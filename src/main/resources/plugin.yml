@@ -1,0 +1,20 @@
+name: ChunkClaimPlugin
+version: '0.2'
+main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
+api-version: '1.16'
+commands:
+  claimchunk:
+    description: Claim the chunk you are standing in
+    usage: /<command>
+  unclaimchunk:
+    description: Unclaim the chunk you are standing in
+    usage: /<command>
+  checkchunk:
+    description: Check the ownership of the chunk you are standing in
+    usage: /<command>
+  infochunk:
+    description: Get a list of your claimed chunks
+    usage: /<command>
+  visualizechunk:
+    description: Visualize the borders of the chunk you are standing in
+    usage: /<command>
