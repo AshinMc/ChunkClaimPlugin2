@@ -1,5 +1,5 @@
-name: ChunkClaimPlugin2
-version: '0.1'
+name: ChunkClaimPlugin
+version: '0.2'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.16'
 commands:
