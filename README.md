@@ -12,3 +12,11 @@
 1. Added fixed all bugs and rewrote everything for 1.21.4.
 2. Made it so other players cannot break anything in your claims.
 3. Added a config file for extra customization
+
+## Future Plans
+1. Giving other players access to your chunks.
+2. Maybe have it be visible on map of some sort?
+3. Admin commands to manage players.
+4. Adding more features to config file?
+
+Let me know if you want me to add anymore features
