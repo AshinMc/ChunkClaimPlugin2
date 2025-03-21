@@ -11,3 +11,4 @@
 ## Version 0.2
 1. Added fixed all bugs and rewrote everything for 1.21.4.
 2. Made it so other players cannot break anything in your claims.
+3. Added a config file for extra customization
