@@ -8,6 +8,6 @@
 4. /infochunk: Get a list of your claimed chunks.
 5. /visualizechunk: Visualize the borders of the chunk you are standing in.
 
-##Version 0.2
+## Version 0.2
 -Added fixed all bugs and rewrote everything for 1.21.4.
 -Made it so other players cannot break anything in your claims
