@@ -23,6 +23,6 @@
 3. Admin commands to manage players.
 4. Adding more features to config file?
 5. A proper gui rewrite?
-6More to come!
+6. More to come!
 
 Let me know if you want me to add anymore features!
