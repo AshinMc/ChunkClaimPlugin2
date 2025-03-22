@@ -14,7 +14,7 @@
 
 ## ✅ Version 0.3 (Working on Currently)
 1. Adding WorldGuard integration. [Done]
-2. 
+2. Soon....
 
 
 ## 🛠️ Future Plans
@@ -22,8 +22,7 @@
 2. Maybe have it be visible on map of some sort?
 3. Admin commands to manage players.
 4. Adding more features to config file?
-5. Adding WorldGuard integration.
-6. A proper gui rewrite?
-7. More to come!
+5. A proper gui rewrite?
+6More to come!
 
 Let me know if you want me to add anymore features!
