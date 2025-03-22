@@ -1,8 +1,8 @@
 package org.ashin.chunkClaimPlugin2.managers;
 
 import org.ashin.chunkClaimPlugin2.data.ChunkData;
+import org.ashin.chunkClaimPlugin2.handlers.WorldGuardHandler;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,13 +17,34 @@ public class ChunkManager {
     private final Map<String, UUID> claimedChunks = new HashMap<>();
     private final File dataFile;
     private final FileConfiguration dataConfig;
+    public final WorldGuardHandler worldGuardHandler;
 
     public ChunkManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.dataFile = new File(plugin.getDataFolder(), "chunkclaims.yml");
         this.dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+        this.worldGuardHandler = new WorldGuardHandler(plugin);
         loadData();
     }
+
+    /**
+     * Checks if a player can claim a chunk, considering both existing claims and WorldGuard regions
+     * @param chunk The chunk to check
+     * @param player The player attempting to claim
+     * @return true if the chunk can be claimed, false otherwise
+     */
+    public boolean canClaimChunk(Chunk chunk, Player player) {
+        String chunkKey = getChunkKey(chunk);
+
+        // First check if chunk is already claimed
+        if (claimedChunks.containsKey(chunkKey)) {
+            return false;
+        }
+
+        // Then check WorldGuard permissions
+        return worldGuardHandler.canClaimChunk(chunk, player);
+    }
+
     /**
      * Returns a copy of all claimed chunks
      * @return Map of chunk keys to owner UUIDs
@@ -33,13 +54,22 @@ public class ChunkManager {
     }
 
     public boolean claimChunk(Player player, Chunk chunk) {
-        String chunkKey = getChunkKey(chunk);
+        // Use the new canClaimChunk method
+        if (!canClaimChunk(chunk, player)) {
+            return false;
+        }
 
+        String chunkKey = getChunkKey(chunk);
+        claimedChunks.put(chunkKey, player.getUniqueId());
+        return true;
+    }
+
+    public boolean claimChunk(String chunkKey, UUID playerId) {
         if (claimedChunks.containsKey(chunkKey)) {
             return false;
         }
 
-        claimedChunks.put(chunkKey, player.getUniqueId());
+        claimedChunks.put(chunkKey, playerId);
         return true;
     }
 
@@ -84,7 +114,7 @@ public class ChunkManager {
         return chunks;
     }
 
-    private String getChunkKey(Chunk chunk) {
+    public String getChunkKey(Chunk chunk) {
         return chunk.getWorld().getName() + ":" + chunk.getX() + ":" + chunk.getZ();
     }
 
@@ -114,4 +144,5 @@ public class ChunkManager {
             plugin.getLogger().severe("Could not save chunk claim data: " + e.getMessage());
         }
     }
+
 }

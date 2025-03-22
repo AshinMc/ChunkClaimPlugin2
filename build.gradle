@@ -3,23 +3,24 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.2'
+version = '0.3'
 
-repositories {
-    mavenCentral()
-    maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
-    }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
-    }
-}
 
-dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
-}
+    repositories {
+        mavenCentral()
+        // Add these repositories
+        maven { url = 'https://maven.enginehub.org/repo/' }
+        maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+        maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+    }
+
+    dependencies {
+        compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
+
+        // Add these dependencies with proper scope
+        compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.13'
+        compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.3.10'
+    }
 
 def targetJavaVersion = 21
 java {

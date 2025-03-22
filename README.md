@@ -12,10 +12,10 @@
 4. /infochunk: Get a list of your claimed chunks.
 5. /visualizechunk: Visualize the borders of the chunk you are standing in.
 
-## ✅ Version 0.2 (Current)
-1. Added fixed all bugs and rewrote everything for 1.21.4.
-2. Made it so other players cannot break anything in your claims.
-3. Added a config file for extra customization
+## ✅ Version 0.3 (Working on Currently)
+1. Adding WorldGuard integration. [Done]
+2. 
+
 
 ## 🛠️ Future Plans
 1. Giving other players access to your chunks.

@@ -1,7 +1,8 @@
 name: ChunkClaimPlugin
-version: '0.2'
+version: '0.3'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.16'
+softdepend: [WorldGuard]
 commands:
   claimchunk:
     description: Claim the chunk you are standing in
