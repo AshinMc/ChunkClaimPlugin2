@@ -18,5 +18,7 @@
 2. Maybe have it be visible on map of some sort?
 3. Admin commands to manage players.
 4. Adding more features to config file?
+5. Adding WorldGuard integration.
+6. A proper gui rewrite?
 
 Let me know if you want me to add anymore features
