@@ -1,16 +1,19 @@
 package org.ashin.chunkClaimPlugin2.handlers;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 public class WorldGuardHandler {
@@ -50,30 +53,26 @@ public class WorldGuardHandler {
                 return true; // No region manager for this world
             }
 
-            // Calculate chunk corners
-            int chunkX = chunk.getX() << 4;
-            int chunkZ = chunk.getZ() << 4;
+            // Build a cuboid for the whole chunk, from world min to max height
+            World w = chunk.getWorld();
+            int minY = w.getMinHeight();
+            int maxY = w.getMaxHeight();
+            int baseX = chunk.getX() << 4;
+            int baseZ = chunk.getZ() << 4;
+            BlockVector3 min = BlockVector3.at(baseX, minY, baseZ);
+            BlockVector3 max = BlockVector3.at(baseX + 15, maxY, baseZ + 15);
+            // Dummy id; not added to manager, only used for intersection query
+            ProtectedCuboidRegion cuboid = new ProtectedCuboidRegion("chunkclaim-" + UUID.randomUUID(), min, max);
 
-            // Check the corners of the chunk
-            Location loc1 = new Location(chunk.getWorld(), chunkX, 64, chunkZ);
-            Location loc2 = new Location(chunk.getWorld(), chunkX + 15, 64, chunkZ + 15);
-
-            // Get regions at these locations
-            ApplicableRegionSet set1 = regions.getApplicableRegions(
-                    BukkitAdapter.asBlockVector(loc1));
-            ApplicableRegionSet set2 = regions.getApplicableRegions(
-                    BukkitAdapter.asBlockVector(loc2));
-
-            // If no regions at either point, the chunk is free to claim
-            if (set1.size() == 0 && set2.size() == 0) {
-                return true;
+            // Regions intersecting the whole chunk
+            ApplicableRegionSet set = regions.getApplicableRegions(cuboid);
+            if (set.size() == 0) {
+                return true; // No regions intersecting this chunk
             }
 
-            // Convert the player to a WorldGuard player - fixed approach
+            // Player must own all overlapping regions
             com.sk89q.worldguard.LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-
-            // Check if the player is an owner of all regions in both sets
-            return set1.isOwnerOfAll(localPlayer) && set2.isOwnerOfAll(localPlayer);
+            return set.isOwnerOfAll(localPlayer);
 
         } catch (Exception e) {
             logger.warning("Error checking WorldGuard regions: " + e.getMessage());
