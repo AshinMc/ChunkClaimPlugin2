@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.3'
+version = '0.4'
 
 
     repositories {
@@ -51,4 +51,9 @@ processResources {
     filesMatching('plugin.yml') {
         expand props
     }
+}
+
+jar {
+    // Name the jar artifact without the trailing '2'
+    archiveBaseName.set('ChunkClaimPlugin')
 }

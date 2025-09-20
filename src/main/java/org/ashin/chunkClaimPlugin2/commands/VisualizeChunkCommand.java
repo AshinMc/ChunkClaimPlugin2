@@ -10,6 +10,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -40,6 +41,49 @@ public class VisualizeChunkCommand implements CommandExecutor {
         Player player = (Player) sender;
         UUID playerId = player.getUniqueId();
 
+        // Single-claim visualization: /visualizechunk <world> <x> <z>
+        if (args.length == 3) {
+            String worldName = args[0];
+            int x, z;
+            try {
+                x = Integer.parseInt(args[1]);
+                z = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                player.sendMessage(messages.getFor(playerId, "chunk-unclaim-fail"));
+                return true;
+            }
+
+            Map<String, UUID> claimedChunks = chunkManager.getClaimedChunks();
+            String key = chunkManager.getChunkKey(worldName, x, z);
+            UUID owner = claimedChunks.get(key);
+            if (owner == null || !owner.equals(playerId)) {
+                player.sendMessage(messages.getFor(playerId, "chunk-unclaim-fail"));
+                return true;
+            }
+
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                player.sendMessage(messages.getFor(playerId, "chunk-unclaim-fail"));
+                return true;
+            }
+
+            Chunk chunk = world.getChunkAt(x, z);
+
+            player.sendMessage(messages.getFor(playerId, "visualize-start", "count", "1", "seconds", String.valueOf(VISUALIZATION_SECONDS)));
+
+            new BukkitRunnable() {
+                int secondsLeft = VISUALIZATION_SECONDS;
+                @Override
+                public void run() {
+                    if (secondsLeft <= 0) { cancel(); return; }
+                    visualizeChunkBorders(player, chunk);
+                    secondsLeft--;
+                }
+            }.runTaskTimer(plugin, 0L, 20L);
+
+            return true;
+        }
+
         // Get all chunks claimed by this player
         Map<String, UUID> claimedChunks = chunkManager.getClaimedChunks();
         if (claimedChunks.isEmpty()) {
@@ -62,7 +106,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
 
     player.sendMessage(messages.getFor(player.getUniqueId(), "visualize-start", "count", String.valueOf(count), "seconds", String.valueOf(VISUALIZATION_SECONDS)));
 
-        // Start visualization
+        // Start visualization for all player claims
         new BukkitRunnable() {
             int secondsLeft = VISUALIZATION_SECONDS;
 

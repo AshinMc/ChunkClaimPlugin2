@@ -1,5 +1,5 @@
 name: ChunkClaimPlugin
-version: '0.3'
+version: '0.4'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.21'
 softdepend: [WorldGuard, WorldEdit]
@@ -18,6 +18,12 @@ commands:
     usage: /<command>
   visualizechunk:
     description: Visualize the borders of the chunk you are standing in
+    usage: /<command>
+  chunklang:
+    description: View or set your language/locale
+    usage: /<command> [get|list|set <locale>]
+  chunksettings:
+    description: Open the chunk settings GUI
     usage: /<command>
 permissions:
   chunkclaimprotection.bypass:

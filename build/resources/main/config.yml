@@ -1,14 +1,19 @@
 # ChunkClaimPlugin2 Configuration
 
+# Language / Locale
+# Set your language file to use (matches files in plugins/ChunkClaimPlugin2/lang/)
+# Examples: en_US, es_ES
+locale: en_US
+
 # Maximum number of chunks a player can claim
 max-claims-per-player: 10
 
 # Messages
 messages:
-  chunk-claimed: "&aYou have successfully claimed this chunk!"
-  chunk-unclaimed: "&eYou have unclaimed this chunk."
-  claim-denied: "&cYou cannot claim this chunk."
-  max-claims-reached: "&cYou have reached your maximum number of claims (%max%)."
+  # Optional: override messages by key here.
+  # Example:
+  # chunk-claim-success: "&aChunk claimed!"
+  # max-claims-reached: "&cYou have reached your maximum number of claims (%max%)."
 
 # Particle settings
 visualization:

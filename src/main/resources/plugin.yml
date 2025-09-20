@@ -22,6 +22,9 @@ commands:
   chunklang:
     description: View or set your language/locale
     usage: /<command> [get|list|set <locale>]
+  chunksettings:
+    description: Open the chunk settings GUI
+    usage: /<command>
 permissions:
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks

@@ -3,6 +3,7 @@ package org.ashin.chunkClaimPlugin2;
 import org.ashin.chunkClaimPlugin2.commands.*;
 import org.ashin.chunkClaimPlugin2.listeners.ChunkProtectionListener;
 import org.ashin.chunkClaimPlugin2.listeners.PlayerJoinLocaleListener;
+import org.ashin.chunkClaimPlugin2.listeners.SettingsGUIListener;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -27,8 +28,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getLogger().info("ChunkClaimPlugin2 has been enabled!");
 
         // Register listeners
-        getServer().getPluginManager().registerEvents(new ChunkProtectionListener(chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new ChunkProtectionListener(chunkManager, messageManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager), this);
+    getServer().getPluginManager().registerEvents(new SettingsGUIListener(chunkManager, messageManager), this);
     }
 
     @Override
@@ -52,6 +54,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         if (getCommand("chunklang") != null) {
             getCommand("chunklang").setExecutor(langCmd);
             getCommand("chunklang").setTabCompleter(langCmd);
+        }
+        if (getCommand("chunksettings") != null) {
+            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(chunkManager, messageManager));
         }
     }
 }

@@ -118,6 +118,22 @@ public class ChunkManager {
         return chunk.getWorld().getName() + ":" + chunk.getX() + ":" + chunk.getZ();
     }
 
+    public String getChunkKey(String world, int x, int z) {
+        return world + ":" + x + ":" + z;
+    }
+
+    /**
+     * Unclaims a chunk by world and chunk coordinates if owned by the given player.
+     * @return true if unclaimed
+     */
+    public boolean unclaimChunk(UUID playerId, String world, int x, int z) {
+        String key = getChunkKey(world, x, z);
+        UUID owner = claimedChunks.get(key);
+        if (owner == null || !owner.equals(playerId)) return false;
+        claimedChunks.remove(key);
+        return true;
+    }
+
     public void loadData() {
         claimedChunks.clear();
 
