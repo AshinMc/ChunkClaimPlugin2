@@ -1,7 +1,9 @@
 package org.ashin.chunkClaimPlugin2.managers;
 
 import org.ashin.chunkClaimPlugin2.data.ChunkData;
-import org.ashin.chunkClaimPlugin2.handlers.WorldGuardHandler;
+import org.ashin.chunkClaimPlugin2.handlers.NoopWorldGuardBridge;
+import org.ashin.chunkClaimPlugin2.handlers.WG7WorldGuardBridge;
+import org.ashin.chunkClaimPlugin2.handlers.WorldGuardBridge;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,13 +19,15 @@ public class ChunkManager {
     private final Map<String, UUID> claimedChunks = new HashMap<>();
     private final File dataFile;
     private final FileConfiguration dataConfig;
-    public final WorldGuardHandler worldGuardHandler;
+    public final WorldGuardBridge worldGuardHandler;
 
     public ChunkManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.dataFile = new File(plugin.getDataFolder(), "chunkclaims.yml");
         this.dataConfig = YamlConfiguration.loadConfiguration(dataFile);
-        this.worldGuardHandler = new WorldGuardHandler(plugin);
+    // Lazy bridge selection to avoid WG class loading when absent
+    boolean hasWG = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
+    this.worldGuardHandler = hasWG ? new WG7WorldGuardBridge() : new NoopWorldGuardBridge();
         loadData();
     }
 
