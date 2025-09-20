@@ -1,8 +1,7 @@
 package org.ashin.chunkClaimPlugin2.listeners;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,8 +26,8 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-    event.setCancelled(true);
-    event.getPlayer().sendMessage(Component.text("You cannot break blocks in a chunk claimed by someone else.").color(NamedTextColor.RED));
+        event.setCancelled(true);
+        event.getPlayer().sendMessage(ChatColor.RED + "You cannot break blocks in a chunk claimed by someone else.");
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -37,8 +36,8 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-    event.setCancelled(true);
-    event.getPlayer().sendMessage(Component.text("You cannot place blocks in a chunk claimed by someone else.").color(NamedTextColor.RED));
+        event.setCancelled(true);
+        event.getPlayer().sendMessage(ChatColor.RED + "You cannot place blocks in a chunk claimed by someone else.");
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -57,7 +56,7 @@ public class ChunkProtectionListener implements Listener {
                  "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "LEVER", "BUTTON",
                  "DOOR", "TRAPDOOR", "FENCE_GATE" -> {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(Component.text("You cannot interact with objects in a chunk claimed by someone else.").color(NamedTextColor.RED));
+                event.getPlayer().sendMessage(ChatColor.RED + "You cannot interact with objects in a chunk claimed by someone else.");
             }
         }
     }

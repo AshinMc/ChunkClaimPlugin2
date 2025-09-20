@@ -2,8 +2,7 @@ package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.data.ChunkData;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,7 +21,7 @@ public class InfoChunkCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can use this command.").color(NamedTextColor.RED));
+            sender.sendMessage(ChatColor.RED + "Only players can use this command.");
             return true;
         }
 
@@ -31,28 +30,20 @@ public class InfoChunkCommand implements CommandExecutor {
         List<ChunkData> chunks = chunkManager.getPlayerChunks(playerId);
 
         if (chunks.isEmpty()) {
-            player.sendMessage(Component.text("You don't have any claimed chunks.").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "You don't have any claimed chunks.");
             return true;
         }
 
-        player.sendMessage(Component.text("Your claimed chunks:").color(NamedTextColor.GREEN));
+        player.sendMessage(ChatColor.GREEN + "Your claimed chunks:");
         int count = 1;
         for (ChunkData chunk : chunks) {
             // Calculate block coordinates from chunk coordinates
             int blockX = chunk.getX() * 16;
             int blockZ = chunk.getZ() * 16;
 
-        player.sendMessage(
-            Component.text()
-                .append(Component.text(count + ". ").color(NamedTextColor.GOLD))
-                .append(Component.text("World: ").color(NamedTextColor.WHITE))
-                .append(Component.text(chunk.getWorld()).color(NamedTextColor.WHITE))
-                .append(Component.text(" Block coordinates: X: ").color(NamedTextColor.WHITE))
-                .append(Component.text(String.valueOf(blockX)).color(NamedTextColor.WHITE))
-                .append(Component.text(", Z: ").color(NamedTextColor.WHITE))
-                .append(Component.text(String.valueOf(blockZ)).color(NamedTextColor.WHITE))
-                .build()
-        );
+            player.sendMessage(ChatColor.GOLD + "" + count + ". " +
+                    ChatColor.WHITE + "World: " + chunk.getWorld() +
+                    ChatColor.WHITE + " Block coordinates: X: " + blockX + ", Z: " + blockZ);
             count++;
         }
 

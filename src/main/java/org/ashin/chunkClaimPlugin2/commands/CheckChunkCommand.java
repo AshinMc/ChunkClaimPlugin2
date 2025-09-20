@@ -2,8 +2,7 @@ package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.bukkit.Bukkit;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,7 +21,7 @@ public class CheckChunkCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can use this command!").color(NamedTextColor.RED));
+            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
             return true;
         }
 
@@ -32,7 +31,7 @@ public class CheckChunkCommand implements CommandExecutor {
         UUID ownerUUID = chunkManager.getChunkOwner(chunk);
 
         if (ownerUUID == null) {
-            player.sendMessage(Component.text("This chunk is not claimed by anyone.").color(NamedTextColor.YELLOW));
+            player.sendMessage(ChatColor.YELLOW + "This chunk is not claimed by anyone.");
         } else {
             Player owner = Bukkit.getPlayer(ownerUUID);
             String ownerName = owner != null ? owner.getName() : Bukkit.getOfflinePlayer(ownerUUID).getName();
@@ -42,9 +41,9 @@ public class CheckChunkCommand implements CommandExecutor {
             }
 
             if (ownerUUID.equals(player.getUniqueId())) {
-                player.sendMessage(Component.text("This chunk is claimed by you.").color(NamedTextColor.GREEN));
+                player.sendMessage(ChatColor.GREEN + "This chunk is claimed by you.");
             } else {
-                player.sendMessage(Component.text("This chunk is claimed by " + ownerName + ".").color(NamedTextColor.RED));
+                player.sendMessage(ChatColor.RED + "This chunk is claimed by " + ownerName + ".");
             }
         }
 

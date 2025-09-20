@@ -1,8 +1,7 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -32,7 +31,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can use this command!").color(NamedTextColor.RED));
+            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
             return true;
         }
 
@@ -42,7 +41,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
         // Get all chunks claimed by this player
         Map<String, UUID> claimedChunks = chunkManager.getClaimedChunks();
         if (claimedChunks.isEmpty()) {
-            player.sendMessage(Component.text("You don't have any claimed chunks.").color(NamedTextColor.YELLOW));
+            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
             return true;
         }
 
@@ -55,12 +54,12 @@ public class VisualizeChunkCommand implements CommandExecutor {
         }
 
         if (count == 0) {
-            player.sendMessage(Component.text("You don't have any claimed chunks.").color(NamedTextColor.YELLOW));
+            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
             return true;
         }
 
-        player.sendMessage(Component.text("Visualizing your " + count + " claimed chunks for " +
-                VISUALIZATION_SECONDS + " seconds.").color(NamedTextColor.GREEN));
+        player.sendMessage(ChatColor.GREEN + "Visualizing your " + count + " claimed chunks for " +
+                VISUALIZATION_SECONDS + " seconds.");
 
         // Start visualization
         new BukkitRunnable() {

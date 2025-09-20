@@ -1,8 +1,7 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,7 +18,7 @@ public class UnclaimChunkCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can use this command!").color(NamedTextColor.RED));
+            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
             return true;
         }
 
@@ -27,10 +26,10 @@ public class UnclaimChunkCommand implements CommandExecutor {
         Chunk chunk = player.getLocation().getChunk();
 
         if (chunkManager.unclaimChunk(player, chunk)) {
-            player.sendMessage(Component.text("You have successfully unclaimed this chunk!").color(NamedTextColor.GREEN));
+            player.sendMessage(ChatColor.GREEN + "You have successfully unclaimed this chunk!");
             chunkManager.saveData();
         } else {
-            player.sendMessage(Component.text("You don't own this chunk or it's not claimed!").color(NamedTextColor.RED));
+            player.sendMessage(ChatColor.RED + "You don't own this chunk or it's not claimed!");
         }
 
         return true;
