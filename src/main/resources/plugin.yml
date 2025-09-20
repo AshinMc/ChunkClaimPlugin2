@@ -29,3 +29,6 @@ permissions:
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks
     default: op
+  chunkclaim.teleport:
+    description: Allows using the Teleport action from the GUI
+    default: op

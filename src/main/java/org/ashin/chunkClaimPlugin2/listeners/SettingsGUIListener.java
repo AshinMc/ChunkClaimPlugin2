@@ -159,6 +159,11 @@ public class SettingsGUIListener implements Listener {
             // Teleport
             String telep = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-teleport"));
             if (name.equals(telep)) {
+                // Require operator (or explicit permission) to use teleport
+                if (!(player.isOp() || player.hasPermission("chunkclaim.teleport"))) {
+                    player.sendMessage(messages.getFor(player.getUniqueId(), "teleport-no-permission"));
+                    return;
+                }
                 if (top == null) return; // safety
                 // Get the info item in slot 11 to parse coords back
                 ItemStack info = top.getItem(11);
