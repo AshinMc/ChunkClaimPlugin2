@@ -1,7 +1,8 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -13,7 +14,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,7 +32,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+            sender.sendMessage(Component.text("Only players can use this command!").color(NamedTextColor.RED));
             return true;
         }
 
@@ -42,7 +42,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
         // Get all chunks claimed by this player
         Map<String, UUID> claimedChunks = chunkManager.getClaimedChunks();
         if (claimedChunks.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
+            player.sendMessage(Component.text("You don't have any claimed chunks.").color(NamedTextColor.YELLOW));
             return true;
         }
 
@@ -55,12 +55,12 @@ public class VisualizeChunkCommand implements CommandExecutor {
         }
 
         if (count == 0) {
-            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
+            player.sendMessage(Component.text("You don't have any claimed chunks.").color(NamedTextColor.YELLOW));
             return true;
         }
 
-        player.sendMessage(ChatColor.GREEN + "Visualizing your " + count + " claimed chunks for " +
-                VISUALIZATION_SECONDS + " seconds.");
+        player.sendMessage(Component.text("Visualizing your " + count + " claimed chunks for " +
+                VISUALIZATION_SECONDS + " seconds.").color(NamedTextColor.GREEN));
 
         // Start visualization
         new BukkitRunnable() {
@@ -116,9 +116,11 @@ public class VisualizeChunkCommand implements CommandExecutor {
         // Get chunk corner coordinates
         int chunkX = chunk.getX() << 4; // Multiply by 16
         int chunkZ = chunk.getZ() << 4; // Multiply by 16
-        int playerY = player.getLocation().getBlockY();
-        int minY = Math.max(0, playerY - 5);
-        int maxY = Math.min(minY + PARTICLE_HEIGHT, player.getWorld().getMaxHeight());
+    int playerY = player.getLocation().getBlockY();
+    int worldMinY = player.getWorld().getMinHeight();
+    int worldMaxY = player.getWorld().getMaxHeight();
+    int minY = Math.max(worldMinY, playerY - 5);
+    int maxY = Math.min(minY + PARTICLE_HEIGHT, worldMaxY);
 
         // Create particles along vertical edges (corners going up)
         for (double y = minY; y <= maxY; y += PARTICLE_SPACING) {

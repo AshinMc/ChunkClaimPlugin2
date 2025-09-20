@@ -14,12 +14,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.logging.Logger;
 
 public class WorldGuardHandler {
-    private final JavaPlugin plugin;
     private final Logger logger;
     private final boolean worldGuardEnabled;
 
     public WorldGuardHandler(JavaPlugin plugin) {
-        this.plugin = plugin;
         this.logger = plugin.getLogger();
 
         // Check if WorldGuard is available

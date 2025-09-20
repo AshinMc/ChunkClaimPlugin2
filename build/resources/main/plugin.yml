@@ -1,8 +1,8 @@
 name: ChunkClaimPlugin
 version: '0.3'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
-api-version: '1.16'
-softdepend: [WorldGuard]
+api-version: '1.21'
+softdepend: [WorldGuard, WorldEdit]
 commands:
   claimchunk:
     description: Claim the chunk you are standing in
@@ -19,3 +19,7 @@ commands:
   visualizechunk:
     description: Visualize the borders of the chunk you are standing in
     usage: /<command>
+permissions:
+  chunkclaimprotection.bypass:
+    description: Allows bypassing chunk protection checks
+    default: op

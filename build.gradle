@@ -12,10 +12,13 @@ version = '0.3'
         maven { url = 'https://maven.enginehub.org/repo/' }
         maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
         maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+        // PaperMC repository for Paper API artifacts
+        maven { url = 'https://repo.papermc.io/repository/maven-public/' }
     }
 
     dependencies {
-        compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
+        // Target Minecraft 1.21.8 API (Paper recommended)
+        compileOnly 'io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT'
 
         // Add these dependencies with proper scope
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.13'
