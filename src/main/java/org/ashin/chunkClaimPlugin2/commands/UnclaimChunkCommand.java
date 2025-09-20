@@ -1,7 +1,7 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,15 +10,17 @@ import org.bukkit.entity.Player;
 
 public class UnclaimChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
 
-    public UnclaimChunkCommand(ChunkManager chunkManager) {
+    public UnclaimChunkCommand(ChunkManager chunkManager, MessageManager messages) {
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+            sender.sendMessage(messages.get("only-players"));
             return true;
         }
 
@@ -26,10 +28,10 @@ public class UnclaimChunkCommand implements CommandExecutor {
         Chunk chunk = player.getLocation().getChunk();
 
         if (chunkManager.unclaimChunk(player, chunk)) {
-            player.sendMessage(ChatColor.GREEN + "You have successfully unclaimed this chunk!");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-success"));
             chunkManager.saveData();
         } else {
-            player.sendMessage(ChatColor.RED + "You don't own this chunk or it's not claimed!");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
         }
 
         return true;

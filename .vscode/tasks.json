@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Gradle project",
+			"type": "shell",
+			"command": "gradle build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$java"
+			],
+			"group": "build"
+		}
+	]
+}

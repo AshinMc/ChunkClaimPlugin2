@@ -1,8 +1,8 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,15 +13,17 @@ import java.util.UUID;
 
 public class CheckChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
 
-    public CheckChunkCommand(ChunkManager chunkManager) {
+    public CheckChunkCommand(ChunkManager chunkManager, MessageManager messages) {
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+            sender.sendMessage(messages.get("only-players"));
             return true;
         }
 
@@ -31,7 +33,7 @@ public class CheckChunkCommand implements CommandExecutor {
         UUID ownerUUID = chunkManager.getChunkOwner(chunk);
 
         if (ownerUUID == null) {
-            player.sendMessage(ChatColor.YELLOW + "This chunk is not claimed by anyone.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unowned"));
         } else {
             Player owner = Bukkit.getPlayer(ownerUUID);
             String ownerName = owner != null ? owner.getName() : Bukkit.getOfflinePlayer(ownerUUID).getName();
@@ -41,9 +43,9 @@ public class CheckChunkCommand implements CommandExecutor {
             }
 
             if (ownerUUID.equals(player.getUniqueId())) {
-                player.sendMessage(ChatColor.GREEN + "This chunk is claimed by you.");
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-self"));
             } else {
-                player.sendMessage(ChatColor.RED + "This chunk is claimed by " + ownerName + ".");
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-other", "player", ownerName));
             }
         }
 

@@ -1,7 +1,7 @@
 package org.ashin.chunkClaimPlugin2.listeners;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,9 +15,11 @@ import java.util.UUID;
 
 public class ChunkProtectionListener implements Listener {
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
 
-    public ChunkProtectionListener(ChunkManager chunkManager) {
+    public ChunkProtectionListener(ChunkManager chunkManager, MessageManager messages) {
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -26,8 +28,8 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-        event.setCancelled(true);
-        event.getPlayer().sendMessage(ChatColor.RED + "You cannot break blocks in a chunk claimed by someone else.");
+    event.setCancelled(true);
+    event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-break"));
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -36,8 +38,8 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-        event.setCancelled(true);
-        event.getPlayer().sendMessage(ChatColor.RED + "You cannot place blocks in a chunk claimed by someone else.");
+    event.setCancelled(true);
+    event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -56,7 +58,7 @@ public class ChunkProtectionListener implements Listener {
                  "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "LEVER", "BUTTON",
                  "DOOR", "TRAPDOOR", "FENCE_GATE" -> {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.RED + "You cannot interact with objects in a chunk claimed by someone else.");
+                event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
             }
         }
     }

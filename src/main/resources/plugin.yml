@@ -19,6 +19,9 @@ commands:
   visualizechunk:
     description: Visualize the borders of the chunk you are standing in
     usage: /<command>
+  chunklang:
+    description: View or set your language/locale
+    usage: /<command> [get|list|set <locale>]
 permissions:
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks

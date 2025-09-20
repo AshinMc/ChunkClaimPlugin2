@@ -2,7 +2,7 @@ package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.data.ChunkData;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,15 +13,17 @@ import java.util.UUID; // Added missing import
 
 public class InfoChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
 
-    public InfoChunkCommand(ChunkManager chunkManager) {
+    public InfoChunkCommand(ChunkManager chunkManager, MessageManager messages) {
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command.");
+            sender.sendMessage(messages.get("only-players"));
             return true;
         }
 
@@ -30,20 +32,23 @@ public class InfoChunkCommand implements CommandExecutor {
         List<ChunkData> chunks = chunkManager.getPlayerChunks(playerId);
 
         if (chunks.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "You don't have any claimed chunks.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "no-claims"));
             return true;
         }
 
-        player.sendMessage(ChatColor.GREEN + "Your claimed chunks:");
+        player.sendMessage(messages.getFor(player.getUniqueId(), "claims-header"));
         int count = 1;
         for (ChunkData chunk : chunks) {
             // Calculate block coordinates from chunk coordinates
             int blockX = chunk.getX() * 16;
             int blockZ = chunk.getZ() * 16;
 
-            player.sendMessage(ChatColor.GOLD + "" + count + ". " +
-                    ChatColor.WHITE + "World: " + chunk.getWorld() +
-                    ChatColor.WHITE + " Block coordinates: X: " + blockX + ", Z: " + blockZ);
+        player.sendMessage(messages.getFor(player.getUniqueId(), "claim-entry",
+            "index", String.valueOf(count),
+            "world", chunk.getWorld(),
+            "x", String.valueOf(blockX),
+            "z", String.valueOf(blockZ))
+        );
             count++;
         }
 

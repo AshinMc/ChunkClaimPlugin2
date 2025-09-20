@@ -1,7 +1,7 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -19,19 +19,21 @@ import java.util.UUID;
 public class VisualizeChunkCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
     private static final int VISUALIZATION_SECONDS = 10;
     private static final int PARTICLE_HEIGHT = 100;
     private static final double PARTICLE_SPACING = 0.5;
 
-    public VisualizeChunkCommand(JavaPlugin plugin, ChunkManager chunkManager) {
+    public VisualizeChunkCommand(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
         this.plugin = plugin;
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+            sender.sendMessage(messages.get("only-players"));
             return true;
         }
 
@@ -41,7 +43,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
         // Get all chunks claimed by this player
         Map<String, UUID> claimedChunks = chunkManager.getClaimedChunks();
         if (claimedChunks.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "no-claims"));
             return true;
         }
 
@@ -54,12 +56,11 @@ public class VisualizeChunkCommand implements CommandExecutor {
         }
 
         if (count == 0) {
-            player.sendMessage(ChatColor.YELLOW + "You don't have any claimed chunks.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "no-claims"));
             return true;
         }
 
-        player.sendMessage(ChatColor.GREEN + "Visualizing your " + count + " claimed chunks for " +
-                VISUALIZATION_SECONDS + " seconds.");
+    player.sendMessage(messages.getFor(player.getUniqueId(), "visualize-start", "count", String.valueOf(count), "seconds", String.valueOf(VISUALIZATION_SECONDS)));
 
         // Start visualization
         new BukkitRunnable() {

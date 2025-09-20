@@ -1,7 +1,7 @@
 package org.ashin.chunkClaimPlugin2.commands;
 
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-import org.bukkit.ChatColor;
+import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,15 +12,17 @@ import java.util.UUID;
 
 public class ClaimChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
+    private final MessageManager messages;
 
-    public ClaimChunkCommand(ChunkManager chunkManager) {
+    public ClaimChunkCommand(ChunkManager chunkManager, MessageManager messages) {
         this.chunkManager = chunkManager;
+        this.messages = messages;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command!");
+            sender.sendMessage(messages.get("only-players"));
             return true;
         }
 
@@ -31,26 +33,26 @@ public class ClaimChunkCommand implements CommandExecutor {
         UUID existingOwner = chunkManager.getChunkOwner(chunk);
         if (existingOwner != null) {
             if (existingOwner.equals(player.getUniqueId())) {
-                player.sendMessage(ChatColor.YELLOW + "You have already claimed this chunk.");
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-already-claimed-self"));
             } else {
-                player.sendMessage(ChatColor.RED + "This chunk is already claimed by another player.");
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-already-claimed-other"));
             }
             return true;
         }
 
         // Check WorldGuard compatibility separately
         if (!chunkManager.worldGuardHandler.canClaimChunk(chunk, player)) {
-            player.sendMessage(ChatColor.RED + "You cannot claim this chunk because it overlaps with a WorldGuard region you don't own.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "worldguard-deny"));
             return true;
         }
 
         // Actually claim the chunk
         if (chunkManager.claimChunk(player, chunk)) {
             chunkManager.saveData();
-            player.sendMessage(ChatColor.GREEN + "You have successfully claimed this chunk!");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-success"));
         } else {
             // This should rarely happen due to the checks above, but just in case
-            player.sendMessage(ChatColor.RED + "Failed to claim this chunk.");
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-fail"));
         }
 
         return true;
