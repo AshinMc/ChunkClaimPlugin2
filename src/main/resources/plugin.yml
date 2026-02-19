@@ -5,29 +5,40 @@ api-version: '1.21'
 softdepend: [WorldGuard, WorldEdit]
 commands:
   claimchunk:
-    description: Claim the chunk you are standing in
-    usage: /<command>
+    description: Claim the chunk you are standing in with an optional name
+    usage: /<command> [name]
   unclaimchunk:
-    description: Unclaim the chunk you are standing in
-    usage: /<command>
+    description: Unclaim a chunk (by name removes entire group, no args unclaims current chunk)
+    usage: /<command> [name]
   checkchunk:
-    description: Check the ownership of the chunk you are standing in
+    description: Check the ownership and claim name of the chunk you are standing in
     usage: /<command>
   infochunk:
-    description: Get a list of your claimed chunks
+    description: Get a list of your claimed chunk groups
     usage: /<command>
   visualizechunk:
-    description: Visualize the borders of the chunk you are standing in
-    usage: /<command>
+    description: Visualize your claim borders (by name or all)
+    usage: /<command> [name]
+  chunkexpand:
+    description: Expand an existing named claim by adding the current chunk
+    usage: /<command> <name>
   chunklang:
     description: View or set your language/locale
     usage: /<command> [get|list|set <locale>]
   chunksettings:
     description: Open the chunk settings GUI
     usage: /<command>
+  chunkadmin:
+    description: Open the admin settings GUI
+    usage: /<command>
+    permission: chunkclaim.admin
 permissions:
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks
+    default: op
+  chunkclaim.admin:
+    description: Allows access to the admin settings GUI
+    default: op
     default: op
   chunkclaim.teleport:
     description: Allows using the Teleport action from the GUI

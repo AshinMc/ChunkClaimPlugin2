@@ -7,13 +7,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class ChunkSettingsCommand implements CommandExecutor {
     private final SettingsGUI gui;
     private final MessageManager messages;
 
-    public ChunkSettingsCommand(ChunkManager chunkManager, MessageManager messages) {
-        this.gui = new SettingsGUI(chunkManager, messages);
+    public ChunkSettingsCommand(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this.gui = new SettingsGUI(plugin, chunkManager, messages);
         this.messages = messages;
     }
 

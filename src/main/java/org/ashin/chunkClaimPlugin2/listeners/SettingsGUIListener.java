@@ -1,6 +1,5 @@
 package org.ashin.chunkClaimPlugin2.listeners;
 
-import org.ashin.chunkClaimPlugin2.data.ChunkData;
 import org.ashin.chunkClaimPlugin2.gui.SettingsGUI;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.ashin.chunkClaimPlugin2.managers.MessageManager;
@@ -14,16 +13,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class SettingsGUIListener implements Listener {
+    private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
     private final SettingsGUI gui;
 
-    public SettingsGUIListener(ChunkManager chunkManager, MessageManager messages) {
+    public SettingsGUIListener(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
-        this.gui = new SettingsGUI(chunkManager, messages);
+        this.gui = new SettingsGUI(plugin, chunkManager, messages);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -65,6 +67,8 @@ public class SettingsGUIListener implements Listener {
             case VISUALIZE: handleVisualize(player, clicked, name); break;
             case DELETE: handleDelete(player, clicked, name); break;
             case LANGUAGE: handleLanguage(player, clicked, name); break;
+            case PARTICLE: handleParticle(player, clicked, name); break;
+            case TRUST: handleTrust(player, clicked, name, sh); break;
             default: break;
         }
     }
@@ -74,48 +78,34 @@ public class SettingsGUIListener implements Listener {
         String nVis = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-visualize"));
         String nDel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-delete"));
         String nLang = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-language"));
+        String nPart = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-particle"));
         if (name.equals(nClaims)) gui.openClaims(player);
         else if (name.equals(nVis)) gui.openVisualize(player);
         else if (name.equals(nDel)) gui.openDelete(player);
         else if (name.equals(nLang)) gui.openLanguage(player);
-    }
-
-    private ChunkData parseFromName(String name) {
-        // Format: <world> @ <x>, <z>
-        try {
-            String[] parts = name.split(" @ ");
-            String world = parts[0];
-            String[] coords = parts[1].split(", ");
-            int x = Integer.parseInt(coords[0]);
-            int z = Integer.parseInt(coords[1]);
-            return new ChunkData(world, x, z);
-        } catch (Exception e) {
-            return null;
-        }
+        else if (name.equals(nPart)) gui.openParticle(player);
     }
 
     private void handleClaims(Player player, ItemStack clicked, String name) {
         if (clicked.getType() == Material.ARROW) { gui.openHome(player); return; }
-        ChunkData cd = parseFromName(name);
-        if (cd == null) return;
-        gui.openClaimDetails(player, cd);
+        // name is the claim group name
+        if (chunkManager.hasClaimName(player.getUniqueId(), name)) {
+            gui.openClaimDetails(player, name);
+        }
     }
 
     private void handleVisualize(Player player, ItemStack clicked, String name) {
         if (clicked.getType() == Material.ARROW) { gui.openHome(player); return; }
-        ChunkData cd = parseFromName(name);
-        if (cd == null) return;
-        var world = Bukkit.getWorld(cd.getWorld());
-        if (world == null) return;
-        // Call single-claim visualization
-        player.performCommand("visualizechunk " + cd.getWorld() + " " + cd.getX() + " " + cd.getZ());
+        // Visualize by claim name
+        player.performCommand("visualizechunk " + name);
     }
 
     private void handleDelete(Player player, ItemStack clicked, String name) {
         if (clicked.getType() == Material.ARROW) { gui.openHome(player); return; }
-        ChunkData cd = parseFromName(name);
-        if (cd == null) return;
-        gui.openDeleteConfirm(player, cd);
+        // name is the claim group name
+        if (chunkManager.hasClaimName(player.getUniqueId(), name)) {
+            gui.openDeleteConfirm(player, name);
+        }
     }
 
     private void handleLanguage(Player player, ItemStack clicked, String name) {
@@ -127,6 +117,50 @@ public class SettingsGUIListener implements Listener {
             player.sendMessage(messages.getFor(player.getUniqueId(), "lang-set", "locale", loc));
             gui.openLanguage(player);
         }
+    }
+
+    private void handleParticle(Player player, ItemStack clicked, String name) {
+        if (clicked.getType() == Material.ARROW) { gui.openHome(player); return; }
+        // Reset to server default
+        String resetLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-particle-reset"));
+        if (name.equals(resetLabel)) {
+            messages.setPlayerParticle(player.getUniqueId(), null);
+            player.sendMessage(messages.getFor(player.getUniqueId(), "particle-reset"));
+            gui.openParticle(player);
+            return;
+        }
+        // Validate as particle name
+        try {
+            org.bukkit.Particle.valueOf(name);
+            messages.setPlayerParticle(player.getUniqueId(), name);
+            player.sendMessage(messages.getFor(player.getUniqueId(), "particle-set", "particle", name));
+            gui.openParticle(player);
+        } catch (IllegalArgumentException ignored) {
+            // not a valid particle, ignore click
+        }
+    }
+
+    private void handleTrust(Player player, ItemStack clicked, String name, SettingsGUI.SettingsHolder sh) {
+        if (clicked.getType() == Material.ARROW) {
+            // Back to claim details
+            if (sh.claimName != null) gui.openClaimDetails(player, sh.claimName);
+            else gui.openHome(player);
+            return;
+        }
+        if (clicked.getType() != Material.PLAYER_HEAD || sh.claimName == null) return;
+        // Toggle trust for this player
+        Player target = Bukkit.getPlayerExact(name);
+        if (target == null) return;
+        boolean currentlyTrusted = chunkManager.isTrusted(player.getUniqueId(), sh.claimName, target.getUniqueId());
+        chunkManager.setTrusted(player.getUniqueId(), sh.claimName, target.getUniqueId(), !currentlyTrusted);
+        chunkManager.saveData();
+        if (!currentlyTrusted) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "trust-added", "player", target.getName(), "name", sh.claimName));
+        } else {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "trust-removed", "player", target.getName(), "name", sh.claimName));
+        }
+        // Refresh the trust GUI
+        gui.openTrust(player, sh.claimName);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -158,6 +192,16 @@ public class SettingsGUIListener implements Listener {
             if (clicked.getType() == Material.ARROW) { gui.openClaims(player); return; }
             // Teleport
             String telep = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-teleport"));
+            String trustLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"));
+            if (name.equals(trustLabel) && clicked.getType() == Material.PLAYER_HEAD) {
+                // Open trust GUI for this claim
+                ItemStack info = top.getItem(11);
+                if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    gui.openTrust(player, claimName);
+                }
+                return;
+            }
             if (name.equals(telep)) {
                 // Require operator (or explicit permission) to use teleport
                 if (!(player.isOp() || player.hasPermission("chunkclaim.teleport"))) {
@@ -165,11 +209,14 @@ public class SettingsGUIListener implements Listener {
                     return;
                 }
                 if (top == null) return; // safety
-                // Get the info item in slot 11 to parse coords back
+                // Get the info item in slot 11 to extract claim name, then teleport to first chunk
                 ItemStack info = top.getItem(11);
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
-                    ChunkData cd = parseFromName(ChatColor.stripColor(info.getItemMeta().getDisplayName()));
-                    if (cd != null) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    java.util.List<org.ashin.chunkClaimPlugin2.data.ChunkData> chunks =
+                            chunkManager.getChunksByName(player.getUniqueId(), claimName);
+                    if (!chunks.isEmpty()) {
+                        org.ashin.chunkClaimPlugin2.data.ChunkData cd = chunks.get(0);
                         var world = Bukkit.getWorld(cd.getWorld());
                         if (world != null) {
                             int bx = (cd.getX() << 4) + 8;
@@ -191,20 +238,19 @@ public class SettingsGUIListener implements Listener {
 
             if (name.equals(confirm)) {
                 if (top == null) return; // safety
-                // Parse coords from center info item (slot 13)
+                // Parse claim name from center info item (slot 13)
                 ItemStack info = top.getItem(13);
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
-                    ChunkData cd = parseFromName(ChatColor.stripColor(info.getItemMeta().getDisplayName()));
-                    if (cd != null) {
-                        boolean ok = chunkManager.unclaimChunk(player.getUniqueId(), cd.getWorld(), cd.getX(), cd.getZ());
-                        if (ok) {
-                            chunkManager.saveData();
-                            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-success"));
-                        } else {
-                            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
-                        }
-                        gui.openDelete(player);
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    int count = chunkManager.unclaimByName(player.getUniqueId(), claimName);
+                    if (count > 0) {
+                        chunkManager.saveData();
+                        player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-success",
+                                "name", claimName, "count", String.valueOf(count)));
+                    } else {
+                        player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
                     }
+                    gui.openDelete(player);
                 }
             }
         }

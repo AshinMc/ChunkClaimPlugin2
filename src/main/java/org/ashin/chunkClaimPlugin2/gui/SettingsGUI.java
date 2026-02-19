@@ -10,25 +10,33 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.Sound;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public class SettingsGUI {
-    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, CLAIM_DETAILS, DELETE_CONFIRM }
+    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, PARTICLE, CLAIM_DETAILS, DELETE_CONFIRM, TRUST }
 
     public static class SettingsHolder implements org.bukkit.inventory.InventoryHolder {
         public final View view;
-        public SettingsHolder(View view) { this.view = view; }
+        public final String claimName; // for views that operate on a specific claim
+        public SettingsHolder(View view) { this(view, null); }
+        public SettingsHolder(View view, String claimName) { this.view = view; this.claimName = claimName; }
         @Override
         public org.bukkit.inventory.Inventory getInventory() { return null; }
     }
 
+    private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
 
-    public SettingsGUI(ChunkManager chunkManager, MessageManager messages) {
+    public SettingsGUI(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
     }
@@ -37,27 +45,32 @@ public class SettingsGUI {
     String title = messages.getFor(player.getUniqueId(), "gui-title-home");
     Inventory inv = Bukkit.createInventory(new SettingsHolder(View.HOME), 27, ChatColor.stripColor(title));
         inv.setItem(10, named(Material.GRASS_BLOCK, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claims"))));
-        inv.setItem(12, named(Material.SPYGLASS, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-visualize"))));
-        inv.setItem(14, named(Material.BARRIER, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-delete"))));
+        inv.setItem(11, named(Material.SPYGLASS, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-visualize"))));
+        inv.setItem(13, named(Material.BARRIER, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-delete"))));
+        inv.setItem(15, named(Material.BLAZE_POWDER, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-particle"))));
         inv.setItem(16, named(Material.BOOK, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-language"))));
         player.openInventory(inv);
         playClick(player);
     }
 
     public void openClaims(Player player) {
-        List<ChunkData> chunks = chunkManager.getPlayerChunks(player.getUniqueId());
-        int size = invSizeFor(chunks.size() + 1);
-    String title = messages.getFor(player.getUniqueId(), "gui-title-claims");
-    Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIMS), size, ChatColor.stripColor(title));
+        List<String> claimNames = chunkManager.getPlayerClaimNames(player.getUniqueId());
+        int size = invSizeFor(claimNames.size() + 1);
+        String title = messages.getFor(player.getUniqueId(), "gui-title-claims");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIMS), size, ChatColor.stripColor(title));
         int i = 0;
-        for (ChunkData cd : chunks) {
+        for (String name : claimNames) {
+            List<ChunkData> chunks = chunkManager.getChunksByName(player.getUniqueId(), name);
             ItemStack item = new ItemStack(Material.GRASS_BLOCK);
             ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.GOLD + cd.getWorld() + ChatColor.GRAY + " @ " + ChatColor.YELLOW + cd.getX() + ", " + cd.getZ());
+            meta.setDisplayName(ChatColor.GOLD + name);
             List<String> lore = new ArrayList<>();
-            int blockX = cd.getX() * 16;
-            int blockZ = cd.getZ() * 16;
-            lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-block", "x", String.valueOf(blockX), "z", String.valueOf(blockZ))));
+            lore.add("" + ChatColor.GRAY + chunks.size() + " chunk(s)");
+            if (!chunks.isEmpty()) {
+                ChunkData first = chunks.get(0);
+                lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-block",
+                        "x", String.valueOf(first.getX() * 16), "z", String.valueOf(first.getZ() * 16))));
+            }
             meta.setLore(lore);
             item.setItemMeta(meta);
             inv.setItem(i++, item);
@@ -68,16 +81,19 @@ public class SettingsGUI {
     }
 
     public void openVisualize(Player player) {
-        // Same layout as claims, but clicking will trigger visualize for that single claim
-        List<ChunkData> chunks = chunkManager.getPlayerChunks(player.getUniqueId());
-        int size = invSizeFor(chunks.size() + 1);
-    String title = messages.getFor(player.getUniqueId(), "gui-title-visualize");
-    Inventory inv = Bukkit.createInventory(new SettingsHolder(View.VISUALIZE), size, ChatColor.stripColor(title));
+        List<String> claimNames = chunkManager.getPlayerClaimNames(player.getUniqueId());
+        int size = invSizeFor(claimNames.size() + 1);
+        String title = messages.getFor(player.getUniqueId(), "gui-title-visualize");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.VISUALIZE), size, ChatColor.stripColor(title));
         int i = 0;
-        for (ChunkData cd : chunks) {
+        for (String name : claimNames) {
+            List<ChunkData> chunks = chunkManager.getChunksByName(player.getUniqueId(), name);
             ItemStack item = new ItemStack(Material.SPYGLASS);
             ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.AQUA + cd.getWorld() + ChatColor.GRAY + " @ " + ChatColor.YELLOW + cd.getX() + ", " + cd.getZ());
+            meta.setDisplayName(ChatColor.AQUA + name);
+            List<String> lore = new ArrayList<>();
+            lore.add("" + ChatColor.GRAY + chunks.size() + " chunk(s)");
+            meta.setLore(lore);
             item.setItemMeta(meta);
             inv.setItem(i++, item);
         }
@@ -87,15 +103,19 @@ public class SettingsGUI {
     }
 
     public void openDelete(Player player) {
-        List<ChunkData> chunks = chunkManager.getPlayerChunks(player.getUniqueId());
-        int size = invSizeFor(chunks.size() + 1);
-    String title = messages.getFor(player.getUniqueId(), "gui-title-delete");
-    Inventory inv = Bukkit.createInventory(new SettingsHolder(View.DELETE), size, ChatColor.stripColor(title));
+        List<String> claimNames = chunkManager.getPlayerClaimNames(player.getUniqueId());
+        int size = invSizeFor(claimNames.size() + 1);
+        String title = messages.getFor(player.getUniqueId(), "gui-title-delete");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.DELETE), size, ChatColor.stripColor(title));
         int i = 0;
-        for (ChunkData cd : chunks) {
+        for (String name : claimNames) {
+            List<ChunkData> chunks = chunkManager.getChunksByName(player.getUniqueId(), name);
             ItemStack item = new ItemStack(Material.BARRIER);
             ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.RED + cd.getWorld() + ChatColor.GRAY + " @ " + ChatColor.YELLOW + cd.getX() + ", " + cd.getZ());
+            meta.setDisplayName(ChatColor.RED + name);
+            List<String> lore = new ArrayList<>();
+            lore.add("" + ChatColor.GRAY + chunks.size() + " chunk(s)");
+            meta.setLore(lore);
             item.setItemMeta(meta);
             inv.setItem(i++, item);
         }
@@ -122,24 +142,64 @@ public class SettingsGUI {
         playClick(player);
     }
 
-    public void openClaimDetails(Player player, ChunkData cd) {
-    String title = messages.getFor(player.getUniqueId(), "gui-title-claim-details");
-    Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIM_DETAILS), 27, ChatColor.stripColor(title));
+    public void openParticle(Player player) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-particle");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.PARTICLE), 27, ChatColor.stripColor(title));
+
+        String currentParticle = messages.getPlayerParticle(player.getUniqueId());
+        if (currentParticle == null || currentParticle.isEmpty()) {
+            currentParticle = plugin.getConfig().getString("visualization.particle-type", "FLAME");
+        }
+
+        String[][] particles = AdminSettingsGUI.getAvailableParticles();
+        int slot = 0;
+        for (String[] entry : particles) {
+            String particleName = entry[0];
+            Material icon = Material.valueOf(entry[1]);
+            boolean selected = particleName.equals(currentParticle);
+            ItemStack item = new ItemStack(icon);
+            ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName((selected ? ChatColor.GREEN : ChatColor.YELLOW) + particleName);
+            if (selected) {
+                List<String> lore = new ArrayList<>();
+                lore.add(ChatColor.GREEN + "Currently selected");
+                meta.setLore(lore);
+            }
+            item.setItemMeta(meta);
+            inv.setItem(slot++, item);
+        }
+
+        // Reset to server default option
+        inv.setItem(22, named(Material.NETHER_STAR, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-particle-reset"))));
+        inv.setItem(26, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openClaimDetails(Player player, String claimName) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-claim-details");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIM_DETAILS), 27, ChatColor.stripColor(title));
+
+        List<ChunkData> chunks = chunkManager.getChunksByName(player.getUniqueId(), claimName);
 
         // Info item (paper)
         ItemStack info = new ItemStack(Material.PAPER);
         ItemMeta im = info.getItemMeta();
-        im.setDisplayName(ChatColor.GOLD + cd.getWorld() + ChatColor.GRAY + " @ " + ChatColor.YELLOW + cd.getX() + ", " + cd.getZ());
+        im.setDisplayName(ChatColor.GOLD + claimName);
         List<String> lore = new ArrayList<>();
-        int blockX = cd.getX() * 16;
-        int blockZ = cd.getZ() * 16;
-        lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-block", "x", String.valueOf(blockX), "z", String.valueOf(blockZ))));
+        lore.add("" + ChatColor.GRAY + chunks.size() + " chunk(s)");
+        for (ChunkData cd : chunks) {
+            lore.add(ChatColor.YELLOW + cd.getWorld() + " @ " + (cd.getX() * 16) + ", " + (cd.getZ() * 16));
+        }
         im.setLore(lore);
         info.setItemMeta(im);
         inv.setItem(11, info);
 
-        // Teleport item (ender pearl)
+        // Teleport item (ender pearl) - teleports to first chunk in group
         inv.setItem(13, named(Material.ENDER_PEARL, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-teleport"))));
+
+        // Trusted players item (player head)
+        inv.setItem(22, named(Material.PLAYER_HEAD, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"))));
 
         // Back item
         inv.setItem(15, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
@@ -148,18 +208,51 @@ public class SettingsGUI {
         playClick(player);
     }
 
-    public void openDeleteConfirm(Player player, ChunkData cd) {
-    String title = messages.getFor(player.getUniqueId(), "gui-title-delete-confirm");
-    Inventory inv = Bukkit.createInventory(new SettingsHolder(View.DELETE_CONFIRM), 27, ChatColor.stripColor(title));
+    public void openTrust(Player player, String claimName) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-trust");
+        java.util.Set<UUID> trusted = chunkManager.getTrustedPlayers(player.getUniqueId(), claimName);
+        // Collect online players (excluding the owner)
+        List<Player> candidates = new ArrayList<>();
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (!online.getUniqueId().equals(player.getUniqueId())) {
+                candidates.add(online);
+            }
+        }
+        int size = invSizeFor(candidates.size() + 1);
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.TRUST, claimName), size, ChatColor.stripColor(title));
+        int i = 0;
+        for (Player online : candidates) {
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta sm = (SkullMeta) head.getItemMeta();
+            sm.setOwningPlayer(online);
+            boolean isTrusted = trusted.contains(online.getUniqueId());
+            sm.setDisplayName((isTrusted ? ChatColor.GREEN : ChatColor.GRAY) + online.getName());
+            List<String> lore = new ArrayList<>();
+            lore.add(isTrusted ? ChatColor.GREEN + "\u2714 Trusted" : ChatColor.RED + "\u2716 Not trusted");
+            sm.setLore(lore);
+            head.setItemMeta(sm);
+            inv.setItem(i++, head);
+        }
+        if (candidates.isEmpty()) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "trust-no-online"));
+        }
+        inv.setItem(size - 1, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openDeleteConfirm(Player player, String claimName) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-delete-confirm");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.DELETE_CONFIRM), 27, ChatColor.stripColor(title));
+
+        List<ChunkData> chunks = chunkManager.getChunksByName(player.getUniqueId(), claimName);
 
         // Info item in center
         ItemStack info = new ItemStack(Material.PAPER);
         ItemMeta im = info.getItemMeta();
-        im.setDisplayName(ChatColor.RED + cd.getWorld() + ChatColor.GRAY + " @ " + ChatColor.YELLOW + cd.getX() + ", " + cd.getZ());
+        im.setDisplayName(ChatColor.RED + claimName);
         List<String> lore = new ArrayList<>();
-        int blockX = cd.getX() * 16;
-        int blockZ = cd.getZ() * 16;
-        lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-block", "x", String.valueOf(blockX), "z", String.valueOf(blockZ))));
+        lore.add("" + ChatColor.GRAY + chunks.size() + " chunk(s)");
         lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-confirm")));
         im.setLore(lore);
         info.setItemMeta(im);

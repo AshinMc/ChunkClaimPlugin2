@@ -25,13 +25,32 @@ public class UnclaimChunkCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        Chunk chunk = player.getLocation().getChunk();
 
-        if (chunkManager.unclaimChunk(player, chunk)) {
-            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-success"));
-            chunkManager.saveData();
+        String claimName;
+        if (args.length > 0) {
+            claimName = String.join(" ", args);
         } else {
-            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
+            // No args: use the claim name of the chunk the player is standing on
+            Chunk chunk = player.getLocation().getChunk();
+            java.util.UUID owner = chunkManager.getChunkOwner(chunk);
+            if (owner == null || !owner.equals(player.getUniqueId())) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
+                return true;
+            }
+            claimName = chunkManager.getChunkClaimName(chunk);
+            if (claimName == null) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
+                return true;
+            }
+        }
+
+        int count = chunkManager.unclaimByName(player.getUniqueId(), claimName);
+        if (count > 0) {
+            chunkManager.saveData();
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-success",
+                    "name", claimName, "count", String.valueOf(count)));
+        } else {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-fail", "name", claimName));
         }
 
         return true;

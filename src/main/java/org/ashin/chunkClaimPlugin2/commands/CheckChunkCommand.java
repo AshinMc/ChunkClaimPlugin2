@@ -42,10 +42,13 @@ public class CheckChunkCommand implements CommandExecutor {
                 ownerName = ownerUUID.toString();
             }
 
+            String claimName = chunkManager.getChunkClaimName(chunk);
+            if (claimName == null) claimName = "?";
+
             if (ownerUUID.equals(player.getUniqueId())) {
-                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-self"));
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-self", "name", claimName));
             } else {
-                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-other", "player", ownerName));
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-owned-other", "player", ownerName, "name", claimName));
             }
         }
 

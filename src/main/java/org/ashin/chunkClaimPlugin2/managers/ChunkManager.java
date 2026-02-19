@@ -7,6 +7,7 @@ import org.ashin.chunkClaimPlugin2.handlers.WorldGuardBridge;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -14,109 +15,235 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Manages chunk claims with named claim groups.
+ * Each claim has: chunkKey -> { owner UUID, claim name }.
+ * A "claim group" is all chunks sharing the same (owner, name).
+ */
 public class ChunkManager {
     private final JavaPlugin plugin;
-    private final Map<String, UUID> claimedChunks = new HashMap<>();
+    // chunkKey -> owner UUID
+    private final Map<String, UUID> chunkOwners = new HashMap<>();
+    // chunkKey -> claim name
+    private final Map<String, String> chunkNames = new HashMap<>();
+    // Trust: "ownerUUID:claimNameLowerCase" -> Set of trusted player UUIDs
+    private final Map<String, Set<UUID>> trustedPlayers = new HashMap<>();
     private final File dataFile;
-    private final FileConfiguration dataConfig;
+    private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
 
     public ChunkManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.dataFile = new File(plugin.getDataFolder(), "chunkclaims.yml");
         this.dataConfig = YamlConfiguration.loadConfiguration(dataFile);
-    // Lazy bridge selection to avoid WG class loading when absent
-    boolean hasWG = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
-    this.worldGuardHandler = hasWG ? new WG7WorldGuardBridge() : new NoopWorldGuardBridge();
+        boolean hasWG = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
+        this.worldGuardHandler = hasWG ? new WG7WorldGuardBridge() : new NoopWorldGuardBridge();
         loadData();
     }
 
-    /**
-     * Checks if a player can claim a chunk, considering both existing claims and WorldGuard regions
-     * @param chunk The chunk to check
-     * @param player The player attempting to claim
-     * @return true if the chunk can be claimed, false otherwise
-     */
+    // ── Basic chunk operations ──
+
     public boolean canClaimChunk(Chunk chunk, Player player) {
         String chunkKey = getChunkKey(chunk);
-
-        // First check if chunk is already claimed
-        if (claimedChunks.containsKey(chunkKey)) {
-            return false;
-        }
-
-        // Then check WorldGuard permissions
+        if (chunkOwners.containsKey(chunkKey)) return false;
         return worldGuardHandler.canClaimChunk(chunk, player);
     }
 
+    public UUID getChunkOwner(Chunk chunk) {
+        return chunkOwners.get(getChunkKey(chunk));
+    }
+
+    public UUID getChunkOwner(String chunkKey) {
+        return chunkOwners.get(chunkKey);
+    }
+
+    public String getChunkClaimName(Chunk chunk) {
+        return chunkNames.get(getChunkKey(chunk));
+    }
+
+    public String getChunkClaimName(String chunkKey) {
+        return chunkNames.get(chunkKey);
+    }
+
+    // ── Claim with name ──
+
     /**
-     * Returns a copy of all claimed chunks
-     * @return Map of chunk keys to owner UUIDs
+     * Claim a chunk with a given name. Returns true on success.
      */
-    public Map<String, UUID> getClaimedChunks() {
-        return new HashMap<>(claimedChunks);  // Return a copy to prevent external modification
+    public boolean claimChunk(Player player, Chunk chunk, String name) {
+        if (!canClaimChunk(chunk, player)) return false;
+        String key = getChunkKey(chunk);
+        chunkOwners.put(key, player.getUniqueId());
+        chunkNames.put(key, name);
+        return true;
     }
 
+    /** Legacy: claim with default name */
     public boolean claimChunk(Player player, Chunk chunk) {
-        // Use the new canClaimChunk method
-        if (!canClaimChunk(chunk, player)) {
-            return false;
-        }
-
-        String chunkKey = getChunkKey(chunk);
-        claimedChunks.put(chunkKey, player.getUniqueId());
-        return true;
+        return claimChunk(player, chunk, "world");
     }
 
-    public boolean claimChunk(String chunkKey, UUID playerId) {
-        if (claimedChunks.containsKey(chunkKey)) {
-            return false;
-        }
-
-        claimedChunks.put(chunkKey, playerId);
-        return true;
-    }
+    // ── Unclaim operations ──
 
     public boolean unclaimChunk(Player player, Chunk chunk) {
-        String chunkKey = getChunkKey(chunk);
-        UUID owner = claimedChunks.get(chunkKey);
-
-        if (owner == null || !owner.equals(player.getUniqueId())) {
-            return false;
-        }
-
-        claimedChunks.remove(chunkKey);
+        String key = getChunkKey(chunk);
+        UUID owner = chunkOwners.get(key);
+        if (owner == null || !owner.equals(player.getUniqueId())) return false;
+        chunkOwners.remove(key);
+        chunkNames.remove(key);
         return true;
     }
 
-    public UUID getChunkOwner(Chunk chunk) {
-        return claimedChunks.get(getChunkKey(chunk));
+    public boolean unclaimChunk(UUID playerId, String world, int x, int z) {
+        String key = getChunkKey(world, x, z);
+        UUID owner = chunkOwners.get(key);
+        if (owner == null || !owner.equals(playerId)) return false;
+        chunkOwners.remove(key);
+        chunkNames.remove(key);
+        return true;
     }
 
-    public List<ChunkData> getPlayerChunks(UUID playerId) {
-        List<ChunkData> chunks = new ArrayList<>();
-
-        for (Map.Entry<String, UUID> entry : claimedChunks.entrySet()) {
+    /**
+     * Unclaim an entire named claim group (all chunks with matching name for this player).
+     * @return number of chunks unclaimed
+     */
+    public int unclaimByName(UUID playerId, String name) {
+        List<String> toRemove = new ArrayList<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
             if (entry.getValue().equals(playerId)) {
-                String key = entry.getKey();
-                String[] parts = key.split(":");
-                if (parts.length >= 3) {
-                    String world = parts[0];
-                    try {
-                        int x = Integer.parseInt(parts[1]);
-                        int z = Integer.parseInt(parts[2]);
-                        chunks.add(new ChunkData(world, x, z));
-                    } catch (NumberFormatException e) {
-                        plugin.getLogger().warning("Invalid chunk coordinates in key: " + key);
-                    }
-                } else {
-                    plugin.getLogger().warning("Invalid chunk key format: " + key);
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(name)) {
+                    toRemove.add(entry.getKey());
                 }
             }
         }
-
-        return chunks;
+        for (String key : toRemove) {
+            chunkOwners.remove(key);
+            chunkNames.remove(key);
+        }
+        // Clean up trust data for this claim group
+        if (!toRemove.isEmpty()) {
+            trustedPlayers.remove(trustKey(playerId, name));
+        }
+        return toRemove.size();
     }
+
+    // ── Query operations ──
+
+    /**
+     * Get all individual chunks owned by a player (with claim names set).
+     */
+    public List<ChunkData> getPlayerChunks(UUID playerId) {
+        List<ChunkData> result = new ArrayList<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                ChunkData cd = parseChunkKey(entry.getKey());
+                if (cd != null) {
+                    cd.setClaimName(chunkNames.getOrDefault(entry.getKey(), "world"));
+                    result.add(cd);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Get the distinct claim group names for a player.
+     */
+    public List<String> getPlayerClaimNames(UUID playerId) {
+        Set<String> names = new LinkedHashSet<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                names.add(chunkNames.getOrDefault(entry.getKey(), "world"));
+            }
+        }
+        return new ArrayList<>(names);
+    }
+
+    /**
+     * Get all chunks in a named claim group for a player.
+     */
+    public List<ChunkData> getChunksByName(UUID playerId, String name) {
+        List<ChunkData> result = new ArrayList<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(name)) {
+                    ChunkData cd = parseChunkKey(entry.getKey());
+                    if (cd != null) {
+                        cd.setClaimName(n);
+                        result.add(cd);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns total number of individual chunks a player owns (across all claim groups).
+     */
+    public int getPlayerChunkCount(UUID playerId) {
+        int count = 0;
+        for (UUID owner : chunkOwners.values()) {
+            if (owner.equals(playerId)) count++;
+        }
+        return count;
+    }
+
+    /**
+     * Check if a player already has a claim group with the given name.
+     */
+    public boolean hasClaimName(UUID playerId, String name) {
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(name)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns a copy of all claimed chunks (key -> owner).
+     */
+    public Map<String, UUID> getClaimedChunks() {
+        return new HashMap<>(chunkOwners);
+    }
+
+    // ── Trust operations ──
+
+    private String trustKey(UUID owner, String claimName) {
+        return owner.toString() + ":" + claimName.toLowerCase();
+    }
+
+    /**
+     * Check if a player is trusted on a specific claim group.
+     */
+    public boolean isTrusted(UUID owner, String claimName, UUID playerId) {
+        Set<UUID> trusted = trustedPlayers.get(trustKey(owner, claimName));
+        return trusted != null && trusted.contains(playerId);
+    }
+
+    /**
+     * Add or remove a trusted player on a claim group.
+     */
+    public void setTrusted(UUID owner, String claimName, UUID playerId, boolean trust) {
+        String key = trustKey(owner, claimName);
+        Set<UUID> set = trustedPlayers.computeIfAbsent(key, k -> new HashSet<>());
+        if (trust) set.add(playerId);
+        else set.remove(playerId);
+        if (set.isEmpty()) trustedPlayers.remove(key);
+    }
+
+    /**
+     * Get all trusted player UUIDs for a claim group.
+     */
+    public Set<UUID> getTrustedPlayers(UUID owner, String claimName) {
+        return trustedPlayers.getOrDefault(trustKey(owner, claimName), Collections.emptySet());
+    }
+
+    // ── Key utilities ──
 
     public String getChunkKey(Chunk chunk) {
         return chunk.getWorld().getName() + ":" + chunk.getX() + ":" + chunk.getZ();
@@ -126,36 +253,101 @@ public class ChunkManager {
         return world + ":" + x + ":" + z;
     }
 
-    /**
-     * Unclaims a chunk by world and chunk coordinates if owned by the given player.
-     * @return true if unclaimed
-     */
-    public boolean unclaimChunk(UUID playerId, String world, int x, int z) {
-        String key = getChunkKey(world, x, z);
-        UUID owner = claimedChunks.get(key);
-        if (owner == null || !owner.equals(playerId)) return false;
-        claimedChunks.remove(key);
-        return true;
+    private ChunkData parseChunkKey(String key) {
+        String[] parts = key.split(":");
+        if (parts.length < 3) {
+            plugin.getLogger().warning("Invalid chunk key: " + key);
+            return null;
+        }
+        try {
+            return new ChunkData(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("Invalid chunk coords in key: " + key);
+            return null;
+        }
     }
 
-    public void loadData() {
-        claimedChunks.clear();
+    // ── Persistence ──
 
-        if (dataConfig.contains("claims")) {
-            for (String key : dataConfig.getConfigurationSection("claims").getKeys(false)) {
-                UUID owner = UUID.fromString(dataConfig.getString("claims." + key));
-                claimedChunks.put(key, owner);
+    public void loadData() {
+        chunkOwners.clear();
+        chunkNames.clear();
+        dataConfig = YamlConfiguration.loadConfiguration(dataFile);
+
+        // New format: claims-v2.<key>.owner / claims-v2.<key>.name
+        if (dataConfig.contains("claims-v2")) {
+            ConfigurationSection section = dataConfig.getConfigurationSection("claims-v2");
+            if (section != null) {
+                for (String key : section.getKeys(false)) {
+                    String owner = section.getString(key + ".owner");
+                    String name = section.getString(key + ".name", "world");
+                    if (owner != null) {
+                        try {
+                            chunkOwners.put(key, UUID.fromString(owner));
+                            chunkNames.put(key, name);
+                        } catch (IllegalArgumentException e) {
+                            plugin.getLogger().warning("Invalid UUID in claims-v2: " + key);
+                        }
+                    }
+                }
+            }
+        }
+        // Migrate old format if present and v2 was empty
+        else if (dataConfig.contains("claims")) {
+            ConfigurationSection section = dataConfig.getConfigurationSection("claims");
+            if (section != null) {
+                for (String key : section.getKeys(false)) {
+                    String ownerStr = section.getString(key);
+                    if (ownerStr != null) {
+                        try {
+                            chunkOwners.put(key, UUID.fromString(ownerStr));
+                            chunkNames.put(key, "world");
+                        } catch (IllegalArgumentException e) {
+                            plugin.getLogger().warning("Invalid UUID in legacy claims: " + key);
+                        }
+                    }
+                }
+                plugin.getLogger().info("Migrated " + chunkOwners.size() + " claims from legacy format.");
+            }
+        }
+
+        // Load trust data
+        trustedPlayers.clear();
+        if (dataConfig.contains("trusts")) {
+            ConfigurationSection trustSection = dataConfig.getConfigurationSection("trusts");
+            if (trustSection != null) {
+                for (String trustKey : trustSection.getKeys(false)) {
+                    List<String> uuids = trustSection.getStringList(trustKey);
+                    Set<UUID> set = new HashSet<>();
+                    for (String u : uuids) {
+                        try { set.add(UUID.fromString(u)); }
+                        catch (IllegalArgumentException e) {
+                            plugin.getLogger().warning("Invalid trusted UUID in key " + trustKey + ": " + u);
+                        }
+                    }
+                    if (!set.isEmpty()) trustedPlayers.put(trustKey, set);
+                }
             }
         }
     }
 
     public void saveData() {
-        // Clear existing data
+        // Clear both old and new sections
         dataConfig.set("claims", null);
+        dataConfig.set("claims-v2", null);
+        dataConfig.set("trusts", null);
 
-        // Save all claims
-        for (Map.Entry<String, UUID> entry : claimedChunks.entrySet()) {
-            dataConfig.set("claims." + entry.getKey(), entry.getValue().toString());
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            String key = entry.getKey();
+            dataConfig.set("claims-v2." + key + ".owner", entry.getValue().toString());
+            dataConfig.set("claims-v2." + key + ".name", chunkNames.getOrDefault(key, "world"));
+        }
+
+        // Save trust data
+        for (Map.Entry<String, Set<UUID>> entry : trustedPlayers.entrySet()) {
+            List<String> uuids = new ArrayList<>();
+            for (UUID u : entry.getValue()) uuids.add(u.toString());
+            dataConfig.set("trusts." + entry.getKey(), uuids);
         }
 
         try {
@@ -164,5 +356,4 @@ public class ChunkManager {
             plugin.getLogger().severe("Could not save chunk claim data: " + e.getMessage());
         }
     }
-
 }

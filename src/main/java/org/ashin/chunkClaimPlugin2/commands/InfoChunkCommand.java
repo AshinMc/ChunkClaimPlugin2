@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
-import java.util.UUID; // Added missing import
+import java.util.UUID;
 
 public class InfoChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
@@ -29,27 +29,32 @@ public class InfoChunkCommand implements CommandExecutor {
 
         Player player = (Player) sender;
         UUID playerId = player.getUniqueId();
-        List<ChunkData> chunks = chunkManager.getPlayerChunks(playerId);
+        List<String> claimNames = chunkManager.getPlayerClaimNames(playerId);
 
-        if (chunks.isEmpty()) {
-            player.sendMessage(messages.getFor(player.getUniqueId(), "no-claims"));
+        if (claimNames.isEmpty()) {
+            player.sendMessage(messages.getFor(playerId, "no-claims"));
             return true;
         }
 
-        player.sendMessage(messages.getFor(player.getUniqueId(), "claims-header"));
-        int count = 1;
-        for (ChunkData chunk : chunks) {
-            // Calculate block coordinates from chunk coordinates
-            int blockX = chunk.getX() * 16;
-            int blockZ = chunk.getZ() * 16;
-
-        player.sendMessage(messages.getFor(player.getUniqueId(), "claim-entry",
-            "index", String.valueOf(count),
-            "world", chunk.getWorld(),
-            "x", String.valueOf(blockX),
-            "z", String.valueOf(blockZ))
-        );
-            count++;
+        player.sendMessage(messages.getFor(playerId, "claims-header"));
+        int index = 1;
+        for (String name : claimNames) {
+            List<ChunkData> chunks = chunkManager.getChunksByName(playerId, name);
+            // Show group header
+            player.sendMessage(messages.getFor(playerId, "claim-group-entry",
+                    "index", String.valueOf(index),
+                    "name", name,
+                    "count", String.valueOf(chunks.size())));
+            // Show each chunk in the group
+            for (ChunkData cd : chunks) {
+                int blockX = cd.getX() * 16;
+                int blockZ = cd.getZ() * 16;
+                player.sendMessage(messages.getFor(playerId, "claim-chunk-entry",
+                        "world", cd.getWorld(),
+                        "x", String.valueOf(blockX),
+                        "z", String.valueOf(blockZ)));
+            }
+            index++;
         }
 
         return true;

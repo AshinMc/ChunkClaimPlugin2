@@ -37,6 +37,7 @@ public class MessageManager {
         // Provide extra example language files
         saveResourceIfNotExists("lang/messages_es_ES.yml");
         saveResourceIfNotExists("lang/messages_fr_FR.yml");
+        saveResourceIfNotExists("lang/messages_zh_CN.yml");
 
         // Load default English from jar (for fallback)
         this.defaultLangConfig = loadResourceYaml("lang/messages_en_US.yml");
@@ -115,7 +116,7 @@ public class MessageManager {
             }
         }
         // From jar (at least our known set)
-        for (String loc : new String[]{"en_US", "es_ES", "fr_FR"}) {
+        for (String loc : new String[]{"en_US", "es_ES", "fr_FR", "zh_CN"}) {
             if (plugin.getResource("lang/messages_" + loc + ".yml") != null) {
                 set.add(loc);
             }
@@ -145,6 +146,33 @@ public class MessageManager {
 
     public String getServerDefaultLocale() {
         return serverDefaultLocale;
+    }
+
+    // Player particle handling
+    public String getPlayerParticle(UUID uuid) {
+        if (uuid == null) return null;
+        return playerData.getString("particles." + uuid.toString(), null);
+    }
+
+    public void setPlayerParticle(UUID uuid, String particle) {
+        if (uuid == null) return;
+        if (particle == null || particle.isEmpty()) {
+            playerData.set("particles." + uuid.toString(), null);
+        } else {
+            playerData.set("particles." + uuid.toString(), particle);
+        }
+        try {
+            playerData.save(playerDataFile);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Reload all locale caches (called after config reload by admin).
+     */
+    public void reloadLocales() {
+        localeCache.clear();
+        getLocaleYaml(serverDefaultLocale);
     }
 
     // Server-default message (no player context)

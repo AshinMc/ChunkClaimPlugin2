@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.4'
+version = '0.5'
 
 
     repositories {
@@ -15,12 +15,23 @@ version = '0.4'
     }
 
     dependencies {
-    // Target Minecraft 1.21.8 API (Spigot)
-    compileOnly 'org.spigotmc:spigot-api:1.21.8-R0.1-SNAPSHOT'
+    // Target Minecraft 1.21.11 API (Spigot)
+    compileOnly 'org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT'
 
         // Add these dependencies with proper scope
-        compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.13'
-        compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.3.10'
+        compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.15'
+        compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.4.0'
+    }
+
+    // WorldGuard 7.0.15 uses strict version constraints that conflict with
+    // Spigot 1.21.11 / WorldEdit 7.4.0 transitive deps. Force the newer
+    // versions since these are all server-provided at runtime.
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.guava:guava:33.5.0-jre'
+            force 'com.google.code.gson:gson:2.13.2'
+            force 'com.google.errorprone:error_prone_annotations:2.36.0'
+        }
     }
 
 def targetJavaVersion = 21

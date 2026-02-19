@@ -1,6 +1,7 @@
 package org.ashin.chunkClaimPlugin2;
 
 import org.ashin.chunkClaimPlugin2.commands.*;
+import org.ashin.chunkClaimPlugin2.listeners.AdminSettingsGUIListener;
 import org.ashin.chunkClaimPlugin2.listeners.ChunkProtectionListener;
 import org.ashin.chunkClaimPlugin2.listeners.PlayerJoinLocaleListener;
 import org.ashin.chunkClaimPlugin2.listeners.SettingsGUIListener;
@@ -30,7 +31,8 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         // Register listeners
     getServer().getPluginManager().registerEvents(new ChunkProtectionListener(chunkManager, messageManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager), this);
-    getServer().getPluginManager().registerEvents(new SettingsGUIListener(chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
     }
 
     @Override
@@ -44,11 +46,12 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getCommand("claimchunk").setExecutor(new ClaimChunkCommand(chunkManager, messageManager));
+        getCommand("claimchunk").setExecutor(new ClaimChunkCommand(this, chunkManager, messageManager));
         getCommand("unclaimchunk").setExecutor(new UnclaimChunkCommand(chunkManager, messageManager));
         getCommand("checkchunk").setExecutor(new CheckChunkCommand(chunkManager, messageManager));
         getCommand("infochunk").setExecutor(new InfoChunkCommand(chunkManager, messageManager));
         getCommand("visualizechunk").setExecutor(new VisualizeChunkCommand(this, chunkManager, messageManager));
+        getCommand("chunkexpand").setExecutor(new ChunkExpandCommand(this, chunkManager, messageManager));
         // Language command for per-player locale
         ChunkLangCommand langCmd = new ChunkLangCommand(messageManager);
         if (getCommand("chunklang") != null) {
@@ -56,7 +59,10 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
             getCommand("chunklang").setTabCompleter(langCmd);
         }
         if (getCommand("chunksettings") != null) {
-            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(chunkManager, messageManager));
+            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(this, chunkManager, messageManager));
+        }
+        if (getCommand("chunkadmin") != null) {
+            getCommand("chunkadmin").setExecutor(new ChunkAdminCommand(this, chunkManager, messageManager));
         }
     }
 }

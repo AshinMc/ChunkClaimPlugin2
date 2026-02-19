@@ -67,6 +67,16 @@ public class ChunkProtectionListener implements Listener {
         UUID owner = chunkManager.getChunkOwner(chunk);
 
         // Not claimed or player is the owner
-        return owner == null || owner.equals(player.getUniqueId()) || player.hasPermission("chunkclaimprotection.bypass");
+        if (owner == null || owner.equals(player.getUniqueId()) || player.hasPermission("chunkclaimprotection.bypass")) {
+            return true;
+        }
+
+        // Check if the player is trusted on this claim group
+        String claimName = chunkManager.getChunkClaimName(chunk);
+        if (claimName != null && chunkManager.isTrusted(owner, claimName, player.getUniqueId())) {
+            return true;
+        }
+
+        return false;
     }
 }
