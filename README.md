@@ -134,5 +134,6 @@ Trust lets you grant other players permission to build, break, and interact with
 - Offline player trust management
 - Map integration
 - More locales
+- Force load chunks (customisable for admins)
 
 Issues and feature requests welcome!
