@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.UUID;
@@ -61,6 +62,21 @@ public class ChunkProtectionListener implements Listener {
                 event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player player)) {
+            return;
+        }
+
+        Chunk chunk = event.getEntity().getLocation().getChunk();
+        if (canModifyChunk(player, chunk)) {
+            return;
+        }
+
+        event.setCancelled(true);
+        player.sendMessage(messages.getFor(player.getUniqueId(), "deny-interact"));
     }
 
     private boolean canModifyChunk(Player player, Chunk chunk) {
