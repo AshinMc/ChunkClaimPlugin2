@@ -17,7 +17,7 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 - **Full entity protection** - minecarts, boats, armor stands, item frames, paintings, and all entities are now protected in claimed chunks
 - **Mob griefing is now flag-gated** - snow golem trails, enderman theft, explosions controllable per claim
 - **Mob spawning prevention** - blocks natural/spawner/raid spawns when enabled
-- **Mob entry prevention** - periodic task removes hostile mobs from protected chunks
+- **Mob entry prevention** - invisible wall pushes all mobs out of protected chunks
 - **PvP toggle** - disable player combat per claim group
 - Bugfix: other players could destroy minecarts/vehicles in claimed chunks
 
@@ -89,7 +89,7 @@ Each claim group has toggleable protection flags. Access via `/chunksettings` ->
 |---|---|---|
 | Mob Griefing Protection | ON | Block snow trails, enderman theft, ravager crops, etc. |
 | Block Mob Spawning | OFF | Prevent natural, spawner, and raid mob spawns |
-| Block Mob Entry | OFF | Remove hostile mobs that enter the chunk |
+| Block Mob Entry | OFF | Invisible wall prevents all mobs from entering the chunk |
 | Explosion Protection | ON | Block creeper, TNT, wither, and all explosion damage |
 | Block PvP | OFF | Prevent player vs player combat in the chunk |
 
@@ -131,7 +131,7 @@ Trust lets you grant other players permission to build, break, and interact with
 - Per-claim settings GUI with toggleable flags (mob griefing, mob spawning, mob entry, explosions, PvP)
 - Full entity protection: minecarts, boats, armor stands, item frames, paintings
 - Mob griefing, explosions, spawning, entry, and PvP now controlled per claim group
-- Hostile mob entry prevention via periodic cleanup task
+- Mob entry prevention: invisible wall teleports all mobs to the nearest chunk edge
 - PvP combat toggle per claim
 - Added `deny-entity`, `deny-pvp` and all flag-related messages to all 4 locales
 - Default claim flags configurable in `config.yml`

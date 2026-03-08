@@ -265,7 +265,7 @@ public class ChunkManager {
     private static final Map<String, Boolean> DEFAULT_FLAGS = Map.of(
         FLAG_MOB_GRIEFING, true,   // block mob griefing by default
         FLAG_MOB_SPAWNING, false,  // allow mob spawning by default
-        FLAG_MOB_ENTRY,    false,  // allow mob entry by default
+        FLAG_MOB_ENTRY,    false,  // allow all mob entry by default
         FLAG_EXPLOSIONS,   true,   // block explosions by default
         FLAG_PVP,          false   // allow PvP by default
     );

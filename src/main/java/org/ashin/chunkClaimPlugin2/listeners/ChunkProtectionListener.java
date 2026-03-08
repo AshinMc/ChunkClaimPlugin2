@@ -3,10 +3,11 @@ package org.ashin.chunkClaimPlugin2.listeners;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -242,8 +243,9 @@ public class ChunkProtectionListener implements Listener {
     // ── Mob entry prevention (periodic task, flag-gated) ──
 
     /**
-     * Starts a periodic task that removes hostile mobs from claimed chunks
-     * that have the mob-entry flag enabled. Runs every 2 seconds.
+     * Starts a periodic task that pushes all non-player mobs out of claimed chunks
+     * that have the mob-entry flag enabled. Mobs are teleported to the nearest chunk
+     * edge, creating an invisible barrier. Runs every 0.5 seconds for smooth behaviour.
      */
     private void startMobEntryTask() {
         new BukkitRunnable() {
@@ -251,15 +253,64 @@ public class ChunkProtectionListener implements Listener {
             public void run() {
                 for (World world : plugin.getServer().getWorlds()) {
                     for (LivingEntity entity : world.getLivingEntities()) {
-                        if (!(entity instanceof Monster)) continue;
+                        if (entity instanceof Player) continue;
+                        if (entity instanceof ArmorStand) continue;
                         Chunk chunk = entity.getLocation().getChunk();
                         if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_ENTRY)) {
-                            entity.remove();
+                            pushOutOfChunk(entity, chunk);
                         }
                     }
                 }
             }
-        }.runTaskTimer(plugin, 40L, 40L); // every 2 seconds
+        }.runTaskTimer(plugin, 10L, 10L); // every 0.5 seconds
+    }
+
+    /**
+     * Teleports an entity to just outside the nearest edge of the given chunk.
+     * If the destination chunk also has mob-entry protection, the entity is removed
+     * (it is trapped between protected chunks with nowhere safe to go).
+     */
+    private void pushOutOfChunk(LivingEntity entity, Chunk chunk) {
+        Location loc = entity.getLocation();
+        double x = loc.getX();
+        double z = loc.getZ();
+
+        // Chunk boundaries in world coordinates
+        double minX = chunk.getX() * 16.0;
+        double maxX = minX + 16.0;
+        double minZ = chunk.getZ() * 16.0;
+        double maxZ = minZ + 16.0;
+
+        // Distance to each edge
+        double dMinX = x - minX;
+        double dMaxX = maxX - x;
+        double dMinZ = z - minZ;
+        double dMaxZ = maxZ - z;
+
+        double nearest = Math.min(Math.min(dMinX, dMaxX), Math.min(dMinZ, dMaxZ));
+
+        double newX = x;
+        double newZ = z;
+
+        if (nearest == dMinX) {
+            newX = minX - 0.5;
+        } else if (nearest == dMaxX) {
+            newX = maxX + 0.5;
+        } else if (nearest == dMinZ) {
+            newZ = minZ - 0.5;
+        } else {
+            newZ = maxZ + 0.5;
+        }
+
+        Location dest = new Location(loc.getWorld(), newX, loc.getY(), newZ, loc.getYaw(), loc.getPitch());
+
+        // If the destination chunk is also protected, the mob has nowhere to go
+        if (chunkManager.isChunkFlagEnabled(dest.getChunk(), ChunkManager.FLAG_MOB_ENTRY)) {
+            entity.remove();
+            return;
+        }
+
+        entity.teleport(dest);
     }
 
     // ── PvP prevention (flag-gated) ──
