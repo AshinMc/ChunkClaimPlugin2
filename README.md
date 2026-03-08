@@ -19,7 +19,7 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 - **Mob spawning prevention** - blocks natural/spawner/raid spawns when enabled
 - **Mob entry prevention** - invisible wall pushes all mobs out of protected chunks
 - **PvP toggle** - disable player combat per claim group
-- Bugfix: other players could destroy minecarts/vehicles in claimed chunks
+- Bugfix: other players was able to destroy minecarts/vehicles in claimed chunks
 
 ### v0.5 - Named Claims, Trust & Chinese Locale
 - **Named claim groups** - every claim has a name (`/claimchunk River`)
@@ -30,18 +30,6 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 - **Chinese (zh_CN) locale** added
 - WorldGuard 7.0.15, WorldEdit 7.4.0
 
-### v0.4.1 - Admin Tools, Particles & 1.21.11
-- **Minecraft 1.21.11** compatibility (api-version 1.21)
-- **Admin settings GUI** (`/chunkadmin`) - set max claims, server default language, default particle, reload config
-- **Per-player particle selection** - choose your visualization particle in `/chunksettings`
-- **Max claims enforcement** - configurable in `config.yml` and via Admin GUI
-
-### v0.4 - GUI & i18n
-- Per-player i18n with `/chunklang` (en_US, es_ES, fr_FR)
-- `/chunksettings` GUI - Claims, Visualize, Delete, Language
-- Claim details with teleport, delete confirmation
-- Safer teleports, click sounds, drag/click protections
-- WorldGuard-aware claiming (compileOnly hook)
 
 ---
 
@@ -89,7 +77,7 @@ Each claim group has toggleable protection flags. Access via `/chunksettings` ->
 |---|---|---|
 | Mob Griefing Protection | ON | Block snow trails, enderman theft, ravager crops, etc. |
 | Block Mob Spawning | OFF | Prevent natural, spawner, and raid mob spawns |
-| Block Mob Entry | OFF | Invisible wall prevents all mobs from entering the chunk |
+| Block Mob Entry | OFF | Invisible wall prevents all mobs from entering the chunk, good for redstones |
 | Explosion Protection | ON | Block creeper, TNT, wither, and all explosion damage |
 | Block PvP | OFF | Prevent player vs player combat in the chunk |
 
