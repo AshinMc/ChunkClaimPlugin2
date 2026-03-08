@@ -69,6 +69,7 @@ public class SettingsGUIListener implements Listener {
             case LANGUAGE: handleLanguage(player, clicked, name); break;
             case PARTICLE: handleParticle(player, clicked, name); break;
             case TRUST: handleTrust(player, clicked, name, sh); break;
+            case CLAIM_SETTINGS: handleClaimSettings(player, clicked, name, sh); break;
             default: break;
         }
     }
@@ -163,6 +164,40 @@ public class SettingsGUIListener implements Listener {
         gui.openTrust(player, sh.claimName);
     }
 
+    private void handleClaimSettings(Player player, ItemStack clicked, String name, SettingsGUI.SettingsHolder sh) {
+        if (clicked.getType() == Material.ARROW) {
+            if (sh.claimName != null) gui.openClaimDetails(player, sh.claimName);
+            else gui.openHome(player);
+            return;
+        }
+        if (sh.claimName == null) return;
+
+        // Map display material back to flag key
+        String flagKey = switch (clicked.getType()) {
+            case SNOW_BLOCK -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_GRIEFING;
+            case SPAWNER    -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_SPAWNING;
+            case IRON_BARS  -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_ENTRY;
+            case TNT        -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_EXPLOSIONS;
+            case IRON_SWORD -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_PVP;
+            default -> null;
+        };
+        if (flagKey == null) return;
+
+        boolean current = chunkManager.getClaimFlag(player.getUniqueId(), sh.claimName, flagKey);
+        chunkManager.setClaimFlag(player.getUniqueId(), sh.claimName, flagKey, !current);
+        chunkManager.saveData();
+
+        String flagLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-" + flagKey.replace("-", "-")));
+        String state = !current
+            ? ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-enabled"))
+            : ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-disabled"));
+        player.sendMessage(messages.getFor(player.getUniqueId(), "flag-toggled",
+            "flag", flagLabel, "state", state, "name", sh.claimName));
+
+        // Refresh
+        gui.openClaimSettings(player, sh.claimName);
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDetailsClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -193,12 +228,22 @@ public class SettingsGUIListener implements Listener {
             // Teleport
             String telep = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-teleport"));
             String trustLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"));
+            String settingsLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claim-settings"));
             if (name.equals(trustLabel) && clicked.getType() == Material.PLAYER_HEAD) {
                 // Open trust GUI for this claim
                 ItemStack info = top.getItem(11);
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
                     String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
                     gui.openTrust(player, claimName);
+                }
+                return;
+            }
+            if (name.equals(settingsLabel) && clicked.getType() == Material.REDSTONE_TORCH) {
+                // Open claim settings GUI
+                ItemStack info = top.getItem(11);
+                if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    gui.openClaimSettings(player, claimName);
                 }
                 return;
             }

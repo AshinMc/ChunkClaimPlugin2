@@ -29,3 +29,12 @@ protection:
   prevent-block-break: true
   prevent-block-place: true
   prevent-interactions: true
+
+# Default claim flags (applied to new claims)
+# Players can toggle these per-claim in /chunksettings -> Claims -> Claim Settings
+claim-flags:
+  mob-griefing: true     # Block mob griefing (snow trails, enderman, etc.)
+  mob-spawning: false    # Block natural mob spawning
+  mob-entry: false       # Block hostile mobs from entering the chunk
+  explosions: true       # Block explosion damage (creepers, TNT, etc.)
+  pvp: false             # Block PvP combat

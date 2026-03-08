@@ -6,11 +6,20 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 
 - **Server:** Spigot / Paper 1.21.11
 - **Java:** 21+
-- **Version:** 0.5
+- **Version:** 0.5.1
 
 ---
 
 ## Highlights
+
+### v0.5.1 - Per-Claim Settings, Entity Protection & Bugfixes
+- **Per-claim settings GUI** - toggle flags per claim group: mob griefing, mob spawning, mob entry, explosions, PvP
+- **Full entity protection** - minecarts, boats, armor stands, item frames, paintings, and all entities are now protected in claimed chunks
+- **Mob griefing is now flag-gated** - snow golem trails, enderman theft, explosions controllable per claim
+- **Mob spawning prevention** - blocks natural/spawner/raid spawns when enabled
+- **Mob entry prevention** - periodic task removes hostile mobs from protected chunks
+- **PvP toggle** - disable player combat per claim group
+- Bugfix: other players could destroy minecarts/vehicles in claimed chunks
 
 ### v0.5 - Named Claims, Trust & Chinese Locale
 - **Named claim groups** - every claim has a name (`/claimchunk River`)
@@ -56,7 +65,8 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 
 ### `/chunksettings` - Player Settings
 - **Home:** Claims, Visualize, Delete, Particle, Language
-- **Claims:** Browse your claim groups -> Claim Details (teleport, trusted players)
+- **Claims:** Browse your claim groups -> Claim Details (teleport, trusted players, claim settings)
+- **Claim Settings:** Toggle per-claim flags (mob griefing, mob spawning, mob entry, explosions, PvP)
 - **Trusted Players:** Click player heads to toggle trust per claim group (green = trusted, gray = not)
 - **Visualize:** Click a claim to visualize its merged bounding box
 - **Delete:** Choose a claim -> Confirm Delete menu
@@ -68,6 +78,22 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 - **Default Language:** Set server default locale
 - **Default Particle:** Set server default visualization particle
 - **Reload Config:** Hot-reload `config.yml`
+
+---
+
+## Claim Settings (Flags)
+
+Each claim group has toggleable protection flags. Access via `/chunksettings` -> Claims -> click a claim -> **Claim Settings**.
+
+| Flag | Default | Description |
+|---|---|---|
+| Mob Griefing Protection | ON | Block snow trails, enderman theft, ravager crops, etc. |
+| Block Mob Spawning | OFF | Prevent natural, spawner, and raid mob spawns |
+| Block Mob Entry | OFF | Remove hostile mobs that enter the chunk |
+| Explosion Protection | ON | Block creeper, TNT, wither, and all explosion damage |
+| Block PvP | OFF | Prevent player vs player combat in the chunk |
+
+Flags are saved per claim group and persist across restarts.
 
 ---
 
@@ -90,16 +116,26 @@ Trust lets you grant other players permission to build, break, and interact with
 ## Build and Install
 1. Clone the repository
 2. Build: `.\gradlew.bat build` (Windows) or `./gradlew build` (Linux/Mac)
-3. Output: `build/libs/ChunkClaimPlugin-0.5.jar`
+3. Output: `build/libs/ChunkClaimPlugin-0.5.1.jar`
 4. Drop the jar into your server's `plugins/` folder and restart
 
 ## Configuration
-- **config.yml** - `locale`, `max-claims-per-player`, `visualization.particle-type`
+- **config.yml** - `locale`, `max-claims-per-player`, `visualization.particle-type`, `claim-flags` defaults
 - **lang/messages_*.yml** - en_US, es_ES, fr_FR, zh_CN
 
 ---
 
 ## Changelog
+
+### v0.5.1
+- Per-claim settings GUI with toggleable flags (mob griefing, mob spawning, mob entry, explosions, PvP)
+- Full entity protection: minecarts, boats, armor stands, item frames, paintings
+- Mob griefing, explosions, spawning, entry, and PvP now controlled per claim group
+- Hostile mob entry prevention via periodic cleanup task
+- PvP combat toggle per claim
+- Added `deny-entity`, `deny-pvp` and all flag-related messages to all 4 locales
+- Default claim flags configurable in `config.yml`
+- Bugfix: vehicles/minecarts could be destroyed by non-owners
 
 ### v0.5
 - Named claim groups (`/claimchunk <name>`, `/chunkexpand <name>`)

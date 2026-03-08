@@ -1,5 +1,5 @@
 name: ChunkClaimPlugin
-version: '0.5'
+version: '0.5.1'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.21'
 softdepend: [WorldGuard, WorldEdit]

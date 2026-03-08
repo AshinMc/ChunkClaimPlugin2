@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class SettingsGUI {
-    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, PARTICLE, CLAIM_DETAILS, DELETE_CONFIRM, TRUST }
+    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, PARTICLE, CLAIM_DETAILS, DELETE_CONFIRM, TRUST, CLAIM_SETTINGS }
 
     public static class SettingsHolder implements org.bukkit.inventory.InventoryHolder {
         public final View view;
@@ -201,6 +201,9 @@ public class SettingsGUI {
         // Trusted players item (player head)
         inv.setItem(22, named(Material.PLAYER_HEAD, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"))));
 
+        // Claim settings item (redstone torch)
+        inv.setItem(20, named(Material.REDSTONE_TORCH, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claim-settings"))));
+
         // Back item
         inv.setItem(15, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
 
@@ -237,6 +240,44 @@ public class SettingsGUI {
             player.sendMessage(messages.getFor(player.getUniqueId(), "trust-no-online"));
         }
         inv.setItem(size - 1, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openClaimSettings(Player player, String claimName) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-claim-settings");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIM_SETTINGS, claimName), 27, ChatColor.stripColor(title));
+
+        // Flag definitions: { flag key, material name, lang key for display name }
+        String[][] flagDefs = {
+            { ChunkManager.FLAG_MOB_GRIEFING, "SNOW_BLOCK",     "gui-flag-mob-griefing" },
+            { ChunkManager.FLAG_MOB_SPAWNING, "SPAWNER",        "gui-flag-mob-spawning" },
+            { ChunkManager.FLAG_MOB_ENTRY,    "IRON_BARS",      "gui-flag-mob-entry" },
+            { ChunkManager.FLAG_EXPLOSIONS,   "TNT",            "gui-flag-explosions" },
+            { ChunkManager.FLAG_PVP,          "IRON_SWORD",     "gui-flag-pvp" },
+        };
+
+        int slot = 10;
+        for (String[] def : flagDefs) {
+            String flagKey = def[0];
+            Material mat = Material.valueOf(def[1]);
+            String displayName = ChatColor.stripColor(messages.getFor(player.getUniqueId(), def[2]));
+            boolean enabled = chunkManager.getClaimFlag(player.getUniqueId(), claimName, flagKey);
+
+            ItemStack item = new ItemStack(mat);
+            ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName((enabled ? ChatColor.GREEN : ChatColor.RED) + displayName);
+            List<String> lore = new ArrayList<>();
+            lore.add(enabled
+                ? ChatColor.GREEN + "\u2714 " + ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-enabled"))
+                : ChatColor.RED   + "\u2716 " + ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-disabled")));
+            lore.add(ChatColor.GRAY + ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-flag-click-toggle")));
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+            inv.setItem(slot++, item);
+        }
+
+        inv.setItem(26, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
         player.openInventory(inv);
         playClick(player);
     }

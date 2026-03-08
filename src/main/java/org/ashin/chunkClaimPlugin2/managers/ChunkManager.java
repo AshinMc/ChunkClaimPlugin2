@@ -28,6 +28,8 @@ public class ChunkManager {
     private final Map<String, String> chunkNames = new HashMap<>();
     // Trust: "ownerUUID:claimNameLowerCase" -> Set of trusted player UUIDs
     private final Map<String, Set<UUID>> trustedPlayers = new HashMap<>();
+    // Claim flags: "ownerUUID:claimNameLowerCase" -> { flagName -> enabled }
+    private final Map<String, Map<String, Boolean>> claimFlags = new HashMap<>();
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
@@ -123,7 +125,9 @@ public class ChunkManager {
         }
         // Clean up trust data for this claim group
         if (!toRemove.isEmpty()) {
-            trustedPlayers.remove(trustKey(playerId, name));
+            String tk = trustKey(playerId, name);
+            trustedPlayers.remove(tk);
+            claimFlags.remove(tk);
         }
         return toRemove.size();
     }
@@ -243,6 +247,65 @@ public class ChunkManager {
         return trustedPlayers.getOrDefault(trustKey(owner, claimName), Collections.emptySet());
     }
 
+    // ── Claim flag operations ──
+
+    /** All known claim flags with their defaults. */
+    public static final String FLAG_MOB_GRIEFING = "mob-griefing";
+    public static final String FLAG_MOB_SPAWNING = "mob-spawning";
+    public static final String FLAG_MOB_ENTRY    = "mob-entry";
+    public static final String FLAG_EXPLOSIONS   = "explosions";
+    public static final String FLAG_PVP          = "pvp";
+
+    /** Ordered list for GUI display. */
+    public static final String[] ALL_FLAGS = {
+        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_EXPLOSIONS, FLAG_PVP
+    };
+
+    /** Default values: true = protection enabled. */
+    private static final Map<String, Boolean> DEFAULT_FLAGS = Map.of(
+        FLAG_MOB_GRIEFING, true,   // block mob griefing by default
+        FLAG_MOB_SPAWNING, false,  // allow mob spawning by default
+        FLAG_MOB_ENTRY,    false,  // allow mob entry by default
+        FLAG_EXPLOSIONS,   true,   // block explosions by default
+        FLAG_PVP,          false   // allow PvP by default
+    );
+
+    /**
+     * Get a claim flag value. Returns the default if not explicitly set.
+     */
+    public boolean getClaimFlag(UUID owner, String claimName, String flag) {
+        Map<String, Boolean> flags = claimFlags.get(trustKey(owner, claimName));
+        if (flags != null && flags.containsKey(flag)) return flags.get(flag);
+        return DEFAULT_FLAGS.getOrDefault(flag, false);
+    }
+
+    /**
+     * Convenience: check a flag for a specific chunk (looks up owner + claim name).
+     */
+    public boolean isChunkFlagEnabled(Chunk chunk, String flag) {
+        UUID owner = getChunkOwner(chunk);
+        if (owner == null) return false;
+        String name = getChunkClaimName(chunk);
+        if (name == null) return DEFAULT_FLAGS.getOrDefault(flag, false);
+        return getClaimFlag(owner, name, flag);
+    }
+
+    /**
+     * Set a claim flag value.
+     */
+    public void setClaimFlag(UUID owner, String claimName, String flag, boolean value) {
+        String key = trustKey(owner, claimName);
+        Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new HashMap<>());
+        flags.put(flag, value);
+    }
+
+    /**
+     * Get the default value for a flag.
+     */
+    public static boolean getDefaultFlag(String flag) {
+        return DEFAULT_FLAGS.getOrDefault(flag, false);
+    }
+
     // ── Key utilities ──
 
     public String getChunkKey(Chunk chunk) {
@@ -329,6 +392,24 @@ public class ChunkManager {
                 }
             }
         }
+
+        // Load claim flags
+        claimFlags.clear();
+        if (dataConfig.contains("claim-flags")) {
+            ConfigurationSection flagSection = dataConfig.getConfigurationSection("claim-flags");
+            if (flagSection != null) {
+                for (String claimKey : flagSection.getKeys(false)) {
+                    ConfigurationSection inner = flagSection.getConfigurationSection(claimKey);
+                    if (inner != null) {
+                        Map<String, Boolean> flags = new HashMap<>();
+                        for (String flag : inner.getKeys(false)) {
+                            flags.put(flag, inner.getBoolean(flag));
+                        }
+                        if (!flags.isEmpty()) claimFlags.put(claimKey, flags);
+                    }
+                }
+            }
+        }
     }
 
     public void saveData() {
@@ -348,6 +429,13 @@ public class ChunkManager {
             List<String> uuids = new ArrayList<>();
             for (UUID u : entry.getValue()) uuids.add(u.toString());
             dataConfig.set("trusts." + entry.getKey(), uuids);
+        }
+
+        // Save claim flags
+        for (Map.Entry<String, Map<String, Boolean>> entry : claimFlags.entrySet()) {
+            for (Map.Entry<String, Boolean> flag : entry.getValue().entrySet()) {
+                dataConfig.set("claim-flags." + entry.getKey() + "." + flag.getKey(), flag.getValue());
+            }
         }
 
         try {

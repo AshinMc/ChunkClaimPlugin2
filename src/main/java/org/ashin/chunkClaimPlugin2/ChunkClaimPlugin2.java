@@ -29,7 +29,7 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getLogger().info("ChunkClaimPlugin2 has been enabled!");
 
         // Register listeners
-    getServer().getPluginManager().registerEvents(new ChunkProtectionListener(chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new ChunkProtectionListener(this, chunkManager, messageManager), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager), this);
     getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager), this);
     getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
