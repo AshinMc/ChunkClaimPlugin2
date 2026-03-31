@@ -1,7 +1,7 @@
 name: ChunkClaimPlugin
-version: '0.5.1'
+version: '0.5.2'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
-api-version: '1.21'
+api-version: '26'
 softdepend: [WorldGuard, WorldEdit]
 commands:
   claimchunk:

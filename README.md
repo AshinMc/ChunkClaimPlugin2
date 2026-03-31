@@ -4,13 +4,16 @@
 
 Protect your land by claiming chunks with named claim groups, per-player trust, and a rich GUI.
 
-- **Server:** Spigot / Paper 1.21.11
+- **Server:** Spigot / Paper 26.1
 - **Java:** 21+
-- **Version:** 0.5.1
+- **Version:** 0.5.2
 
 ---
 
 ## Highlights
+
+### v0.5.2 - Minecraft 26.1 Update
+- **Updated to target the new Minecraft 26.1 API natively**.
 
 ### v0.5.1 - Per-Claim Settings, Entity Protection & Bugfixes
 - **Per-claim settings GUI** - toggle flags per claim group: mob griefing, mob spawning, mob entry, explosions, PvP

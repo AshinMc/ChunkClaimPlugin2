@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.5.1'
+version = '0.5.2'
 
 
     repositories {
@@ -15,8 +15,8 @@ version = '0.5.1'
     }
 
     dependencies {
-    // Target Minecraft 1.21.11 API (Spigot)
-    compileOnly 'org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT'
+    // Target Minecraft 26.1 API (Spigot)
+    compileOnly 'org.spigotmc:spigot-api:26.1-R0.1-SNAPSHOT'
 
         // Add these dependencies with proper scope
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.15'
