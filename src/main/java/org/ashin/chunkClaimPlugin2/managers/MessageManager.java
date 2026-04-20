@@ -38,6 +38,9 @@ public class MessageManager {
         saveResourceIfNotExists("lang/messages_es_ES.yml");
         saveResourceIfNotExists("lang/messages_fr_FR.yml");
         saveResourceIfNotExists("lang/messages_zh_CN.yml");
+        saveResourceIfNotExists("lang/messages_de_DE.yml");
+        saveResourceIfNotExists("lang/messages_pt_BR.yml");
+        saveResourceIfNotExists("lang/messages_ru_RU.yml");
 
         // Load default English from jar (for fallback)
         this.defaultLangConfig = loadResourceYaml("lang/messages_en_US.yml");

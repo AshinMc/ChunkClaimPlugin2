@@ -201,6 +201,9 @@ public class SettingsGUI {
         // Trusted players item (player head)
         inv.setItem(22, named(Material.PLAYER_HEAD, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"))));
 
+        // Rename item (name tag)
+        inv.setItem(24, named(Material.NAME_TAG, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-rename"))));
+
         // Claim settings item (redstone torch)
         inv.setItem(20, named(Material.REDSTONE_TORCH, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claim-settings"))));
 
@@ -255,6 +258,7 @@ public class SettingsGUI {
             { ChunkManager.FLAG_MOB_ENTRY,    "IRON_BARS",      "gui-flag-mob-entry" },
             { ChunkManager.FLAG_EXPLOSIONS,   "TNT",            "gui-flag-explosions" },
             { ChunkManager.FLAG_PVP,          "IRON_SWORD",     "gui-flag-pvp" },
+            { ChunkManager.FLAG_GREETING_TITLE, "OAK_SIGN",     "gui-flag-greeting-title" },
         };
 
         int slot = 10;

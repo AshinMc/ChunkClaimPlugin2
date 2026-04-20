@@ -3,6 +3,7 @@ package org.ashin.chunkClaimPlugin2;
 import org.ashin.chunkClaimPlugin2.commands.*;
 import org.ashin.chunkClaimPlugin2.listeners.AdminSettingsGUIListener;
 import org.ashin.chunkClaimPlugin2.listeners.ChunkProtectionListener;
+import org.ashin.chunkClaimPlugin2.listeners.ItemClaimListener;
 import org.ashin.chunkClaimPlugin2.listeners.PlayerJoinLocaleListener;
 import org.ashin.chunkClaimPlugin2.listeners.SettingsGUIListener;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
@@ -33,6 +34,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager), this);
     getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager), this);
     getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new ItemClaimListener(this, chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener(this, chunkManager, messageManager), this);
+    getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.ChatRenameListener(this, chunkManager, messageManager), this);
     }
 
     @Override

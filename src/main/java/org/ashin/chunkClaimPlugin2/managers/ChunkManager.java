@@ -106,6 +106,38 @@ public class ChunkManager {
     }
 
     /**
+     * Rename an entire named claim group.
+     * @return true if successful, false if name already exists or not found
+     */
+    public boolean renameClaim(UUID playerId, String oldName, String newName) {
+        if (hasClaimName(playerId, newName)) return false;
+
+        boolean renamed = false;
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(oldName)) {
+                    chunkNames.put(entry.getKey(), newName);
+                    renamed = true;
+                }
+            }
+        }
+
+        if (renamed) {
+            String oldKey = trustKey(playerId, oldName);
+            String newKey = trustKey(playerId, newName);
+
+            if (trustedPlayers.containsKey(oldKey)) {
+                trustedPlayers.put(newKey, trustedPlayers.remove(oldKey));
+            }
+            if (claimFlags.containsKey(oldKey)) {
+                claimFlags.put(newKey, claimFlags.remove(oldKey));
+            }
+        }
+        return renamed;
+    }
+
+    /**
      * Unclaim an entire named claim group (all chunks with matching name for this player).
      * @return number of chunks unclaimed
      */
@@ -255,19 +287,33 @@ public class ChunkManager {
     public static final String FLAG_MOB_ENTRY    = "mob-entry";
     public static final String FLAG_EXPLOSIONS   = "explosions";
     public static final String FLAG_PVP          = "pvp";
+    public static final String FLAG_GREETING_TITLE = "greeting-title";
+    
+    public static final String FLAG_INTERACT_CHEST = "interact-chest";
+    public static final String FLAG_INTERACT_FURNACE = "interact-furnace";
+    public static final String FLAG_INTERACT_STONECUTTER = "interact-stonecutter";
+    public static final String FLAG_INTERACT_DOOR = "interact-door";
+    public static final String FLAG_INTERACT_REDSTONE = "interact-redstone";
 
     /** Ordered list for GUI display. */
     public static final String[] ALL_FLAGS = {
-        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_EXPLOSIONS, FLAG_PVP
+        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_GREETING_TITLE,
+        FLAG_INTERACT_CHEST, FLAG_INTERACT_FURNACE, FLAG_INTERACT_STONECUTTER, FLAG_INTERACT_DOOR, FLAG_INTERACT_REDSTONE
     };
 
-    /** Default values: true = protection enabled. */
-    private static final Map<String, Boolean> DEFAULT_FLAGS = Map.of(
-        FLAG_MOB_GRIEFING, true,   // block mob griefing by default
-        FLAG_MOB_SPAWNING, false,  // allow mob spawning by default
-        FLAG_MOB_ENTRY,    false,  // allow all mob entry by default
-        FLAG_EXPLOSIONS,   true,   // block explosions by default
-        FLAG_PVP,          false   // allow PvP by default
+    /** Default values: false = allow interaction (visitors can use them), true = block interaction. Wait, original logic blocked them all. So default false means blocked? No, let's say true = visitors CAN interact. But we want consistency: true = protection enabled (visitors CANNOT interact). */
+    private static final Map<String, Boolean> DEFAULT_FLAGS = Map.ofEntries(
+        Map.entry(FLAG_MOB_GRIEFING, true),   // block mob griefing by default
+        Map.entry(FLAG_MOB_SPAWNING, false),  // allow mob spawning by default
+        Map.entry(FLAG_MOB_ENTRY,    false),  // allow all mob entry by default
+        Map.entry(FLAG_EXPLOSIONS,   true),   // block explosions by default
+        Map.entry(FLAG_PVP,          false),  // allow PvP by default
+        Map.entry(FLAG_GREETING_TITLE, true), // show welcome title by default
+        Map.entry(FLAG_INTERACT_CHEST, true),      // protect chests by default
+        Map.entry(FLAG_INTERACT_FURNACE, true),    // protect furnaces by default
+        Map.entry(FLAG_INTERACT_STONECUTTER, true),// protect stonecutters by default
+        Map.entry(FLAG_INTERACT_DOOR, true),       // protect doors by default
+        Map.entry(FLAG_INTERACT_REDSTONE, true)    // protect redstone (buttons/levers) by default
     );
 
     /**

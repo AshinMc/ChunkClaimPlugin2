@@ -71,14 +71,45 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
-        // Only cancel interactions with containers, doors, etc.
+        Chunk chunk = event.getClickedBlock().getChunk();
+        boolean blockIt = false;
+
+        // Check against specific flags
         switch (event.getClickedBlock().getType().name()) {
-            case "CHEST", "TRAPPED_CHEST", "BARREL", "FURNACE", "BLAST_FURNACE", "SMOKER",
-                 "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "LEVER", "BUTTON",
-                 "DOOR", "TRAPDOOR", "FENCE_GATE" -> {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+            case "CHEST", "TRAPPED_CHEST", "BARREL", "ENDER_CHEST", "SHULKER_BOX" -> {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_CHEST)) blockIt = true;
             }
+            case "FURNACE", "BLAST_FURNACE", "SMOKER" -> {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_FURNACE)) blockIt = true;
+            }
+            case "STONECUTTER", "CRAFTING_TABLE", "CARTOGRAPHY_TABLE", "SMITHING_TABLE", "GRINDSTONE", "LOOM" -> {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_STONECUTTER)) blockIt = true;
+            }
+            case "DOOR", "TRAPDOOR", "FENCE_GATE", "ACACIA_DOOR", "BIRCH_DOOR", "CRIMSON_DOOR", "DARK_OAK_DOOR", "JUNGLE_DOOR", "OAK_DOOR", "SPRUCE_DOOR", "WARPED_DOOR", "CHERRY_DOOR", "MANGROVE_DOOR", "BAMBOO_DOOR", "IRON_DOOR" -> {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_DOOR)) blockIt = true;
+            }
+            case "LEVER", "BUTTON", "OAK_BUTTON", "STONE_BUTTON", "REPEATER", "COMPARATOR", "DAYLIGHT_DETECTOR" -> {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_REDSTONE)) blockIt = true;
+            }
+            case "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "ANVIL", "CHIPPED_ANVIL", "DAMAGED_ANVIL" -> {
+                // Default block these other containers
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_CHEST)) blockIt = true;
+            }
+        }
+        
+        // Also catch anything ending in _DOOR, _TRAPDOOR, etc if the name match didn't catch it
+        String name = event.getClickedBlock().getType().name();
+        if (!blockIt) {
+            if (name.endsWith("_DOOR") || name.endsWith("_TRAPDOOR") || name.endsWith("_FENCE_GATE")) {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_DOOR)) blockIt = true;
+            } else if (name.endsWith("_BUTTON")) {
+                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_REDSTONE)) blockIt = true;
+            }
+        }
+
+        if (blockIt) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
         }
     }
 

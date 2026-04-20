@@ -8,6 +8,9 @@ locale: en_US
 # Maximum number of chunks a player can claim (0 = unlimited)
 max-claims-per-player: 10
 
+# Item used to claim chunks on right click (Set to "NONE" to disable)
+claim-item: "WOODEN_SHOVEL"
+
 # Messages
 messages:
   # Optional: override messages by key here.
@@ -38,3 +41,9 @@ claim-flags:
   mob-entry: false       # Block all mobs from entering the chunk (invisible wall)
   explosions: true       # Block explosion damage (creepers, TNT, etc.)
   pvp: false             # Block PvP combat
+  greeting-title: true   # Show welcome title when entering claim
+  interact-chest: true
+  interact-furnace: true
+  interact-stonecutter: true
+  interact-door: true
+  interact-redstone: true

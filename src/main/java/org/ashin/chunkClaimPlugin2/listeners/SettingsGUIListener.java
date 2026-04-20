@@ -179,6 +179,7 @@ public class SettingsGUIListener implements Listener {
             case IRON_BARS  -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_ENTRY;
             case TNT        -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_EXPLOSIONS;
             case IRON_SWORD -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_PVP;
+            case OAK_SIGN   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_GREETING_TITLE;
             default -> null;
         };
         if (flagKey == null) return;
@@ -225,6 +226,19 @@ public class SettingsGUIListener implements Listener {
         if (isDetails) {
             // Back
             if (clicked.getType() == Material.ARROW) { gui.openClaims(player); return; }
+            
+            String renameLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-rename"));
+            if (name.equals(renameLabel) && clicked.getType() == Material.NAME_TAG) {
+                ItemStack info = top.getItem(11);
+                if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    player.closeInventory();
+                    player.setMetadata("ccp_renaming_claim", new org.bukkit.metadata.FixedMetadataValue(plugin, claimName));
+                    player.sendMessage(messages.getFor(player.getUniqueId(), "rename-prompt", "name", claimName));
+                }
+                return;
+            }
+
             // Teleport
             String telep = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-teleport"));
             String trustLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-trust"));
