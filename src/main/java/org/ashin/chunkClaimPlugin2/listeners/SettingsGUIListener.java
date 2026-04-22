@@ -180,6 +180,11 @@ public class SettingsGUIListener implements Listener {
             case TNT        -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_EXPLOSIONS;
             case IRON_SWORD -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_PVP;
             case OAK_SIGN   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_GREETING_TITLE;
+            case CHEST      -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_CHEST;
+            case FURNACE    -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_FURNACE;
+            case STONECUTTER -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_STONECUTTER;
+            case OAK_DOOR   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_DOOR;
+            case REDSTONE   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_REDSTONE;
             default -> null;
         };
         if (flagKey == null) return;

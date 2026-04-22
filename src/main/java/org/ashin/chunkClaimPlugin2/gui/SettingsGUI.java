@@ -249,7 +249,7 @@ public class SettingsGUI {
 
     public void openClaimSettings(Player player, String claimName) {
         String title = messages.getFor(player.getUniqueId(), "gui-title-claim-settings");
-        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIM_SETTINGS, claimName), 27, ChatColor.stripColor(title));
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.CLAIM_SETTINGS, claimName), 45, ChatColor.stripColor(title));
 
         // Flag definitions: { flag key, material name, lang key for display name }
         String[][] flagDefs = {
@@ -259,10 +259,16 @@ public class SettingsGUI {
             { ChunkManager.FLAG_EXPLOSIONS,   "TNT",            "gui-flag-explosions" },
             { ChunkManager.FLAG_PVP,          "IRON_SWORD",     "gui-flag-pvp" },
             { ChunkManager.FLAG_GREETING_TITLE, "OAK_SIGN",     "gui-flag-greeting-title" },
+            { ChunkManager.FLAG_INTERACT_CHEST, "CHEST",        "gui-flag-interact-chest" },
+            { ChunkManager.FLAG_INTERACT_FURNACE, "FURNACE",    "gui-flag-interact-furnace" },
+            { ChunkManager.FLAG_INTERACT_STONECUTTER, "STONECUTTER", "gui-flag-interact-stonecutter" },
+            { ChunkManager.FLAG_INTERACT_DOOR, "OAK_DOOR",      "gui-flag-interact-door" },
+            { ChunkManager.FLAG_INTERACT_REDSTONE, "REDSTONE",  "gui-flag-interact-redstone" }
         };
 
         int slot = 10;
         for (String[] def : flagDefs) {
+            if (slot == 17) slot = 19; // Skip edge slots for cleaner look
             String flagKey = def[0];
             Material mat = Material.valueOf(def[1]);
             String displayName = ChatColor.stripColor(messages.getFor(player.getUniqueId(), def[2]));
@@ -281,7 +287,7 @@ public class SettingsGUI {
             inv.setItem(slot++, item);
         }
 
-        inv.setItem(26, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        inv.setItem(44, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
         player.openInventory(inv);
         playClick(player);
     }
