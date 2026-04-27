@@ -67,6 +67,13 @@ public class ChunkManager {
         return chunkNames.get(chunkKey);
     }
 
+    /**
+     * Check if a chunk is claimed.
+     */
+    public boolean isChunkClaimed(Chunk chunk) {
+        return chunkOwners.containsKey(getChunkKey(chunk));
+    }
+
     // ── Claim with name ──
 
     /**

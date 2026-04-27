@@ -18,6 +18,17 @@ messages:
   # chunk-claim-success: "&aChunk claimed!"
   # max-claims-reached: "&cYou have reached your maximum number of claims (%max%)."
 
+# Message toggles - turn on/off specific action messages for all players
+# Set to true to show the message, false to hide it
+message-toggles:
+  deny-break: true        # Message when block break is denied
+  deny-place: true        # Message when block place is denied
+  deny-interact: true     # Message when interaction is denied
+  deny-entity: true       # Message when entity damage is denied
+  deny-pvp: true          # Message when PvP is denied
+  claim-success: true    # Message when chunk is claimed
+  unclaim-success: true  # Message when chunk is unclaimed
+
 # Particle settings
 visualization:
   duration-seconds: 10

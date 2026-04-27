@@ -49,7 +49,9 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-break"));
+        if (messages.isMessageEnabled("deny-break")) {
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-break"));
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -58,7 +60,9 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
+        if (messages.isMessageEnabled("deny-place")) {
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -109,7 +113,9 @@ public class ChunkProtectionListener implements Listener {
 
         if (blockIt) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+            if (messages.isMessageEnabled("deny-interact")) {
+                event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+            }
         }
     }
 
@@ -128,7 +134,9 @@ public class ChunkProtectionListener implements Listener {
         if (canModifyChunk(player, chunk)) return;
 
         event.setCancelled(true);
-        player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+        if (messages.isMessageEnabled("deny-entity")) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+        }
     }
 
     /**
@@ -143,7 +151,9 @@ public class ChunkProtectionListener implements Listener {
         if (canModifyChunk(player, chunk)) return;
 
         event.setCancelled(true);
-        player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+        if (messages.isMessageEnabled("deny-entity")) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+        }
     }
 
     /**
@@ -152,6 +162,9 @@ public class ChunkProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        // Don't block interaction with other players
+        if (event.getRightClicked() instanceof Player) return;
+
         Chunk chunk = event.getRightClicked().getLocation().getChunk();
         if (canModifyChunk(event.getPlayer(), chunk)) return;
 
@@ -168,7 +181,9 @@ public class ChunkProtectionListener implements Listener {
         if (canModifyChunk(event.getPlayer(), chunk)) return;
 
         event.setCancelled(true);
-        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+        if (messages.isMessageEnabled("deny-interact")) {
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+        }
     }
 
     /**
@@ -183,7 +198,9 @@ public class ChunkProtectionListener implements Listener {
         if (canModifyChunk(player, chunk)) return;
 
         event.setCancelled(true);
-        player.sendMessage(messages.getFor(player.getUniqueId(), "deny-break"));
+        if (messages.isMessageEnabled("deny-break")) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "deny-break"));
+        }
     }
 
     /**
@@ -197,7 +214,9 @@ public class ChunkProtectionListener implements Listener {
         if (canModifyChunk(event.getPlayer(), chunk)) return;
 
         event.setCancelled(true);
-        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
+        if (messages.isMessageEnabled("deny-place")) {
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
+        }
     }
 
     // ── Mob griefing protection (flag-gated) ──
@@ -210,7 +229,8 @@ public class ChunkProtectionListener implements Listener {
     public void onEntityBlockForm(EntityBlockFormEvent event) {
         if (event.getEntity() instanceof Player) return;
         Chunk chunk = event.getBlock().getChunk();
-        if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
+        // Only block if chunk is claimed AND flag is enabled
+        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
             event.setCancelled(true);
         }
     }
@@ -223,7 +243,8 @@ public class ChunkProtectionListener implements Listener {
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         if (event.getEntity() instanceof Player) return;
         Chunk chunk = event.getBlock().getChunk();
-        if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
+        // Only block if chunk is claimed AND flag is enabled
+        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
             event.setCancelled(true);
         }
     }
@@ -234,7 +255,10 @@ public class ChunkProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityExplode(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> chunkManager.isChunkFlagEnabled(block.getChunk(), ChunkManager.FLAG_EXPLOSIONS));
+        // Only filter if explosions flag is enabled on claimed chunks
+        event.blockList().removeIf(block -> 
+            chunkManager.isChunkClaimed(block.getChunk()) && 
+            chunkManager.isChunkFlagEnabled(block.getChunk(), ChunkManager.FLAG_EXPLOSIONS));
     }
 
     /**
@@ -243,7 +267,10 @@ public class ChunkProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockExplode(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> chunkManager.isChunkFlagEnabled(block.getChunk(), ChunkManager.FLAG_EXPLOSIONS));
+        // Only filter if explosions flag is enabled on claimed chunks
+        event.blockList().removeIf(block -> 
+            chunkManager.isChunkClaimed(block.getChunk()) && 
+            chunkManager.isChunkFlagEnabled(block.getChunk(), ChunkManager.FLAG_EXPLOSIONS));
     }
 
     // ── Mob spawning prevention (flag-gated) ──
@@ -265,7 +292,8 @@ public class ChunkProtectionListener implements Listener {
                 || reason == CreatureSpawnEvent.SpawnReason.RAID
                 || reason == CreatureSpawnEvent.SpawnReason.REINFORCEMENTS) {
             Chunk chunk = event.getEntity().getLocation().getChunk();
-            if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_SPAWNING)) {
+            // Only block if chunk is claimed AND flag is enabled
+            if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_SPAWNING)) {
                 event.setCancelled(true);
             }
         }
@@ -287,7 +315,8 @@ public class ChunkProtectionListener implements Listener {
                         if (entity instanceof Player) continue;
                         if (entity instanceof ArmorStand) continue;
                         Chunk chunk = entity.getLocation().getChunk();
-                        if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_ENTRY)) {
+                        // Only push mobs if chunk is claimed AND flag is enabled
+                        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_ENTRY)) {
                             pushOutOfChunk(entity, chunk);
                         }
                     }
@@ -360,7 +389,9 @@ public class ChunkProtectionListener implements Listener {
         Chunk chunk = victim.getLocation().getChunk();
         if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_PVP)) {
             event.setCancelled(true);
-            attacker.sendMessage(messages.getFor(attacker.getUniqueId(), "deny-pvp"));
+            if (messages.isMessageEnabled("deny-pvp")) {
+                attacker.sendMessage(messages.getFor(attacker.getUniqueId(), "deny-pvp"));
+            }
         }
     }
 

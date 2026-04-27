@@ -178,6 +178,15 @@ public class MessageManager {
         getLocaleYaml(serverDefaultLocale);
     }
 
+    /**
+     * Check if a specific message toggle is enabled in config.
+     * @param key The message key (e.g., "deny-break", "claim-success")
+     * @return true if the message should be shown, false if suppressed
+     */
+    public boolean isMessageEnabled(String key) {
+        return plugin.getConfig().getBoolean("message-toggles." + key, true);
+    }
+
     // Server-default message (no player context)
     public String get(String key) {
         return getInternal(null, key, null);

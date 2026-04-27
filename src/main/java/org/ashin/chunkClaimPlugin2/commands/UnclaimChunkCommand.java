@@ -47,8 +47,10 @@ public class UnclaimChunkCommand implements CommandExecutor {
         int count = chunkManager.unclaimByName(player.getUniqueId(), claimName);
         if (count > 0) {
             chunkManager.saveData();
-            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-success",
-                    "name", claimName, "count", String.valueOf(count)));
+            if (messages.isMessageEnabled("unclaim-success")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-success",
+                        "name", claimName, "count", String.valueOf(count)));
+            }
         } else {
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-fail", "name", claimName));
         }

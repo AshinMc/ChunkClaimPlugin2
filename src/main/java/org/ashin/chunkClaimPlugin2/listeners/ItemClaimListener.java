@@ -92,7 +92,9 @@ public class ItemClaimListener implements Listener {
         // Actually claim the chunk with the name
         if (chunkManager.claimChunk(player, chunk, claimName)) {
             chunkManager.saveData();
-            player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-success", "name", claimName));
+            if (messages.isMessageEnabled("claim-success")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-success", "name", claimName));
+            }
         } else {
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-fail"));
         }
