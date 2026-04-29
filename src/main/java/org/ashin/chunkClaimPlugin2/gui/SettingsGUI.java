@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public class SettingsGUI {
-    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, PARTICLE, CLAIM_DETAILS, DELETE_CONFIRM, TRUST, CLAIM_SETTINGS }
+    public enum View { HOME, CLAIMS, VISUALIZE, DELETE, LANGUAGE, PARTICLE, CLAIM_DETAILS, DELETE_CONFIRM, TRUST, CLAIM_SETTINGS, TRANSFER, TRANSFER_CONFIRM }
 
     public static class SettingsHolder implements org.bukkit.inventory.InventoryHolder {
         public final View view;
@@ -207,6 +207,9 @@ public class SettingsGUI {
         // Claim settings item (redstone torch)
         inv.setItem(20, named(Material.REDSTONE_TORCH, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claim-settings"))));
 
+        // Transfer item (ender eye)
+        inv.setItem(26, named(Material.ENDER_EYE, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-transfer"))));
+
         // Back item
         inv.setItem(15, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
 
@@ -243,6 +246,61 @@ public class SettingsGUI {
             player.sendMessage(messages.getFor(player.getUniqueId(), "trust-no-online"));
         }
         inv.setItem(size - 1, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openTransfer(Player player, String claimName) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-transfer");
+        // Collect online players (excluding the owner)
+        List<Player> candidates = new ArrayList<>();
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (!online.getUniqueId().equals(player.getUniqueId())) {
+                candidates.add(online);
+            }
+        }
+        int size = invSizeFor(candidates.size() + 1);
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.TRANSFER, claimName), size, ChatColor.stripColor(title));
+        int i = 0;
+        for (Player online : candidates) {
+            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta sm = (SkullMeta) head.getItemMeta();
+            sm.setOwningPlayer(online);
+            sm.setDisplayName(ChatColor.AQUA + online.getName());
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-transfer-select")));
+            sm.setLore(lore);
+            head.setItemMeta(sm);
+            inv.setItem(i++, head);
+        }
+        if (candidates.isEmpty()) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "transfer-no-online"));
+        }
+        inv.setItem(size - 1, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openTransferConfirm(Player player, String claimName, Player targetPlayer) {
+        String title = messages.getFor(player.getUniqueId(), "gui-title-transfer-confirm");
+        Inventory inv = Bukkit.createInventory(new SettingsHolder(View.TRANSFER_CONFIRM, claimName), 27, ChatColor.stripColor(title));
+
+        // Info item with target player
+        ItemStack info = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta im = (SkullMeta) info.getItemMeta();
+        im.setOwningPlayer(targetPlayer);
+        im.setDisplayName(ChatColor.YELLOW + claimName);
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.GRAY + messages.getFor(player.getUniqueId(), "transfer-to", "player", targetPlayer.getName()));
+        lore.add(ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-lore-confirm")));
+        im.setLore(lore);
+        info.setItemMeta(im);
+        inv.setItem(13, info);
+
+        // Confirm/Cancel
+        inv.setItem(11, named(Material.GREEN_CONCRETE, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-confirm"))));
+        inv.setItem(15, named(Material.RED_CONCRETE, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-cancel"))));
+
         player.openInventory(inv);
         playClick(player);
     }

@@ -13,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SettingsGUIListener implements Listener {
@@ -69,6 +70,7 @@ public class SettingsGUIListener implements Listener {
             case LANGUAGE: handleLanguage(player, clicked, name); break;
             case PARTICLE: handleParticle(player, clicked, name); break;
             case TRUST: handleTrust(player, clicked, name, sh); break;
+            case TRANSFER: handleTransfer(player, clicked, name, sh); break;
             case CLAIM_SETTINGS: handleClaimSettings(player, clicked, name, sh); break;
             default: break;
         }
@@ -164,6 +166,20 @@ public class SettingsGUIListener implements Listener {
         gui.openTrust(player, sh.claimName);
     }
 
+    private void handleTransfer(Player player, ItemStack clicked, String name, SettingsGUI.SettingsHolder sh) {
+        if (clicked.getType() == Material.ARROW) {
+            if (sh.claimName != null) gui.openClaimDetails(player, sh.claimName);
+            else gui.openHome(player);
+            return;
+        }
+        if (clicked.getType() != Material.PLAYER_HEAD || sh.claimName == null) return;
+        // Open confirmation screen for this player
+        Player target = Bukkit.getPlayerExact(name);
+        if (target != null) {
+            gui.openTransferConfirm(player, sh.claimName, target);
+        }
+    }
+
     private void handleClaimSettings(Player player, ItemStack clicked, String name, SettingsGUI.SettingsHolder sh) {
         if (clicked.getType() == Material.ARROW) {
             if (sh.claimName != null) gui.openClaimDetails(player, sh.claimName);
@@ -215,7 +231,8 @@ public class SettingsGUIListener implements Listener {
         SettingsGUI.SettingsHolder sh = (SettingsGUI.SettingsHolder) holder;
         boolean isDetails = sh.view == SettingsGUI.View.CLAIM_DETAILS;
         boolean isDelConf = sh.view == SettingsGUI.View.DELETE_CONFIRM;
-        if (!isDetails && !isDelConf) return;
+        boolean isTransfConf = sh.view == SettingsGUI.View.TRANSFER_CONFIRM;
+        if (!isDetails && !isDelConf && !isTransfConf) return;
 
         // Always cancel any click when in details/confirm menus (even empty slots)
         event.setCancelled(true);
@@ -264,6 +281,16 @@ public class SettingsGUIListener implements Listener {
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
                     String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
                     gui.openClaimSettings(player, claimName);
+                }
+                return;
+            }
+            // Transfer ownership button
+            String transferLabel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-transfer"));
+            if (name.equals(transferLabel) && clicked.getType() == Material.ENDER_EYE) {
+                ItemStack info = top.getItem(11);
+                if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    gui.openTransfer(player, claimName);
                 }
                 return;
             }
@@ -317,6 +344,37 @@ public class SettingsGUIListener implements Listener {
                     }
                     gui.openDelete(player);
                 }
+            }
+        }
+
+        if (isTransfConf) {
+            String confirm = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-confirm"));
+            String cancel = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-cancel"));
+            if (name.equals(cancel)) {
+                gui.openTransfer(player, sh.claimName);
+                return;
+            }
+
+            if (name.equals(confirm)) {
+                if (top == null || sh.claimName == null) return;
+                // Extract target player from the skull item in slot 13
+                ItemStack info = top.getItem(13);
+                if (info != null && info.hasItemMeta()) {
+                    SkullMeta sm = (SkullMeta) info.getItemMeta();
+                    org.bukkit.OfflinePlayer offlineTarget = sm.getOwningPlayer();
+                    if (offlineTarget != null) {
+                        java.util.UUID targetUUID = offlineTarget.getUniqueId();
+                        int transferred = chunkManager.transferClaim(player.getUniqueId(), targetUUID, sh.claimName);
+                        if (transferred > 0) {
+                            chunkManager.saveData();
+                            Player targetOnline = Bukkit.getPlayer(targetUUID);
+                            String targetName = targetOnline != null ? targetOnline.getName() : offlineTarget.getName();
+                            player.sendMessage(messages.getFor(player.getUniqueId(), "transfer-success",
+                                    "name", sh.claimName, "player", targetName));
+                        }
+                    }
+                }
+                gui.openClaims(player);
             }
         }
     }

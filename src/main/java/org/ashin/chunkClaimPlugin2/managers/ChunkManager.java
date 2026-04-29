@@ -145,6 +145,38 @@ public class ChunkManager {
     }
 
     /**
+     * Transfer a named claim group from one owner to another.
+     * @return number of chunks transferred
+     */
+    public int transferClaim(UUID oldOwner, UUID newOwner, String claimName) {
+        if (oldOwner.equals(newOwner)) return 0;
+
+        int transferred = 0;
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(oldOwner)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(claimName)) {
+                    entry.setValue(newOwner);
+                    transferred++;
+                }
+            }
+        }
+
+        if (transferred > 0) {
+            String oldKey = trustKey(oldOwner, claimName);
+            String newKey = trustKey(newOwner, claimName);
+
+            if (trustedPlayers.containsKey(oldKey)) {
+                trustedPlayers.put(newKey, trustedPlayers.remove(oldKey));
+            }
+            if (claimFlags.containsKey(oldKey)) {
+                claimFlags.put(newKey, claimFlags.remove(oldKey));
+            }
+        }
+        return transferred;
+    }
+
+    /**
      * Unclaim an entire named claim group (all chunks with matching name for this player).
      * @return number of chunks unclaimed
      */
