@@ -15,8 +15,9 @@ version = '0.6.0'
     }
 
     dependencies {
-    // Target Minecraft 26.1 API (Spigot)
-    compileOnly 'org.spigotmc:spigot-api:26.1-R0.1-SNAPSHOT'
+    // Target Minecraft 1.21.x API (works for both 1.21.x and 26.1.x)
+    // Paper API 1.21.4+ (version 26.1) includes all previous 1.21.x APIs
+    compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
 
         // Add these dependencies with proper scope
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.15'
@@ -53,19 +54,6 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    def props = [version: version, apiVersion: '26.1']
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    filesMatching('plugin.yml') {
-        expand props
-    }
-}
-
-task processResources_1_21(type: ProcessResources) {
-    from sourceSets.main.resources
-    into layout.buildDirectory.dir("resources/main_1_21")
     def props = [version: version, apiVersion: '1.21']
     inputs.properties props
     filteringCharset 'UTF-8'
@@ -77,14 +65,9 @@ task processResources_1_21(type: ProcessResources) {
 }
 
 jar {
-    archiveBaseName.set('ChunkClaimPlugin-26.1')
+    archiveBaseName.set('ChunkClaimPlugin')
+    manifest {
+        attributes 'Multi-Version': 'true'
+        attributes 'Supported-Versions': '1.21.x,26.1'
+    }
 }
-
-task jar_1_21(type: Jar) {
-    dependsOn processResources_1_21
-    archiveBaseName.set('ChunkClaimPlugin-1.21.x')
-    from sourceSets.main.java.classesDirectory
-    from processResources_1_21.destinationDir
-}
-
-build.dependsOn jar_1_21

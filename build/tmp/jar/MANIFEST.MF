@@ -1,2 +1,4 @@
 Manifest-Version: 1.0
+Multi-Version: true
+Supported-Versions: 1.21.x,26.1
 

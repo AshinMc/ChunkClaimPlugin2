@@ -50,6 +50,7 @@ claim-flags:
   mob-griefing: true     # Block mob griefing (snow trails, enderman, etc.)
   mob-spawning: false    # Block natural mob spawning
   mob-entry: false       # Block all mobs from entering the chunk (invisible wall)
+  mob-protection: true   # Block players from attacking non-hostile mobs (cows, pigs, etc.)
   explosions: true       # Block explosion damage (creepers, TNT, etc.)
   pvp: false             # Block PvP combat
   greeting-title: true   # Show welcome title when entering claim

@@ -256,6 +256,7 @@ public class SettingsGUI {
             { ChunkManager.FLAG_MOB_GRIEFING, "SNOW_BLOCK",     "gui-flag-mob-griefing" },
             { ChunkManager.FLAG_MOB_SPAWNING, "SPAWNER",        "gui-flag-mob-spawning" },
             { ChunkManager.FLAG_MOB_ENTRY,    "IRON_BARS",      "gui-flag-mob-entry" },
+            { ChunkManager.FLAG_MOB_PROTECTION, "COW_SPAWN_EGG", "gui-flag-mob-protection" },
             { ChunkManager.FLAG_EXPLOSIONS,   "TNT",            "gui-flag-explosions" },
             { ChunkManager.FLAG_PVP,          "IRON_SWORD",     "gui-flag-pvp" },
             { ChunkManager.FLAG_GREETING_TITLE, "OAK_SIGN",     "gui-flag-greeting-title" },

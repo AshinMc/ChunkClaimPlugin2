@@ -65,6 +65,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         if (getCommand("chunksettings") != null) {
             getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(this, chunkManager, messageManager));
         }
+        if (getCommand("chunktp") != null) {
+            getCommand("chunktp").setExecutor(new ChunkTeleportCommand(chunkManager, messageManager));
+        }
         if (getCommand("chunkadmin") != null) {
             getCommand("chunkadmin").setExecutor(new ChunkAdminCommand(this, chunkManager, messageManager));
         }

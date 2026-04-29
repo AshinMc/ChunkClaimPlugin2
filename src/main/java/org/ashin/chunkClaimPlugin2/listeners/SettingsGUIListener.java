@@ -177,6 +177,7 @@ public class SettingsGUIListener implements Listener {
             case SNOW_BLOCK -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_GRIEFING;
             case SPAWNER    -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_SPAWNING;
             case IRON_BARS  -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_ENTRY;
+            case COW_SPAWN_EGG -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_PROTECTION;
             case TNT        -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_EXPLOSIONS;
             case IRON_SWORD -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_PVP;
             case OAK_SIGN   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_GREETING_TITLE;

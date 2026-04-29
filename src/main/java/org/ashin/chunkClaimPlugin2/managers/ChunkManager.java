@@ -292,6 +292,7 @@ public class ChunkManager {
     public static final String FLAG_MOB_GRIEFING = "mob-griefing";
     public static final String FLAG_MOB_SPAWNING = "mob-spawning";
     public static final String FLAG_MOB_ENTRY    = "mob-entry";
+    public static final String FLAG_MOB_PROTECTION = "mob-protection";
     public static final String FLAG_EXPLOSIONS   = "explosions";
     public static final String FLAG_PVP          = "pvp";
     public static final String FLAG_GREETING_TITLE = "greeting-title";
@@ -304,7 +305,7 @@ public class ChunkManager {
 
     /** Ordered list for GUI display. */
     public static final String[] ALL_FLAGS = {
-        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_GREETING_TITLE,
+        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_MOB_PROTECTION, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_GREETING_TITLE,
         FLAG_INTERACT_CHEST, FLAG_INTERACT_FURNACE, FLAG_INTERACT_STONECUTTER, FLAG_INTERACT_DOOR, FLAG_INTERACT_REDSTONE
     };
 
@@ -313,6 +314,7 @@ public class ChunkManager {
         Map.entry(FLAG_MOB_GRIEFING, true),   // block mob griefing by default
         Map.entry(FLAG_MOB_SPAWNING, false),  // allow mob spawning by default
         Map.entry(FLAG_MOB_ENTRY,    false),  // allow all mob entry by default
+        Map.entry(FLAG_MOB_PROTECTION, true), // protect non-hostile mobs by default
         Map.entry(FLAG_EXPLOSIONS,   true),   // block explosions by default
         Map.entry(FLAG_PVP,          false),  // allow PvP by default
         Map.entry(FLAG_GREETING_TITLE, true), // show welcome title by default

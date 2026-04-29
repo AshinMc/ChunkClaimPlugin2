@@ -1,7 +1,7 @@
 name: CCP
 version: '0.6.0'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
-api-version: '26.1'
+api-version: '1.21'
 softdepend: [WorldGuard, WorldEdit]
 commands:
   claimchunk:
@@ -36,6 +36,10 @@ commands:
     description: Open the chunk settings GUI
     usage: /<command>
     permission: ccp.settings
+  chunktp:
+    description: Teleport to a chunk by claim name
+    usage: /<command> <name>
+    permission: ccp.teleport
   chunkadmin:
     description: Open the admin settings GUI
     usage: /<command>
@@ -64,6 +68,9 @@ permissions:
     default: true
   ccp.settings:
     description: Allows using the chunk settings GUI
+    default: true
+  ccp.teleport:
+    description: Allows teleporting to chunks
     default: true
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks
