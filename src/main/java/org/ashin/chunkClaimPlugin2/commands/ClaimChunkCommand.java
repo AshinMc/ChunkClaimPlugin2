@@ -44,7 +44,7 @@ public class ClaimChunkCommand implements CommandExecutor {
         } else {
             // Generate default name: "Claim #N"
             int next = chunkManager.getPlayerClaimNames(player.getUniqueId()).size() + 1;
-            claimName = "Claim #" + next;
+            claimName = "Claim_#" + next;
         }
 
         // Check if the chunk is already claimed by someone

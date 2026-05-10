@@ -10,12 +10,12 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 
 ---
 
-## 🚀 Highlights in v0.6.0
+## 🚀 Highlights in v0.6.0+
 - **Command Prefix Update:** The plugin alias is now officially \/ccp\ for faster typing!
-- **Dual API Support:** Natively compiles two jars: one for \1.21.x\ and another for \26.1+\.
+- **Dual API Support:** Single universal JAR compatible with both \1.21.0-1.21.11\ and \26.1+\ servers.
 - **Item-Based Claiming:** Claim chunks by simply right-clicking with a configurable item (Default: Wooden Shovel).
 - **Chunk Entry Titles:** See a Welcome Title and Subtitle when entering a claimed area.
-- **Granular Permissions:** Full LuckPerms support with \ccp.claim\, \ccp.unclaim\, \ccp.check\, \ccp.info\, \ccp.visualize\, \ccp.expand\, \ccp.lang\, and \ccp.settings\.
+- **Granular Permissions:** Full LuckPerms support with \ccp.claim\, \ccp.unclaim\, \ccp.check\, \ccp.info\, \ccp.visualize\, \ccp.expand\, \ccp.lang\, \ccp.settings\, \ccp.teleport\, and \ccp.transfer\.
 - **GUI Enhancements:** Added 'Back' buttons for easier menu navigation.
 - **Rename Claims:** Rename your claims seamlessly via an interactive chat prompt directly from the GUI.
 - **Granular Interaction Settings:** Protect or allow access to specific blocks via the GUI:
@@ -24,8 +24,12 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
   - Crafting/Utility blocks (Stonecutters, etc.)
   - Doors/Trapdoors
   - Redstone Inputs (Buttons/Levers)
-- **New Languages:** Added full support for German (\de_DE\), Portuguese (\pt_BR\), and Russian (\
-u_RU\).
+  - Mob Protection (toggle damage to passive mobs like cows and pigs)
+- **Message Toggle System:** Admins can now disable specific chat messages (deny notifications, success messages, etc.) via \config.yml\ without code changes.
+- **Claim Ownership Transfer:** Transfer claim ownership to other players directly from the claim details GUI with all settings preserved.
+- **Teleport Command:** Use \/chunktp <name>\ to quickly teleport to any of your claims by name.
+- **Fixed Player Combat:** Players can now properly attack each other; the PvP flag correctly controls only player-vs-player interactions.
+- **New Languages:** Added full support for German (\de_DE\), Portuguese (\pt_BR\), and Russian (\ru_RU\).
 
 For a full breakdown of features, permissions, and configuration, please see the [**Server Owner Wiki**](WIKI.md).
 
@@ -42,8 +46,7 @@ For a full breakdown of features, permissions, and configuration, please see the
 | \/infochunk\ | \/ccp info\ | List all your claim groups with chunk counts |
 | \/visualizechunk [name]\| \/ccp visualize [name]\ | Visualize a claim group, current chunk's group, or all claims |
 | \/chunklang\ | \/ccp lang\ | View/list/set your language (per-player) |
-| \/chunksettings\ | \/ccp settings\ | Open the player settings GUI |
-| \/chunkadmin\ | \/ccp admin\ | Open the admin settings GUI (requires \chunkclaim.admin\) |
+| \/chunksettings\ | \/ccp settings\ | Open the player settings GUI || \/chunktp <name>\ | \/ccp tp <name>\ | Teleport to a claim by name || \/chunkadmin\ | \/ccp admin\ | Open the admin settings GUI (requires \chunkclaim.admin\) |
 
 ---
 
@@ -52,10 +55,9 @@ For a full breakdown of features, permissions, and configuration, please see the
 2. Build the project:
    - Windows: `.\gradlew.bat build`
    - Linux/Mac: `./gradlew build`
-3. The build script will automatically output two jars in `build/libs/`:
-   - `ChunkClaimPlugin-26.1-0.6.0.jar` (For Spigot/Paper 26.1+)
-   - `ChunkClaimPlugin-1.21.x-0.6.0.jar` (For older Spigot 1.21.x builds)
-4. Drop the correct jar into your server's `plugins/` folder and restart!
+3. The build script outputs a universal JAR in `build/libs/`:
+   - `ChunkClaimPlugin.jar` (Works with Spigot/Paper 1.21.0-1.21.11 AND 26.1+)
+4. Drop the jar into your server's `plugins/` folder and restart!
 
 ---
 
@@ -71,14 +73,19 @@ Don't want to type commands all day? Now you can claim chunks using your **Confi
 
 ## 📖 Changelog
 
-### v0.6.0
+### v0.6.0+
 - **Major Architecture Update:** Brought the plugin to Minecraft 26.1 API native support.
-- **Improved GUI & Experience:** Added Back Buttons, Rename Claim options, and 5 new modular item interaction toggles (Chests, Furnaces, Utilities, Doors, Redstone) right from the `/ccp settings` menu!
+- **Single JAR Compatibility:** Truly universal binary that works with both 1.21.0-1.21.11 and 26.1+ servers without version detection needed.
+- **Improved GUI & Experience:** Added Back Buttons, Rename Claim options, 6 modular item interaction toggles (Chests, Furnaces, Utilities, Doors, Redstone, Mobs), and a new Ownership Transfer button right from the \/ccp settings\ menu!
 - **Added Dynamic Claim Item:** Right-click with your configured default item (Wooden Shovel) inside an unclaimed chunk to instantly grab it via a chat prompt.
-- **Added Granular Permissions:** Fully migrated to `ccp.*` permission nodes for easier LuckPerms integration.
-- **Added 3 New Languages:** `de_DE`, `pt_BR`, and `ru_RU` join our localization suite.
-- **Dual APIs Built-In:** The build engine natively kicks out both `1.21.x` and `26.1` jars. Just drag and drop!
+- **Added Granular Permissions:** Fully migrated to \ccp.*\ permission nodes for easier LuckPerms integration.
+- **Added 3 New Languages:** \de_DE\, \pt_BR\, and \ru_RU\ join our localization suite.
 - **Welcome Titles:** Pop-up Titles and Subtitles now greet you (and visitors) automatically upon entering limits.
+- **Mob Protection Toggle:** New \mob-protection\ flag allows server admins and players to control whether non-hostile mobs (cows, pigs, sheep, etc.) can be damaged in claimed chunks, while hostile mobs (zombies, creepers) remain killable.
+- **Message Toggle System:** New \message-toggles\ section in \config.yml\ allows admins to suppress specific protection denial messages without editing code. Configure which messages players see (deny-break, deny-place, deny-interact, deny-entity, deny-pvp, claim-success, unclaim-success).
+- **Ownership Transfer Feature:** Transfer claims to other players directly from the claim details GUI using the new Transfer Ownership button. All claim settings, trusted players, and flags are preserved.
+- **Teleport Command:** New \/chunktp <name>\ command provides quick teleportation to any of your claims by name, with safe landing at the chunk center.
+- **Fixed Player Combat Logic:** Separated player-to-player damage handling from entity protection. Players can now properly attack each other in PvP-enabled claims, while the mob-protection flag works independently.
 
 ### v0.5.1
 - Per-claim settings GUI with toggleable flags (mob griefing, mob spawning, mob entry, explosions, PvP)
