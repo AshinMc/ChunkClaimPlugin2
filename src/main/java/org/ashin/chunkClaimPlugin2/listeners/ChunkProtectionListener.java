@@ -78,6 +78,14 @@ public class ChunkProtectionListener implements Listener {
         Chunk chunk = event.getClickedBlock().getChunk();
         boolean blockIt = false;
 
+        // Block crop trampling (Action.PHYSICAL on FARMLAND) and turtle eggs
+        if (event.getAction() == org.bukkit.event.block.Action.PHYSICAL) {
+            String typeName = event.getClickedBlock().getType().name();
+            if (typeName.equals("FARMLAND") || typeName.equals("TURTLE_EGG") || typeName.equals("SNIFFER_EGG")) {
+                blockIt = true;
+            }
+        }
+
         // Check against specific flags
         switch (event.getClickedBlock().getType().name()) {
             case "CHEST", "TRAPPED_CHEST", "BARREL", "ENDER_CHEST", "SHULKER_BOX" -> {

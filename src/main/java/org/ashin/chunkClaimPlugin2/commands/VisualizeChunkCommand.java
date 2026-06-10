@@ -14,17 +14,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class VisualizeChunkCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
-    private static final int VISUALIZATION_SECONDS = 10;
     private static final int PARTICLE_HEIGHT = 100;
     private static final double PARTICLE_SPACING = 0.5;
+    
+    private final Map<UUID, BukkitTask> activeVisualizations = new HashMap<>();
 
     public VisualizeChunkCommand(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
         this.plugin = plugin;
@@ -41,6 +45,16 @@ public class VisualizeChunkCommand implements CommandExecutor {
 
         Player player = (Player) sender;
         UUID playerId = player.getUniqueId();
+        
+        int durationSeconds = plugin.getConfig().getInt("visualization.duration-seconds", 10);
+
+        // If player has an active visualization, toggle it off
+        if (activeVisualizations.containsKey(playerId)) {
+            activeVisualizations.get(playerId).cancel();
+            activeVisualizations.remove(playerId);
+            player.sendMessage(org.bukkit.ChatColor.YELLOW + "Visualization stopped.");
+            return true;
+        }
 
         if (args.length > 0) {
             String claimName = String.join(" ", args);
@@ -53,7 +67,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
             }
 
             player.sendMessage(messages.getFor(playerId, "visualize-start",
-                    "count", String.valueOf(chunks.size()), "seconds", String.valueOf(VISUALIZATION_SECONDS)));
+                    "count", String.valueOf(chunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
 
             // Calculate merged bounding box in block coordinates
             int minBlockX = Integer.MAX_VALUE, minBlockZ = Integer.MAX_VALUE;
@@ -76,15 +90,25 @@ public class VisualizeChunkCommand implements CommandExecutor {
 
             final int fMinX = minBlockX, fMinZ = minBlockZ, fMaxX = maxBlockX, fMaxZ = maxBlockZ;
 
-            new BukkitRunnable() {
-                int secondsLeft = VISUALIZATION_SECONDS;
+            BukkitTask task = new BukkitRunnable() {
+                int secondsLeft = durationSeconds;
                 @Override
                 public void run() {
-                    if (secondsLeft <= 0) { cancel(); return; }
+                    if (durationSeconds > 0 && secondsLeft <= 0) { 
+                        activeVisualizations.remove(playerId);
+                        cancel(); 
+                        return; 
+                    }
+                    if (!player.isOnline()) {
+                        activeVisualizations.remove(playerId);
+                        cancel();
+                        return;
+                    }
                     visualizeBoundingBox(player, fMinX, fMinZ, fMaxX, fMaxZ);
-                    secondsLeft--;
+                    if (durationSeconds > 0) secondsLeft--;
                 }
             }.runTaskTimer(plugin, 0L, 20L);
+            activeVisualizations.put(playerId, task);
 
             return true;
         }
@@ -98,7 +122,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
                 List<ChunkData> standingChunks = chunkManager.getChunksByName(playerId, standingName);
                 if (!standingChunks.isEmpty()) {
                     player.sendMessage(messages.getFor(playerId, "visualize-start",
-                            "count", String.valueOf(standingChunks.size()), "seconds", String.valueOf(VISUALIZATION_SECONDS)));
+                            "count", String.valueOf(standingChunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
                     int sMinX = Integer.MAX_VALUE, sMinZ = Integer.MAX_VALUE;
                     int sMaxX = Integer.MIN_VALUE, sMaxZ = Integer.MIN_VALUE;
                     String sWorldName = standingChunks.get(0).getWorld();
@@ -113,15 +137,25 @@ public class VisualizeChunkCommand implements CommandExecutor {
                     World sWorld = Bukkit.getWorld(sWorldName);
                     if (sWorld != null) {
                         final int fsMinX = sMinX, fsMinZ = sMinZ, fsMaxX = sMaxX, fsMaxZ = sMaxZ;
-                        new BukkitRunnable() {
-                            int secondsLeft = VISUALIZATION_SECONDS;
+                        BukkitTask task = new BukkitRunnable() {
+                            int secondsLeft = durationSeconds;
                             @Override
                             public void run() {
-                                if (secondsLeft <= 0) { cancel(); return; }
+                                if (durationSeconds > 0 && secondsLeft <= 0) { 
+                                    activeVisualizations.remove(playerId);
+                                    cancel(); 
+                                    return; 
+                                }
+                                if (!player.isOnline()) {
+                                    activeVisualizations.remove(playerId);
+                                    cancel();
+                                    return;
+                                }
                                 visualizeBoundingBox(player, fsMinX, fsMinZ, fsMaxX, fsMaxZ);
-                                secondsLeft--;
+                                if (durationSeconds > 0) secondsLeft--;
                             }
                         }.runTaskTimer(plugin, 0L, 20L);
+                        activeVisualizations.put(playerId, task);
                     }
                     return true;
                 }
@@ -137,14 +171,23 @@ public class VisualizeChunkCommand implements CommandExecutor {
 
         int totalChunks = chunkManager.getPlayerChunkCount(playerId);
         player.sendMessage(messages.getFor(playerId, "visualize-start",
-                "count", String.valueOf(totalChunks), "seconds", String.valueOf(VISUALIZATION_SECONDS)));
+                "count", String.valueOf(totalChunks), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
 
-        new BukkitRunnable() {
-            int secondsLeft = VISUALIZATION_SECONDS;
+        BukkitTask task = new BukkitRunnable() {
+            int secondsLeft = durationSeconds;
 
             @Override
             public void run() {
-                if (secondsLeft <= 0) { cancel(); return; }
+                if (durationSeconds > 0 && secondsLeft <= 0) { 
+                    activeVisualizations.remove(playerId);
+                    cancel(); 
+                    return; 
+                }
+                if (!player.isOnline()) {
+                    activeVisualizations.remove(playerId);
+                    cancel();
+                    return;
+                }
 
                 for (String name : claimNames) {
                     List<ChunkData> chunks = chunkManager.getChunksByName(playerId, name);
@@ -165,9 +208,10 @@ public class VisualizeChunkCommand implements CommandExecutor {
                     }
                     visualizeBoundingBox(player, minX, minZ, maxX, maxZ);
                 }
-                secondsLeft--;
+                if (durationSeconds > 0) secondsLeft--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
+        activeVisualizations.put(playerId, task);
 
         return true;
     }
@@ -215,7 +259,8 @@ public class VisualizeChunkCommand implements CommandExecutor {
         } catch (IllegalArgumentException e) {
             particle = Particle.FLAME;
         }
-        if (particle == Particle.DUST) {
+        String name = particle.name();
+        if (name.equals("DUST") || name.equals("REDSTONE")) {
             player.getWorld().spawnParticle(particle, location, 1, 0, 0, 0, 0,
                     new Particle.DustOptions(org.bukkit.Color.RED, 1.0f));
         } else {

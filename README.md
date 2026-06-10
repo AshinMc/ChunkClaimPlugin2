@@ -12,7 +12,7 @@ Protect your land by claiming chunks with named claim groups, per-player trust, 
 
 ## 🚀 Highlights in v0.6.0+
 - **Command Prefix Update:** The plugin alias is now officially \/ccp\ for faster typing!
-- **Dual API Support:** Single universal JAR compatible with both \1.21.0-1.21.11\ and \26.1+\ servers.
+- **Multi-Version Support:** Single universal JAR compatible with `1.19.x`, `1.20.x`, `1.21.0-1.21.11`, and `26.1+` servers, running on Java 17 or higher.
 - **Item-Based Claiming:** Claim chunks by simply right-clicking with a configurable item (Default: Wooden Shovel).
 - **Chunk Entry Titles:** See a Welcome Title and Subtitle when entering a claimed area.
 - **Granular Permissions:** Full LuckPerms support with \ccp.claim\, \ccp.unclaim\, \ccp.check\, \ccp.info\, \ccp.visualize\, \ccp.expand\, \ccp.lang\, \ccp.settings\, \ccp.teleport\, and \ccp.transfer\.
@@ -73,6 +73,12 @@ Don't want to type commands all day? Now you can claim chunks using your **Confi
 
 ## 📖 Changelog
 
+### v0.7.0
+- **Individual Chunk Limits:** Admins can configure individual chunk limits for players using `/chunkadmin setlimit <player> <amount>` and `/chunkadmin removelimit <player>`.
+- **External Commands on Claim:** Configure console commands to execute when a claim succeeds, fails, or when a chunk is unclaimed (configurable in `config.yml`).
+- **Indefinite Visualization:** Set `visualization.duration-seconds` to `0` or `-1` to keep visualization particles active indefinitely (toggleable via `/visualizechunk`).
+- **Crop Trampling Fix:** Fixed a bug where unauthorized players could trample and break crops in claimed chunks.
+
 ### v0.6.0+
 - **Major Architecture Update:** Brought the plugin to Minecraft 26.1 API native support.
 - **Single JAR Compatibility:** Truly universal binary that works with both 1.21.0-1.21.11 and 26.1+ servers without version detection needed.
@@ -101,6 +107,13 @@ Don't want to type commands all day? Now you can claim chunks using your **Confi
 ---
 
 ## 🗺️ Roadmap
+- Pagination for large claim lists
+- Offline player trust management
+- Map integration
+- Force load chunks (customisable for admins)
+
+Issues and feature requests welcome!
+ap
 - Pagination for large claim lists
 - Offline player trust management
 - Map integration

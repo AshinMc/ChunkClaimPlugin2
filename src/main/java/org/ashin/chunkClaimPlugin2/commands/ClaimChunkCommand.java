@@ -59,7 +59,8 @@ public class ClaimChunkCommand implements CommandExecutor {
         }
 
         // Check max claims limit
-        int maxClaims = plugin.getConfig().getInt("max-claims-per-player", 10);
+        int defaultMax = plugin.getConfig().getInt("max-claims-per-player", 10);
+        int maxClaims = chunkManager.getPlayerLimit(player.getUniqueId(), defaultMax);
         if (maxClaims > 0) {
             int currentCount = chunkManager.getPlayerChunkCount(player.getUniqueId());
             if (currentCount >= maxClaims) {
@@ -81,8 +82,20 @@ public class ClaimChunkCommand implements CommandExecutor {
             if (messages.isMessageEnabled("claim-success")) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-success", "name", claimName));
             }
+            // Run success commands
+            java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-success");
+            for (String cmd : cmds) {
+                org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
+            }
         } else {
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-fail"));
+            // Run fail commands
+            java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-fail");
+            for (String cmd : cmds) {
+                org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
+            }
         }
 
         return true;

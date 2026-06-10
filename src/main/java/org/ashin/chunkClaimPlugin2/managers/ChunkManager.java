@@ -30,6 +30,8 @@ public class ChunkManager {
     private final Map<String, Set<UUID>> trustedPlayers = new HashMap<>();
     // Claim flags: "ownerUUID:claimNameLowerCase" -> { flagName -> enabled }
     private final Map<String, Map<String, Boolean>> claimFlags = new HashMap<>();
+    // Player individual limits: UUID -> limit
+    private final Map<UUID, Integer> playerLimits = new HashMap<>();
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
@@ -387,6 +389,24 @@ public class ChunkManager {
     }
 
     /**
+     * Set an individual claim limit for a player. Set to null or a negative value to remove.
+     */
+    public void setPlayerLimit(UUID playerId, Integer limit) {
+        if (limit == null || limit < 0) {
+            playerLimits.remove(playerId);
+        } else {
+            playerLimits.put(playerId, limit);
+        }
+    }
+
+    /**
+     * Get the player's individual limit if it exists, otherwise return the default limit.
+     */
+    public int getPlayerLimit(UUID playerId, int defaultLimit) {
+        return playerLimits.getOrDefault(playerId, defaultLimit);
+    }
+
+    /**
      * Get the default value for a flag.
      */
     public static boolean getDefaultFlag(String flag) {
@@ -497,6 +517,23 @@ public class ChunkManager {
                 }
             }
         }
+
+        // Load player limits
+        playerLimits.clear();
+        if (dataConfig.contains("player-limits")) {
+            ConfigurationSection limitsSection = dataConfig.getConfigurationSection("player-limits");
+            if (limitsSection != null) {
+                for (String uuidStr : limitsSection.getKeys(false)) {
+                    try {
+                        UUID uuid = UUID.fromString(uuidStr);
+                        int limit = limitsSection.getInt(uuidStr);
+                        playerLimits.put(uuid, limit);
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Invalid UUID in player-limits: " + uuidStr);
+                    }
+                }
+            }
+        }
     }
 
     public void saveData() {
@@ -523,6 +560,12 @@ public class ChunkManager {
             for (Map.Entry<String, Boolean> flag : entry.getValue().entrySet()) {
                 dataConfig.set("claim-flags." + entry.getKey() + "." + flag.getKey(), flag.getValue());
             }
+        }
+
+        // Save player limits
+        dataConfig.set("player-limits", null);
+        for (Map.Entry<UUID, Integer> entry : playerLimits.entrySet()) {
+            dataConfig.set("player-limits." + entry.getKey().toString(), entry.getValue());
         }
 
         try {

@@ -137,7 +137,9 @@ public class AdminSettingsGUI {
         int slot = 0;
         for (String[] entry : particles) {
             String particleName = entry[0];
-            Material icon = Material.valueOf(entry[1]);
+            Material icon = Material.matchMaterial(entry[1]);
+            if (icon == null) icon = Material.OAK_LEAVES; // Fallback for 1.19 which lacks CHERRY_LEAVES
+            
             boolean selected = particleName.equals(current);
             ItemStack item = new ItemStack(icon);
             ItemMeta meta = item.getItemMeta();

@@ -51,7 +51,7 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
 
     private void registerCommands() {
         getCommand("claimchunk").setExecutor(new ClaimChunkCommand(this, chunkManager, messageManager));
-        getCommand("unclaimchunk").setExecutor(new UnclaimChunkCommand(chunkManager, messageManager));
+        getCommand("unclaimchunk").setExecutor(new UnclaimChunkCommand(this, chunkManager, messageManager));
         getCommand("checkchunk").setExecutor(new CheckChunkCommand(chunkManager, messageManager));
         getCommand("infochunk").setExecutor(new InfoChunkCommand(chunkManager, messageManager));
         getCommand("visualizechunk").setExecutor(new VisualizeChunkCommand(this, chunkManager, messageManager));

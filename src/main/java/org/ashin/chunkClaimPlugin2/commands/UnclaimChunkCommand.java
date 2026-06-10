@@ -11,8 +11,10 @@ import org.bukkit.entity.Player;
 public class UnclaimChunkCommand implements CommandExecutor {
     private final ChunkManager chunkManager;
     private final MessageManager messages;
+    private final org.bukkit.plugin.java.JavaPlugin plugin;
 
-    public UnclaimChunkCommand(ChunkManager chunkManager, MessageManager messages) {
+    public UnclaimChunkCommand(org.bukkit.plugin.java.JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
     }
@@ -50,6 +52,12 @@ public class UnclaimChunkCommand implements CommandExecutor {
             if (messages.isMessageEnabled("unclaim-success")) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-success",
                         "name", claimName, "count", String.valueOf(count)));
+            }
+            // Run success commands
+            java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.unclaim-success");
+            for (String cmd : cmds) {
+                org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
             }
         } else {
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-fail", "name", claimName));

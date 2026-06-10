@@ -59,3 +59,12 @@ claim-flags:
   interact-stonecutter: true
   interact-door: true
   interact-redstone: true
+
+# Commands to run from console on certain events
+# Available placeholders: %player%, %claim%
+event-commands:
+  claim-success: []
+  # Example:
+  # - "give %player% diamond 1"
+  claim-fail: []
+  unclaim-success: []

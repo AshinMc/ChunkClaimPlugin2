@@ -3,8 +3,7 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.6.0'
-
+version = '0.7.0'
 
     repositories {
         mavenCentral()
@@ -15,13 +14,13 @@ version = '0.6.0'
     }
 
     dependencies {
-    // Target Minecraft 1.21.x API (works for both 1.21.x and 26.1.x)
-    // Paper API 1.21.4+ (version 26.1) includes all previous 1.21.x APIs
-    compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
+    // Target Minecraft 1.19.4 API to ensure backwards compatibility 
+    // It will still run fine on 1.20 and 1.21
+    compileOnly 'org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT'
 
         // Add these dependencies with proper scope
-        compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.15'
-        compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.4.0'
+        compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.9'
+        compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.2.15'
     }
 
     // WorldGuard 7.0.15 uses strict version constraints that conflict with
@@ -35,7 +34,7 @@ version = '0.6.0'
         }
     }
 
-def targetJavaVersion = 21
+def targetJavaVersion = 17
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -54,7 +53,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    def props = [version: version, apiVersion: '1.21']
+    // API version 1.13 ensures it loads on 1.13+ including 1.19, 1.20, 1.21
+    def props = [version: version, apiVersion: '1.13']
     inputs.properties props
     filteringCharset 'UTF-8'
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -68,6 +68,6 @@ jar {
     archiveBaseName.set('ChunkClaimPlugin')
     manifest {
         attributes 'Multi-Version': 'true'
-        attributes 'Supported-Versions': '1.21.x,26.1'
+        attributes 'Supported-Versions': '1.19.x,1.20.x,1.21.x,26.1'
     }
 }
