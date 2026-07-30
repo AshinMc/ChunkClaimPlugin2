@@ -63,6 +63,7 @@ Each claim group has toggleable settings:
 | Mob Protection | Protect passive mobs from players | ON |
 | Explosions | Block TNT/Wither damage | ON |
 | PvP | Prevent player combat | OFF |
+| Fire Spread | Block fire burn and spread | ON |
 | Block Interactions | Protect chests, furnaces, doors | ON |
 
 ## 🔑 Permissions
@@ -77,6 +78,7 @@ Each claim group has toggleable settings:
 - `ccp.lang` - Change personal language
 - `ccp.teleport` - Teleport to claims (v0.6.0+)
 - `ccp.transfer` - Transfer claim ownership (v0.6.0+)
+- `ccp.flag.*` - Toggle claim flags in settings GUI (v0.7.0+)
 - `chunkclaim.admin` - Admin GUI (OP only)
 - `chunkclaimprotection.bypass` - Bypass all protection (OP only)
 
@@ -89,6 +91,10 @@ locale: "en_US"                    # Default server language
 max-claims-per-player: 10          # Claims per player
 claim-item: "WOODEN_SHOVEL"        # Item for right-click claiming
 mob-protection: true               # Protect passive mobs by default
+title-duration:                    # Title timing (fade-in, stay, fade-out)
+  fade-in: 10
+  stay: 70
+  fade-out: 20
 message-toggles:                   # Admin control over chat messages
   deny-break: true
   deny-place: true
@@ -150,6 +156,7 @@ Toggle protection for your specific claim:
 - **Mob Protection** - Protect passive animals (cows, pigs)
 - **Explosions** - Block TNT/Wither damage
 - **PvP** - Allow/disable player combat
+- **Fire Spread** - Block fire burn and spread
 - **Chest Interactions** - Protect chests and containers
 - **Furnace Interactions** - Protect furnaces
 - **Utility Interactions** - Protect stonecutters and crafting blocks
@@ -160,12 +167,18 @@ Toggle protection for your specific claim:
 
 ## 🎯 What's New in v0.7.0
 
-- ✨ Multi-version support for Minecraft 1.19.x, 1.20.x, 1.21.x and 26.1+
+- ✨ **Developer API & Custom Events:** Full API access via `ChunkClaimAPI` (`ChunkClaimPlugin2.getInstance().getChunkManager()`) and cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
+- ✨ **PlaceholderAPI Integration:** Parse PAPI placeholders in player messages + custom `%ccp_*%` placeholders (`%ccp_claimed_chunks%`, `%ccp_max_chunks%`, `%ccp_chunk_owner%`, `%ccp_claim_name%`, `%ccp_is_claimed%`, `%ccp_total_claims%`).
+- ✨ **Fire Spread Protection:** New `fire-spread` flag prevents fire burning, ignite spreading, and block spread in claims.
+- ✨ **Granular Flag Permissions:** Permission nodes (`ccp.flag.*` and `ccp.flag.<flagname>`) to control flag toggles in GUI.
+- ✨ **Configurable Title Duration:** Control welcome banner timing (`fade-in`, `stay`, `fade-out`) in `config.yml`.
+- ✨ **Fixed Mob Protection Display Bug:** Resolved missing translation string for passive mob protection in GUI.
+- ✨ Multi-version support for Minecraft 1.19.x, 1.20.x, 1.21.x and 26.x
 - ✨ Individual Chunk Limits configuration for admins
 - ✨ External Command integration for Claim/Unclaim events
 - ✨ Indefinite Chunk Visualization support
 - ✨ Crop Trampling protection fix in claimed chunks
-- ✨ Java 17 support for older server instances
+- ✨ Java 17+ / Java 21 support for server instances
 
 ## 🎯 What's New in v0.6.0+
 
