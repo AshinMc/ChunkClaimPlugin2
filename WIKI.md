@@ -42,6 +42,7 @@ claim-item: "WOODEN_SHOVEL"
 # Particle settings for chunk visualization (/visualizechunk)
 visualization:
   duration-seconds: 10
+# set to -1 to make it indefinite
   particle-height: 100
   particle-spacing: 0.5
   particle-type: FLAME # Options: FLAME, END_ROD, HEART, VILLAGER_HAPPY, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES
