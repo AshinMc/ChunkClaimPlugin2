@@ -44,6 +44,12 @@ protection:
   prevent-block-place: true
   prevent-interactions: true
 
+# Title message display duration (ticks: 20 ticks = 1 second)
+title-duration:
+  fade-in: 10
+  stay: 70
+  fade-out: 20
+
 # Default claim flags (applied to new claims)
 # Players can toggle these per-claim in /chunksettings -> Claims -> Claim Settings
 claim-flags:
@@ -53,6 +59,7 @@ claim-flags:
   mob-protection: true   # Block players from attacking non-hostile mobs (cows, pigs, etc.)
   explosions: true       # Block explosion damage (creepers, TNT, etc.)
   pvp: false             # Block PvP combat
+  fire-spread: true      # Block fire spread and burning in claim
   greeting-title: true   # Show welcome title when entering claim
   interact-chest: true
   interact-furnace: true

@@ -12,20 +12,43 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ChunkClaimPlugin2 extends JavaPlugin {
 
+    private static ChunkClaimPlugin2 instance;
     private ChunkManager chunkManager;
     private MessageManager messageManager;
 
+    public static ChunkClaimPlugin2 getInstance() {
+        return instance;
+    }
+
+    public ChunkManager getChunkManager() {
+        return chunkManager;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
+    }
+
     @Override
     public void onEnable() {
+        instance = this;
         // Initialize config
         saveDefaultConfig();
 
-        // Initialize chunk manager
+        // Initialize chunk manager & message manager
         chunkManager = new ChunkManager(this);
-    messageManager = new MessageManager(this);
+        messageManager = new MessageManager(this);
+
+        // Initialize public Developer API
+        org.ashin.chunkClaimPlugin2.api.ChunkClaimAPI.init(chunkManager);
 
         // Register commands
         registerCommands();
+
+        // Register PlaceholderAPI expansion if available
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new org.ashin.chunkClaimPlugin2.placeholders.ChunkClaimExpansion(this, chunkManager).register();
+            getLogger().info("Hooked into PlaceholderAPI successfully!");
+        }
 
         getLogger().info("ChunkClaimPlugin2 has been enabled!");
 

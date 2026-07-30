@@ -61,7 +61,10 @@ public class PlayerMoveListener implements Listener {
                     subtitle = "Owned by " + ownerName;
                 }
                 
-                player.sendTitle(title, subtitle, 10, 70, 20);
+                int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
+                int stay = plugin.getConfig().getInt("title-duration.stay", 70);
+                int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 20);
+                player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
             }
         }
     }

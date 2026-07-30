@@ -317,6 +317,7 @@ public class SettingsGUI {
             { ChunkManager.FLAG_MOB_PROTECTION, "COW_SPAWN_EGG", "gui-flag-mob-protection" },
             { ChunkManager.FLAG_EXPLOSIONS,   "TNT",            "gui-flag-explosions" },
             { ChunkManager.FLAG_PVP,          "IRON_SWORD",     "gui-flag-pvp" },
+            { ChunkManager.FLAG_FIRE_SPREAD,  "FLINT_AND_STEEL", "gui-flag-fire-spread" },
             { ChunkManager.FLAG_GREETING_TITLE, "OAK_SIGN",     "gui-flag-greeting-title" },
             { ChunkManager.FLAG_INTERACT_CHEST, "CHEST",        "gui-flag-interact-chest" },
             { ChunkManager.FLAG_INTERACT_FURNACE, "FURNACE",    "gui-flag-interact-furnace" },

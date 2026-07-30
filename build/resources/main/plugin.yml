@@ -2,7 +2,7 @@ name: CCP
 version: '0.7.0'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.13'
-softdepend: [WorldGuard, WorldEdit]
+softdepend: [WorldGuard, WorldEdit, PlaceholderAPI]
 commands:
   claimchunk:
     description: Claim the chunk you are standing in with an optional name
@@ -71,6 +71,48 @@ permissions:
     default: true
   ccp.teleport:
     description: Allows teleporting to chunks
+    default: true
+  ccp.flag.*:
+    description: Allows toggling all claim flags in settings GUI
+    default: true
+  ccp.flag.mob-griefing:
+    description: Allows toggling mob-griefing flag
+    default: true
+  ccp.flag.mob-spawning:
+    description: Allows toggling mob-spawning flag
+    default: true
+  ccp.flag.mob-entry:
+    description: Allows toggling mob-entry flag
+    default: true
+  ccp.flag.mob-protection:
+    description: Allows toggling mob-protection flag
+    default: true
+  ccp.flag.explosions:
+    description: Allows toggling explosions flag
+    default: true
+  ccp.flag.pvp:
+    description: Allows toggling pvp flag
+    default: true
+  ccp.flag.fire-spread:
+    description: Allows toggling fire-spread flag
+    default: true
+  ccp.flag.greeting-title:
+    description: Allows toggling greeting-title flag
+    default: true
+  ccp.flag.interact-chest:
+    description: Allows toggling chest interaction flag
+    default: true
+  ccp.flag.interact-furnace:
+    description: Allows toggling furnace interaction flag
+    default: true
+  ccp.flag.interact-stonecutter:
+    description: Allows toggling stonecutter interaction flag
+    default: true
+  ccp.flag.interact-door:
+    description: Allows toggling door interaction flag
+    default: true
+  ccp.flag.interact-redstone:
+    description: Allows toggling redstone interaction flag
     default: true
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks

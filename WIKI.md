@@ -1,202 +1,172 @@
-﻿# CCP (Chunk Claim Plugin 2) Server Wiki
+# 📘 ChunkClaimPlugin2 (CCP) — Server Owner Wiki & Guide
 
-Welcome to the definitive guide on setting up and managing CCP on your Spigot/Paper server!
-
----
-
-## 💻 1. Installation
-
-1. Download the universal JAR file:
-   - Download `ChunkClaimPlugin.jar` - Works with **Minecraft 1.19.x, 1.20.x, 1.21.x and 26.1+**
-   - Requires **Java 17** or higher.
-2. Drop the plugin into your `plugins/` folder.
-3. Restart or reload your server.
-
-**Integrations:** 
-CCP natively supports **WorldGuard** and **WorldEdit** overlap protection to ensure players don't claim over existing server regions. They are treated as soft dependencies.
+Welcome to the official documentation for **ChunkClaimPlugin2**. This guide covers installation, configuration, claim flags, permissions, admin commands, and PlaceholderAPI integration for server administrators.
 
 ---
 
-## 🛠️ 2. Permissions (LuckPerms)
-
-The plugin has been refactored in v0.5.2 to use the much shorter `ccp.*` permission node map, fully supporting server groups (like LuckPerms, Vault, etc.).
-
-| Permission Node | Action Granted | Default |
-|---|---|---|
-| `ccp.claim` | Claim a chunk (command/item) | Everyone |
-| `ccp.expand` | Add a chunk to an existing group | Everyone |
-| `ccp.unclaim` | Unclaim a chunk | Everyone |
-| `ccp.check` | Use `/checkchunk` | Everyone |
-| `ccp.info` | Use `/infochunk` | Everyone |
-| `ccp.visualize` | Use `/visualizechunk` | Everyone |
-| `ccp.settings` | Open `/chunksettings` GUI | Everyone |
-| `ccp.lang` | Change personal language | Everyone |
-| `ccp.teleport` | Use `/chunktp` command | Everyone |
-| `ccp.transfer` | Transfer claim ownership | Everyone |
-| `chunkclaimprotection.bypass` | Admins bypass protection flags | OP |
-| `chunkclaim.admin` | Open `/chunkadmin` | OP |
-
-*Tip: Add `ccp.*` to give players all normal commands.*
+## 📋 Table of Contents
+1. [Installation & Setup](#-installation--setup)
+2. [Configuration Reference (`config.yml`)](#-configuration-reference-configyml)
+3. [Claim Flags & Interactive Protection](#-claim-flags--interactive-protection)
+4. [Permissions Reference](#-permissions-reference)
+5. [Admin Commands & Management](#-admin-commands--management)
+6. [PlaceholderAPI Reference](#-placeholderapi-reference)
+7. [Localization & Multi-Language (`lang/`)](#-localization--multi-language-lang)
 
 ---
 
-## ⚙️ 3. Configuration & Defaults
+## 🛠️ Installation & Setup
 
-Here is the default `config.yml` that will generate during the first boot. 
-Admins can either edit this file and use `/chunkadmin` GUI to reload the configuration, or alter the settings natively via the `/chunkadmin` interface.
+1. Download or compile `ChunkClaimPlugin.jar`.
+2. Place `ChunkClaimPlugin.jar` into your server's `plugins/` directory.
+3. (Optional) Install [WorldGuard](https://enginehub.org/worldguard/) if region protection checks are needed.
+4. (Optional) Install [PlaceholderAPI](https://mcbops.com/placeholderapi) for placeholder support.
+5. Restart your server to generate default configuration files.
+
+---
+
+## ⚙️ Configuration Reference (`config.yml`)
+
+The primary configuration file is located at `plugins/ChunkClaimPlugin2/config.yml`.
 
 ```yaml
-# Default language out of the 7 provided (en_US, es_ES, fr_FR, zh_CN, de_DE, pt_BR, ru_RU)
-locale: "en_US"
+# Language / Locale (en_US, es_ES, fr_FR, de_DE, pt_BR, ru_RU, zh_CN)
+locale: en_US
 
-# The amount of chunk properties a regular player can possess
+# Default maximum number of chunks a player can claim (0 = unlimited)
 max-claims-per-player: 10
 
-# Allow players to claim chunks using an item instead of the /ccp claim command
-# To disable, set to false
+# Item used to claim chunks on right-click (Set to "NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
 
-# Visual border particle (Requires particle name)
+# Particle settings for chunk visualization (/visualizechunk)
 visualization:
-  particle-type: "FLAME"
-  duration-seconds: 10 # Set to 0 or -1 for indefinite visualization
+  duration-seconds: 10
+  particle-height: 100
+  particle-spacing: 0.5
+  particle-type: FLAME # Options: FLAME, END_ROD, HEART, VILLAGER_HAPPY, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES
 
-# Default flags generated on newly created chunks
+# Title message display timing (20 ticks = 1 second)
+title-duration:
+  fade-in: 10
+  stay: 70
+  fade-out: 20
+
+# Default claim flags for new claims (true = protection enabled / blocked)
 claim-flags:
-  mob-griefing: true           # Block creeper, enderman theft, snow trails
-  mob-spawning: false          # Allow normal mob spawning
-  mob-entry: false             # Allow mobs to walk in (if true, invisible wall active)
-  mob-protection: true         # Protect passive mobs (cows, pigs, etc.) from player damage
-  explosions: true             # Block TNT, Wither, Creeper block damage
-  pvp: false                   # Disallow PVP by default
-  greeting-title: true         # Pop Welcome Titles and Subtitles when visiting
-  
-  # Block Interactions (Set to true to PROTECT them from visitors)
-  interact-chest: true
-  interact-furnace: true
-  interact-stonecutter: true
-  interact-door: true
-  interact-redstone: true
+  mob-griefing: true     # Block endermen, snow golems, silverfish
+  mob-spawning: false    # Block natural mob spawning
+  mob-entry: false       # Push mobs out of chunk (invisible wall)
+  mob-protection: true   # Block non-owners from hurting cows, pigs, villagers
+  explosions: true       # Block Creeper / TNT block damage
+  pvp: false             # Block PvP combat
+  fire-spread: true      # Block fire burn and spread
+  greeting-title: true   # Show welcome title on entry
+  interact-chest: true   # Protect chests, barrels, shulker boxes
+  interact-furnace: true # Protect furnaces, blast furnaces, smokers
+  interact-stonecutter: true # Protect stonecutters, crafting tables
+  interact-door: true    # Protect doors, trapdoors, fence gates
+  interact-redstone: true# Protect levers, buttons, repeaters
 
-# Commands to run from console on certain events
-# Available placeholders: %player%, %claim%
+# Console commands executed on claim events
 event-commands:
   claim-success: []
-  # Example:
-  # - "give %player% diamond 1"
   claim-fail: []
   unclaim-success: []
-
-# Message toggles: Admins can suppress specific messages without code changes
-# Set to false to disable the message from appearing in chat
-message-toggles:
-  deny-break: true             # Show "cannot break blocks" message
-  deny-place: true             # Show "cannot place blocks" message
-  deny-interact: true          # Show "cannot interact" message
-  deny-entity: true            # Show "cannot damage entities" message
-  deny-pvp: true               # Show "cannot PVP" message
-  claim-success: true          # Show successful claim message
-  unclaim-success: true        # Show successful unclaim message
 ```
 
 ---
 
-## 🚪 4. The GUI Menus Explained
+## 🛡️ Claim Flags & Interactive Protection
 
-### The Player Settings GUI (`/ccp settings`)
-A deeply integrated GUI allowing chunk owners to customize their individual experiences.
+Players can customize flags per claim group via `/chunksettings` -> **Claims** -> **Claim Settings**.
 
-- **Rename Claims**: Players can rename existing chunks seamlessly via Chat Sync prompt.
-- **Claim Details**: Access detailed information about your claims including:
-  - **Transfer Ownership**: Transfer claim ownership to another online player while preserving all settings, trusted players, and flags.
-  - **Teleport**: Teleport to the center of your claim with safe landing height.
-  - **Trusted Players**: Grant other players bypass access over all active flags within that specific claim.
-  - **Claim Settings**: Toggle protection flags on/off for your specific claim group.
-- **Granular Toggle Switches**: Interaction toggles inside the *"Claim Settings"* section. Every group (Furnaces, Chests, Utility Blocks, Mobs, etc.) can be checked individually. *(Green = Allowed, Red = Denied)*.
-
-### The Admin GUI (`/ccp admin`)
-Allows quick Server Administration modification to variables like *Max Claims* and changing the server's master locale or restarting `config.yml` directly from the game without file restarts!
-
-### Message Toggle Configuration
-Admins can now control which protection denial messages appear to players by editing the `message-toggles` section in `config.yml`. This allows you to:
-- Hide repetitive "cannot break blocks" messages if you prefer a different approach
-- Show only critical messages like PvP denials
-- Suppress success messages to reduce chat spam
-- Customize the player experience without code changes
-
-*Example: Set `deny-break: false` to prevent the "You cannot break blocks" message from appearing when players try to damage blocks in claimed chunks.*
+| Flag | Item Icon | Description | Default |
+|---|---|---|---|
+| `mob-griefing` | Snow Block | Blocks mob block modification (Endermen, Snow Golems) | `true` |
+| `mob-spawning` | Spawner | Blocks natural mob spawning inside the claim | `false` |
+| `mob-entry` | Iron Bars | Prevents mobs from entering claim (invisible wall) | `false` |
+| `mob-protection` | Cow Spawn Egg | Prevents visitors from attacking passive animals & mobs | `true` |
+| `explosions` | TNT | Prevents TNT, Creeper, and Wither explosions | `true` |
+| `pvp` | Iron Sword | Prevents player vs player combat | `false` |
+| `fire-spread` | Flint & Steel | Prevents fire spread and block burning | `true` |
+| `greeting-title` | Oak Sign | Displays title banner when entering claim | `true` |
+| `interact-chest` | Chest | Protects chests, barrels, ender chests, and shulker boxes | `true` |
+| `interact-furnace` | Furnace | Protects furnaces, blast furnaces, and smokers | `true` |
+| `interact-stonecutter` | Stonecutter | Protects stonecutters, crafting tables, and utilities | `true` |
+| `interact-door` | Oak Door | Protects doors, trapdoors, and fence gates | `true` |
+| `interact-redstone` | Redstone | Protects levers, buttons, repeaters, and comparators | `true` |
 
 ---
 
-## 🔧 5. Claiming Chunks Without Commands
+## 🔐 Permissions Reference
 
-As of v0.5.2, if **`claim-item`** is defined in `config.yml` (e.g., `WOODEN_SHOVEL`), a player can **right-click** while holding that item inside an unclaimed chunk. A chat prompt will ask them to name the claim (or they can type `cancel`).
+Configure these permissions using a permissions plugin such as **LuckPerms**:
 
-Once answered correctly, the property bounds will instantly draw and associate the real estate to that user.
+### Player Permissions (`default: true`)
+- `ccp.claim` — Allows `/claimchunk` and item right-click claiming.
+- `ccp.unclaim` — Allows `/unclaimchunk`.
+- `ccp.check` — Allows `/checkchunk`.
+- `ccp.info` — Allows `/infochunk`.
+- `ccp.visualize` — Allows `/visualizechunk`.
+- `ccp.expand` — Allows `/chunkexpand`.
+- `ccp.lang` — Allows `/chunklang`.
+- `ccp.settings` — Allows `/chunksettings`.
+- `ccp.teleport` — Allows `/chunktp`.
 
----
+### Flag Toggle Permissions (`default: true`)
+- `ccp.flag.*` — Allows toggling all claim flags in the GUI.
+- `ccp.flag.mob-griefing` — Allows toggling mob griefing flag.
+- `ccp.flag.mob-spawning` — Allows toggling mob spawning flag.
+- `ccp.flag.mob-entry` — Allows toggling mob entry flag.
+- `ccp.flag.mob-protection` — Allows toggling passive mob protection flag.
+- `ccp.flag.explosions` — Allows toggling explosions flag.
+- `ccp.flag.pvp` — Allows toggling PvP flag.
+- `ccp.flag.fire-spread` — Allows toggling fire spread flag.
+- `ccp.flag.greeting-title` — Allows toggling greeting title flag.
+- `ccp.flag.interact-chest` — Allows toggling chest protection flag.
+- `ccp.flag.interact-furnace` — Allows toggling furnace protection flag.
+- `ccp.flag.interact-stonecutter` — Allows toggling utility interaction flag.
+- `ccp.flag.interact-door` — Allows toggling door protection flag.
+- `ccp.flag.interact-redstone` — Allows toggling redstone protection flag.
 
-## ✨ 6. Key Features Explained
-
-### Individual Chunk Limits
-Admins can configure individual chunk limits for specific players, overriding the global `max-claims-per-player` setting.
-- Command: `/chunkadmin setlimit <player> <amount>`
-- Command: `/chunkadmin removelimit <player>` (removes individual limit, reverting to global)
-
-### Indefinite Visualization
-You can configure chunk visualizations to stay active indefinitely by setting `visualization.duration-seconds` to `0` or `-1` in `config.yml`. Players can turn off an active indefinite visualization by typing `/visualizechunk` again.
-
-### External Commands on Claim Events
-You can automatically execute commands from the server console when specific actions occur:
-- `claim-success`: Triggers when a claim is created successfully.
-- `claim-fail`: Triggers when a claim attempt fails.
-- `unclaim-success`: Triggers when a claim group is removed.
-Placeholders `%player%` and `%claim%` are supported in the commands. Edit the `event-commands` section in `config.yml` to configure.
-
-### Mob Protection Flag
-The `mob-protection` flag controls whether players can damage **passive mobs** (cows, pigs, sheep, horses, etc.) within claimed chunks:
-- **Enabled (true)**: Players CANNOT hurt passive mobs in the claim
-- **Disabled (false)**: Players CAN hurt passive mobs
-- **Hostile Mobs**: Zombies, creepers, and other hostile mobs can ALWAYS be damaged, regardless of this setting
-
-This allows server admins to protect animal farms while still letting players defend against monsters.
-
-### Teleport Command
-Use `/chunktp <name>` to quickly teleport to any of your claims:
-- Teleports to the chunk center at a safe height
-- Works across different worlds
-- Respects player permissions (`ccp.teleport`)
-
-### Transfer Ownership
-Transfer claim ownership directly from the GUI:
-1. Open `/chunksettings` and navigate to a claim's details
-2. Click the "Transfer Ownership" button (ENDER_EYE icon)
-3. Select an online player
-4. Confirm the transfer
-5. All settings, trusted players, and flags are automatically preserved!
-
-This is useful for:
-- Handing off claims to clan members
-- Transferring land to new players
-- Management of multi-player bases
-
-### Player vs Player Combat Fix
-The PvP flag now correctly controls **only player-to-player combat**:
-- **PvP Enabled**: Players can attack each other
-- **PvP Disabled**: Players cannot attack each other
-- This setting does NOT affect mob interactions or other entity damage
-
-Previously, all entity damage was blocked uniformly, preventing even hostile mob combat.
+### Admin Permissions (`default: op`)
+- `chunkclaim.admin` — Access to `/chunkadmin` GUI and setting player limits.
+- `chunkclaimprotection.bypass` — Bypasses all chunk protection restrictions.
 
 ---
 
-## 💡 7. Tips for Server Admins
+## 👑 Admin Commands & Management
 
-- Use `message-toggles` to customize the player experience and reduce chat spam
-- Set `mob-protection: false` if your server focuses on player-run farms without interference
-- Limit `max-claims-per-player` on large servers to manage claim density
-- Enable `greeting-title` for immersive claim entry announcements
-- Use the `/chunkadmin` GUI to quickly adjust settings without file edits
-- Use the new `/chunkadmin setlimit` to reward specific players or ranks with more claims!
+- **`/chunkadmin`** — Opens the admin control panel GUI.
+- **`/chunkadmin setlimit <player> <amount>`** — Sets a custom chunk claim limit for a specific player.
+- **`/chunkadmin removelimit <player>`** — Removes custom chunk claim limit for a player (reverts to config default).
 
-**Have an awesome server setup!**
+---
+
+## 📊 PlaceholderAPI Reference
+
+When PlaceholderAPI is installed, you can use the `%ccp_*%` expansion in TAB, Scoreboards, Holograms, and Chat:
+
+| Placeholder | Description | Example Output |
+|---|---|---|
+| `%ccp_claimed_chunks%` | Number of chunks claimed by player | `5` |
+| `%ccp_max_chunks%` | Max chunk limit for player | `10` or `Unlimited` |
+| `%ccp_is_claimed%` | Whether player's current chunk is claimed | `true` / `false` |
+| `%ccp_chunk_owner%` | Owner name of current chunk | `Steve` or `Unclaimed` |
+| `%ccp_claim_name%` | Claim group name of current chunk | `Base` or `None` |
+| `%ccp_total_claims%` | Total claimed chunks across the server | `142` |
+
+---
+
+## 🌐 Localization & Multi-Language (`lang/`)
+
+Plugin messages are stored in `plugins/ChunkClaimPlugin2/lang/`. Each player can independently select their preferred language using `/chunklang set <locale>`:
+
+- `en_US` — English (US)
+- `es_ES` — Spanish (Spain)
+- `fr_FR` — French (France)
+- `de_DE` — German (Germany)
+- `pt_BR` — Portuguese (Brazil)
+- `ru_RU` — Russian (Russia)
+- `zh_CN` — Chinese (Simplified)

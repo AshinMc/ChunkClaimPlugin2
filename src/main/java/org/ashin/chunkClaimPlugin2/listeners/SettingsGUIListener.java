@@ -196,6 +196,7 @@ public class SettingsGUIListener implements Listener {
             case COW_SPAWN_EGG -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_MOB_PROTECTION;
             case TNT        -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_EXPLOSIONS;
             case IRON_SWORD -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_PVP;
+            case FLINT_AND_STEEL -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_FIRE_SPREAD;
             case OAK_SIGN   -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_GREETING_TITLE;
             case CHEST      -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_CHEST;
             case FURNACE    -> org.ashin.chunkClaimPlugin2.managers.ChunkManager.FLAG_INTERACT_FURNACE;
@@ -205,6 +206,12 @@ public class SettingsGUIListener implements Listener {
             default -> null;
         };
         if (flagKey == null) return;
+
+        // Check permission for flag toggle
+        if (!player.hasPermission("ccp.flag.*") && !player.hasPermission("ccp.flag." + flagKey)) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), "flag-no-permission"));
+            return;
+        }
 
         boolean current = chunkManager.getClaimFlag(player.getUniqueId(), sh.claimName, flagKey);
         chunkManager.setClaimFlag(player.getUniqueId(), sh.claimName, flagKey, !current);

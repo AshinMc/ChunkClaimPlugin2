@@ -10,7 +10,8 @@ version = '0.7.0'
         // Add these repositories
         maven { url = 'https://maven.enginehub.org/repo/' }
         maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
-    maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+        maven { url = 'https://oss.sonatype.org/content/groups/public/' }
+        maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
     }
 
     dependencies {
@@ -21,6 +22,7 @@ version = '0.7.0'
         // Add these dependencies with proper scope
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.9'
         compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.2.15'
+        compileOnly 'me.clip:placeholderapi:2.11.6'
     }
 
     // WorldGuard 7.0.15 uses strict version constraints that conflict with
@@ -68,6 +70,6 @@ jar {
     archiveBaseName.set('ChunkClaimPlugin')
     manifest {
         attributes 'Multi-Version': 'true'
-        attributes 'Supported-Versions': '1.19.x,1.20.x,1.21.x,26.1'
+        attributes 'Supported-Versions': '1.19.x,1.20.x,1.21.x,26.x'
     }
 }

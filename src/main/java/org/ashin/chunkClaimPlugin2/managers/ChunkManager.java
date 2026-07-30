@@ -83,6 +83,10 @@ public class ChunkManager {
      */
     public boolean claimChunk(Player player, Chunk chunk, String name) {
         if (!canClaimChunk(chunk, player)) return false;
+        org.ashin.chunkClaimPlugin2.api.events.ChunkClaimEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkClaimEvent(player, chunk, name);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
+        name = event.getClaimName();
         String key = getChunkKey(chunk);
         chunkOwners.put(key, player.getUniqueId());
         chunkNames.put(key, name);
@@ -100,6 +104,10 @@ public class ChunkManager {
         String key = getChunkKey(chunk);
         UUID owner = chunkOwners.get(key);
         if (owner == null || !owner.equals(player.getUniqueId())) return false;
+        String claimName = chunkNames.getOrDefault(key, "world");
+        org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent(owner, claimName, chunk);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
         chunkOwners.remove(key);
         chunkNames.remove(key);
         return true;
@@ -109,6 +117,10 @@ public class ChunkManager {
         String key = getChunkKey(world, x, z);
         UUID owner = chunkOwners.get(key);
         if (owner == null || !owner.equals(playerId)) return false;
+        String claimName = chunkNames.getOrDefault(key, "world");
+        org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent(owner, claimName, null);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
         chunkOwners.remove(key);
         chunkNames.remove(key);
         return true;
@@ -120,6 +132,10 @@ public class ChunkManager {
      */
     public boolean renameClaim(UUID playerId, String oldName, String newName) {
         if (hasClaimName(playerId, newName)) return false;
+        org.ashin.chunkClaimPlugin2.api.events.ChunkRenameEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkRenameEvent(playerId, oldName, newName);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
+        newName = event.getNewName();
 
         boolean renamed = false;
         for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
@@ -152,6 +168,9 @@ public class ChunkManager {
      */
     public int transferClaim(UUID oldOwner, UUID newOwner, String claimName) {
         if (oldOwner.equals(newOwner)) return 0;
+        org.ashin.chunkClaimPlugin2.api.events.ChunkTransferEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkTransferEvent(oldOwner, newOwner, claimName);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return 0;
 
         int transferred = 0;
         for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
@@ -183,6 +202,10 @@ public class ChunkManager {
      * @return number of chunks unclaimed
      */
     public int unclaimByName(UUID playerId, String name) {
+        org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent event = new org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent(playerId, name, null);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return 0;
+
         List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
             if (entry.getValue().equals(playerId)) {
@@ -329,6 +352,7 @@ public class ChunkManager {
     public static final String FLAG_MOB_PROTECTION = "mob-protection";
     public static final String FLAG_EXPLOSIONS   = "explosions";
     public static final String FLAG_PVP          = "pvp";
+    public static final String FLAG_FIRE_SPREAD  = "fire-spread";
     public static final String FLAG_GREETING_TITLE = "greeting-title";
     
     public static final String FLAG_INTERACT_CHEST = "interact-chest";
@@ -339,11 +363,11 @@ public class ChunkManager {
 
     /** Ordered list for GUI display. */
     public static final String[] ALL_FLAGS = {
-        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_MOB_PROTECTION, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_GREETING_TITLE,
+        FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_MOB_PROTECTION, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_FIRE_SPREAD, FLAG_GREETING_TITLE,
         FLAG_INTERACT_CHEST, FLAG_INTERACT_FURNACE, FLAG_INTERACT_STONECUTTER, FLAG_INTERACT_DOOR, FLAG_INTERACT_REDSTONE
     };
 
-    /** Default values: false = allow interaction (visitors can use them), true = block interaction. Wait, original logic blocked them all. So default false means blocked? No, let's say true = visitors CAN interact. But we want consistency: true = protection enabled (visitors CANNOT interact). */
+    /** Default values: true = protection enabled / blocked action, false = allowed action */
     private static final Map<String, Boolean> DEFAULT_FLAGS = Map.ofEntries(
         Map.entry(FLAG_MOB_GRIEFING, true),   // block mob griefing by default
         Map.entry(FLAG_MOB_SPAWNING, false),  // allow mob spawning by default
@@ -351,6 +375,7 @@ public class ChunkManager {
         Map.entry(FLAG_MOB_PROTECTION, true), // protect non-hostile mobs by default
         Map.entry(FLAG_EXPLOSIONS,   true),   // block explosions by default
         Map.entry(FLAG_PVP,          false),  // allow PvP by default
+        Map.entry(FLAG_FIRE_SPREAD,  true),   // block fire spread by default
         Map.entry(FLAG_GREETING_TITLE, true), // show welcome title by default
         Map.entry(FLAG_INTERACT_CHEST, true),      // protect chests by default
         Map.entry(FLAG_INTERACT_FURNACE, true),    // protect furnaces by default

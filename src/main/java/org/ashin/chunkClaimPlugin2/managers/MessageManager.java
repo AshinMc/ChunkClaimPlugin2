@@ -249,6 +249,12 @@ public class MessageManager {
 
         if (raw == null) raw = key; // fallback to key
         String msg = applyPlaceholders(raw, placeholders);
+        if (uuid != null && plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            org.bukkit.entity.Player player = plugin.getServer().getPlayer(uuid);
+            if (player != null) {
+                msg = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, msg);
+            }
+        }
         return colorize(msg);
     }
 

@@ -131,19 +131,55 @@ public class ChunkProtectionListener implements Listener {
 
     /**
      * Prevents players from attacking/destroying entities (minecarts, animals, armor stands, etc.)
-     * in chunks claimed by someone else.
+     * in chunks claimed by someone else when mob-protection flag is enabled.
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (event.getEntity() instanceof Player) return; // Handled in onPvP
         Player player = resolveAttacker(event.getDamager());
         if (player == null) return;
 
         Chunk chunk = event.getEntity().getLocation().getChunk();
         if (canModifyChunk(player, chunk)) return;
 
-        event.setCancelled(true);
-        if (messages.isMessageEnabled("deny-entity")) {
-            player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+        if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_PROTECTION)) {
+            event.setCancelled(true);
+            if (messages.isMessageEnabled("deny-entity")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
+            }
+        }
+    }
+
+    // ── Fire spread protection (flag-gated) ──
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBlockBurn(org.bukkit.event.block.BlockBurnEvent event) {
+        Chunk chunk = event.getBlock().getChunk();
+        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_FIRE_SPREAD)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBlockIgnite(org.bukkit.event.block.BlockIgniteEvent event) {
+        Chunk chunk = event.getBlock().getChunk();
+        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_FIRE_SPREAD)) {
+            if (event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.SPREAD
+                    || event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LAVA
+                    || event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LIGHTNING) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBlockSpread(org.bukkit.event.block.BlockSpreadEvent event) {
+        Chunk chunk = event.getBlock().getChunk();
+        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_FIRE_SPREAD)) {
+            String type = event.getSource().getType().name();
+            if (type.contains("FIRE")) {
+                event.setCancelled(true);
+            }
         }
     }
 
