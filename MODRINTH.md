@@ -37,6 +37,7 @@ Protect your land by claiming chunks with named claim groups, per-claim trust ma
 
 
 For complete admin documentation, see the [**Server Owner Wiki**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md).
+
 For developer documentation, see the [**Documentation Wiki**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/DEVELOPER.md)
 
 ## 🛡️ Protection Flags
