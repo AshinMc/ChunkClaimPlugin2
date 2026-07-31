@@ -5,7 +5,7 @@ Protect your land by claiming chunks with named claim groups, per-claim trust ma
 ## 🚀 Features
 
 - **Named Claim Groups** - Claim multiple chunks under one name and expand anytime
-- **Dual Version Support** - Single JAR works on Minecraft 1.21.0-1.21.11 AND 26.1+ servers
+- **Multi-Version Support** - Single JAR works on Minecraft 1.19.x, 1.20.x, 1.21.x AND 26.x servers
 - **GUI-Based Management** - No config file edits needed; use `/chunksettings` to manage everything
 - **Per-Claim Trust System** - Grant other players building access for specific claim groups
 - **Granular Protection Flags** - Toggle mob griefing, spawning, explosions, PvP, and block interactions per claim
@@ -17,24 +17,8 @@ Protect your land by claiming chunks with named claim groups, per-claim trust ma
 - **WorldGuard Integration** - Prevents claiming over WorldGuard regions
 - **Item-Based Claiming** - Right-click with a configurable item (default: Wooden Shovel) to claim chunks
 - **Entry Titles** - Players see welcome titles when entering claimed areas
+- **Developer Friendly** - Developers are free to use the API to utilise more potential, also PlaceholderAPI supported
 
-## ⚡ Quick Start
-
-1. **Install**
-   - Download `ChunkClaimPlugin.jar`
-   - Drop into your `plugins/` folder
-   - Restart your server
-
-2. **Claim a Chunk**
-   - Option A: Hold a Wooden Shovel and right-click in an unclaimed chunk
-   - Option B: Use `/claimchunk <name>` or `/ccp claim <name>` command
-
-3. **Manage Your Claims**
-   - Type `/chunksettings` or `/ccp settings` to open the GUI
-   - Invite trusted players, toggle protection flags, rename claims
-
-4. **Teleport** (v0.6.0+)
-   - Use `/chunktp <name>` or `/ccp tp <name>` to teleport to any of your claims
 
 ## 📋 Essential Commands
 
@@ -50,6 +34,10 @@ Protect your land by claiming chunks with named claim groups, per-claim trust ma
 | `/chunktp <name>` | `/ccp tp <name>` | Teleport to a claim (v0.6.0+) |
 | `/visualizechunk [name]` | `/ccp visualize [name]` | Visualize claim boundaries |
 | `/chunklang` | `/ccp lang` | Change your language (per-player) |
+
+
+For complete admin documentation, see the [**Server Owner Wiki**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md).
+For developer documentation, see the [**Documentation Wiki**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/DEVELOPER.md)
 
 ## 🛡️ Protection Flags
 
@@ -103,7 +91,6 @@ message-toggles:                   # Admin control over chat messages
   # ... and more
 ```
 
-For complete admin documentation, see the [**Server Owner Wiki**](WIKI.md).
 
 ## 🌍 Localization
 
