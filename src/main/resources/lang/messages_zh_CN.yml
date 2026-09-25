@@ -117,7 +117,7 @@ admin-unclaim-chunk-notify: "&c管理员移除了你在 &eX: %x%, Z: %z% &c的�
 admin-unclaim-group-notify: "&c管理员移除了你的领地组 &e%claim%&c。"
 admin-unclaim-all-notify: "&c管理员移除了你所有的区块领地。"
 greeting-actionbar: "&e%claim% &8| &7领主: &a%player%"
-greeting-actionbar-sale: "&e%claim% &8| &7领主: &a%player% &8| &a出售中: &6%price% &7(/claimbuy)"
+greeting-actionbar-sale: "&e%claim% &8| &7领主: &a%player% &8| &a出售中: &6%price% &7(/claimtrade buy)"
 greeting-subtitle-sale: "&7所有者: %player% &8| &a出售中: &6%price%"
 wilderness-actionbar: "&2~ 荒野 ~"
 claim-cost-notice: "&7认领花费: &e%cost%"

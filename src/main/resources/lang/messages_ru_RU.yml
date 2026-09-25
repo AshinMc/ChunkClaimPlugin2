@@ -117,7 +117,7 @@ admin-unclaim-chunk-notify: "&cАдминистратор удалил ваш п
 admin-unclaim-group-notify: "&cАдминистратор удалил вашу группу приватов &e%claim%&c."
 admin-unclaim-all-notify: "&cАдминистратор удалил все ваши приваты чанков."
 greeting-actionbar: "&e%claim% &8| &7Владелец: &a%player%"
-greeting-actionbar-sale: "&e%claim% &8| &7Владелец: &a%player% &8| &aПродаётся: &6%price% &7(/claimbuy)"
+greeting-actionbar-sale: "&e%claim% &8| &7Владелец: &a%player% &8| &aПродаётся: &6%price% &7(/claimtrade buy)"
 greeting-subtitle-sale: "&7Владелец: %player% &8| &aПродаётся: &6%price%"
 wilderness-actionbar: "&2~ Дикие земли ~"
 claim-cost-notice: "&7Стоимость привата: &e%cost%"

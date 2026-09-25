@@ -86,13 +86,13 @@ public class PlayerMoveListener implements Listener {
                 subtitle = messages.getFor(player.getUniqueId(), "greeting-subtitle-sale",
                         "player", ownerName, "price", priceStr);
                 if (subtitle.equals("greeting-subtitle-sale")) {
-                    subtitle = "§7Owned by " + ownerName + " §8| §aFor Sale: §6" + priceStr + " §7(/claimbuy)";
+                    subtitle = "§7Owned by " + ownerName + " §8| §aFor Sale: §6" + priceStr + " §7(/claimtrade buy)";
                 }
 
                 actionBar = messages.getFor(player.getUniqueId(), "greeting-actionbar-sale",
                         "claim", toName, "player", ownerName, "price", priceStr);
                 if (actionBar.equals("greeting-actionbar-sale")) {
-                    actionBar = "§e" + toName + " §8| §7Owner: §a" + ownerName + " §8| §aFor Sale: §6" + priceStr + " §7(/claimbuy)";
+                    actionBar = "§e" + toName + " §8| §7Owner: §a" + ownerName + " §8| §aFor Sale: §6" + priceStr + " §7(/claimtrade buy)";
                 }
             } else {
                 subtitle = messages.getFor(player.getUniqueId(), "greeting-subtitle", "player", ownerName);

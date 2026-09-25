@@ -28,21 +28,18 @@ commands:
     description: Expand an existing named claim by adding the current chunk
     usage: /<command> <name>
     permission: ccp.expand
-  chunksell:
-    description: Put a claim group up for sale or cancel sale
-    usage: /<command> <name> <price|cancel>
-    permission: ccp.sell
-  claimbuy:
-    description: Buy a claim group currently for sale
-    usage: /<command> [name]
-    permission: ccp.buy
+  claimtrade:
+    description: Buy, sell, or trade claims with other players
+    usage: /<command> [buy|sell|cancel|list]
+    aliases: [chunktrade]
+    permission: ccp.trade
   chunklang:
     description: View or set your language/locale
     usage: /<command> [get|list|set <locale>]
     permission: ccp.lang
   chunksettings:
-    description: Open the chunk settings GUI
-    usage: /<command>
+    description: Open the chunk settings GUI or configure settings via subcommands
+    usage: /<command> [subcommand]
     permission: ccp.settings
   chunktp:
     description: Teleport to a chunk by claim name
@@ -56,11 +53,14 @@ permissions:
   ccp.claim:
     description: Allows claiming chunks
     default: true
+  ccp.trade:
+    description: Allows trading (buying and selling) claims with other players
+    default: true
   ccp.sell:
-    description: Allows listing claims for sale
+    description: Legacy permission for listing claims for sale
     default: true
   ccp.buy:
-    description: Allows buying claims that are for sale
+    description: Legacy permission for buying claims that are for sale
     default: true
   ccp.admin.unclaim:
     description: Allows administrators to remove any player chunks

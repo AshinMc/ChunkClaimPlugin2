@@ -482,7 +482,7 @@ public class ChunkManager {
     };
 
     /** Default values: true = protection enabled / blocked action, false = allowed action */
-    private static final Map<String, Boolean> DEFAULT_FLAGS = Map.ofEntries(
+    public static final Map<String, Boolean> DEFAULT_FLAGS = Map.ofEntries(
         Map.entry(FLAG_MOB_GRIEFING, true),   // block mob griefing by default
         Map.entry(FLAG_MOB_SPAWNING, false),  // allow mob spawning by default
         Map.entry(FLAG_MOB_ENTRY,    false),  // allow all mob entry by default

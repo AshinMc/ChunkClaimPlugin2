@@ -89,14 +89,11 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getCommand("visualizechunk").setExecutor(new VisualizeChunkCommand(this, chunkManager, messageManager));
         getCommand("chunkexpand").setExecutor(new ChunkExpandCommand(this, chunkManager, messageManager, economyManager));
 
-        // Marketplace commands
-        ClaimSellCommand sellCmd = new ClaimSellCommand(chunkManager, messageManager, economyManager);
-        if (getCommand("chunksell") != null) {
-            getCommand("chunksell").setExecutor(sellCmd);
-            getCommand("chunksell").setTabCompleter(sellCmd);
-        }
-        if (getCommand("claimbuy") != null) {
-            getCommand("claimbuy").setExecutor(new ClaimBuyCommand(this, chunkManager, messageManager, economyManager));
+        // Marketplace command
+        ClaimTradeCommand tradeCmd = new ClaimTradeCommand(this, chunkManager, messageManager, economyManager);
+        if (getCommand("claimtrade") != null) {
+            getCommand("claimtrade").setExecutor(tradeCmd);
+            getCommand("claimtrade").setTabCompleter(tradeCmd);
         }
 
         // Language command for per-player locale
@@ -107,7 +104,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         }
 
         if (getCommand("chunksettings") != null) {
-            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(this, chunkManager, messageManager, economyManager));
+            ChunkSettingsCommand settingsCmd = new ChunkSettingsCommand(this, chunkManager, messageManager, economyManager);
+            getCommand("chunksettings").setExecutor(settingsCmd);
+            getCommand("chunksettings").setTabCompleter(settingsCmd);
         }
         if (getCommand("chunktp") != null) {
             getCommand("chunktp").setExecutor(new ChunkTeleportCommand(chunkManager, messageManager));
