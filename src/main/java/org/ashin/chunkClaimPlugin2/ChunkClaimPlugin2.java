@@ -1,6 +1,7 @@
 package org.ashin.chunkClaimPlugin2;
 
 import org.ashin.chunkClaimPlugin2.commands.*;
+import org.ashin.chunkClaimPlugin2.economy.EconomyManager;
 import org.ashin.chunkClaimPlugin2.listeners.AdminSettingsGUIListener;
 import org.ashin.chunkClaimPlugin2.listeners.ChunkProtectionListener;
 import org.ashin.chunkClaimPlugin2.listeners.ItemClaimListener;
@@ -15,6 +16,7 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     private static ChunkClaimPlugin2 instance;
     private ChunkManager chunkManager;
     private MessageManager messageManager;
+    private EconomyManager economyManager;
 
     public static ChunkClaimPlugin2 getInstance() {
         return instance;
@@ -28,15 +30,22 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         return messageManager;
     }
 
+    public EconomyManager getEconomyManager() {
+        return economyManager;
+    }
+
     @Override
     public void onEnable() {
         instance = this;
-        // Initialize config
+        // Initialize config & auto-update missing default keys for existing installations
         saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
-        // Initialize chunk manager & message manager
+        // Initialize managers
         chunkManager = new ChunkManager(this);
         messageManager = new MessageManager(this);
+        economyManager = new EconomyManager(this);
 
         // Initialize public Developer API
         org.ashin.chunkClaimPlugin2.api.ChunkClaimAPI.init(chunkManager);
@@ -53,13 +62,13 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getLogger().info("ChunkClaimPlugin2 has been enabled!");
 
         // Register listeners
-    getServer().getPluginManager().registerEvents(new ChunkProtectionListener(this, chunkManager, messageManager), this);
-        getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager), this);
-    getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager), this);
-    getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
-    getServer().getPluginManager().registerEvents(new ItemClaimListener(this, chunkManager, messageManager), this);
-    getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener(this, chunkManager, messageManager), this);
-    getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.ChatRenameListener(this, chunkManager, messageManager), this);
+        getServer().getPluginManager().registerEvents(new ChunkProtectionListener(this, chunkManager, messageManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinLocaleListener(messageManager, economyManager), this);
+        getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager, economyManager), this);
+        getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
+        getServer().getPluginManager().registerEvents(new ItemClaimListener(this, chunkManager, messageManager, economyManager), this);
+        getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener(this, chunkManager, messageManager, economyManager), this);
+        getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.ChatRenameListener(this, chunkManager, messageManager, economyManager), this);
     }
 
     @Override
@@ -73,26 +82,40 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getCommand("claimchunk").setExecutor(new ClaimChunkCommand(this, chunkManager, messageManager));
-        getCommand("unclaimchunk").setExecutor(new UnclaimChunkCommand(this, chunkManager, messageManager));
+        getCommand("claimchunk").setExecutor(new ClaimChunkCommand(this, chunkManager, messageManager, economyManager));
+        getCommand("unclaimchunk").setExecutor(new UnclaimChunkCommand(this, chunkManager, messageManager, economyManager));
         getCommand("checkchunk").setExecutor(new CheckChunkCommand(chunkManager, messageManager));
         getCommand("infochunk").setExecutor(new InfoChunkCommand(chunkManager, messageManager));
         getCommand("visualizechunk").setExecutor(new VisualizeChunkCommand(this, chunkManager, messageManager));
-        getCommand("chunkexpand").setExecutor(new ChunkExpandCommand(this, chunkManager, messageManager));
+        getCommand("chunkexpand").setExecutor(new ChunkExpandCommand(this, chunkManager, messageManager, economyManager));
+
+        // Marketplace commands
+        ClaimSellCommand sellCmd = new ClaimSellCommand(chunkManager, messageManager, economyManager);
+        if (getCommand("chunksell") != null) {
+            getCommand("chunksell").setExecutor(sellCmd);
+            getCommand("chunksell").setTabCompleter(sellCmd);
+        }
+        if (getCommand("claimbuy") != null) {
+            getCommand("claimbuy").setExecutor(new ClaimBuyCommand(this, chunkManager, messageManager, economyManager));
+        }
+
         // Language command for per-player locale
         ChunkLangCommand langCmd = new ChunkLangCommand(messageManager);
         if (getCommand("chunklang") != null) {
             getCommand("chunklang").setExecutor(langCmd);
             getCommand("chunklang").setTabCompleter(langCmd);
         }
+
         if (getCommand("chunksettings") != null) {
-            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(this, chunkManager, messageManager));
+            getCommand("chunksettings").setExecutor(new ChunkSettingsCommand(this, chunkManager, messageManager, economyManager));
         }
         if (getCommand("chunktp") != null) {
             getCommand("chunktp").setExecutor(new ChunkTeleportCommand(chunkManager, messageManager));
         }
         if (getCommand("chunkadmin") != null) {
-            getCommand("chunkadmin").setExecutor(new ChunkAdminCommand(this, chunkManager, messageManager));
+            ChunkAdminCommand adminCmd = new ChunkAdminCommand(this, chunkManager, messageManager);
+            getCommand("chunkadmin").setExecutor(adminCmd);
+            getCommand("chunkadmin").setTabCompleter(adminCmd);
         }
     }
 }
