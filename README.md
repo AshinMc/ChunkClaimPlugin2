@@ -2,58 +2,66 @@
 
 # CCP (Chunk Claim Plugin 2)
 
-A feature-rich, high-performance Minecraft chunk protection plugin designed for modern Spigot & Paper servers (1.19.x – 26.x). Features named claim groups, per-player localization, interactive inventory GUIs, PlaceholderAPI support, fire spread protection, particle border visualization, and a developer API.
+A fast, lightweight chunk protection plugin for modern Spigot & Paper servers (1.19.x through 26.x). Features named claim groups, multi-economy support (Vault & native physical gold/items), player claim trading, action bar greetings, per-player localization, interactive inventory GUIs, particle borders, and a developer API.
 
 - **Supported Server Engine:** Spigot / Paper 1.19.x, 1.20.x, 1.21.x, and 26.x
 - **Java Runtime:** Java 17+ (Java 21 supported)
-- **Plugin Version:** 0.7.0
+- **Plugin Version:** 0.8.0
 
 ---
 
-## 🌟 Key Feature Overview
+## 🌟 Feature Overview
 
-- 🏷️ **Named Claim Groups:** Claim individual chunks or group them together under custom names (e.g. `/claimchunk Base`, `/chunkexpand Base`).
+- 🏷️ **Named Claim Groups:** Claim single chunks or expand multi-chunk groups under custom names (e.g. `/claimchunk Base`, `/chunkexpand Base`).
+- 💰 **Flexible Multi-Economy & Marketplace:** Optional land claiming costs and player-to-player claim trading (`/chunksell`, `/claimbuy`). Works with **Vault** (EssentialsX, CMI), **Gold Banks** (Gringotts), or **Native Items** (Gold Ingots, Diamonds) with zero extra plugins required.
+- 💬 **Action Bar Greetings:** Configurable claim entry alerts in the action bar, title bar, subtitle, or chat, plus wilderness transition notices.
+- 👑 **Admin Land Management:** Instantly remove griefed or abandoned land with `/chunkadmin unclaim`, `/chunkadmin unclaimplayer`, or via the GUI Chunk Inspector.
 - 🌐 **Multi-Language (i18n):** Per-player language settings (`/chunklang`). Supports English (`en_US`), Spanish (`es_ES`), French (`fr_FR`), German (`de_DE`), Portuguese (`pt_BR`), Russian (`ru_RU`), and Chinese (`zh_CN`).
-- 📊 **PlaceholderAPI Integration:** Full support for PlaceholderAPI placeholders in player messages and custom placeholders (`%ccp_claimed_chunks%`, `%ccp_max_chunks%`, `%ccp_chunk_owner%`, `%ccp_claim_name%`, `%ccp_is_claimed%`).
-- 🔥 **Fire Spread & Explosion Protection:** Prevent fire burning, fire spreading, and TNT/Creeper explosions inside claimed land.
-- 🎨 **Particle Border Visualizer:** Per-player custom particle effects (`FLAME`, `HEART`, `SOUL_FIRE_FLAME`, `CHERRY_LEAVES`, `SNOWFLAKE`, etc.) for visualizing claim boundaries.
-- ⚔️ **Granular Interaction & Flag Protection:** Toggle settings for Chests, Furnaces, Doors, Redstone, Mob Entry Wall, Mob Griefing, PvP, Passive Mob Protection, and Welcome Titles directly in `/chunksettings`.
-- 🤝 **Player Trust & Ownership Transfer:** Easily trust friends or transfer claim ownership via the GUI.
-- 💻 **Developer API & Custom Events:** Full API access (`ChunkClaimAPI`) and cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
+- 📊 **PlaceholderAPI Integration:** Full PAPI expansion for claim stats, ownership, names, and marketplace status (`%ccp_claimed_chunks%`, `%ccp_max_chunks%`, `%ccp_chunk_owner%`, `%ccp_claim_name%`, `%ccp_is_for_sale%`, `%ccp_claim_price%`).
+- 🔥 **Protection Flags & Anti-Grief:** Per-claim toggles for Chests, Furnaces, Doors, Redstone, Mob Entry Wall, Mob Griefing, PvP, Passive Mob Protection, Explosions, and Fire Spread in `/chunksettings`.
+- 🎨 **Particle Border Visualizer:** Per-player custom particle effects (`FLAME`, `HEART`, `SOUL_FIRE_FLAME`, `CHERRY_LEAVES`, `SNOWFLAKE`, etc.) for visualizing boundaries.
+- 🤝 **Trust & Ownership Transfer:** Trust friends per claim group or transfer ownership to other players.
+- 💻 **Developer API:** Full programmatic access via `ChunkClaimAPI` and cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
 
 ---
 
-## 📚 Documentation Navigation
+## 📚 Documentation
 
-- 📘 [**Server Owner Wiki & Guide (WIKI.md)**](WIKI.md) — Complete guide for server administrators: installation, configuration, permissions, claim flags, admin commands, and PlaceholderAPI reference.
-- 💻 [**Developer API Guide (DEVELOPER.md)**](DEVELOPER.md) — Complete guide for developers: Maven/Gradle setup, `ChunkClaimAPI` usage, listening to cancellable events, and code examples.
+- 📘 [**Server Owner Wiki & Guide (WIKI.md)**](WIKI.md) — Setup, configuration reference, economy setup, permissions, admin commands, and PlaceholderAPI.
+- 💻 [**Developer API Guide (DEVELOPER.md)**](DEVELOPER.md) — API methods, events, and code examples.
 
 ---
 
-## 📜 Quick Command Reference
+## 📜 Command Reference
 
 | Command | Permission | Description |
 |---|---|---|
-| `/claimchunk [name]` | `ccp.claim` | Claim the chunk you are standing in with an optional name |
-| `/chunkexpand <name>` | `ccp.expand` | Expand an existing claim group by adding current chunk |
-| `/unclaimchunk [name]` | `ccp.unclaim` | Unclaim a claim group by name or current chunk |
+| `/claimchunk [name]` | `ccp.claim` | Claim current chunk with an optional group name |
+| `/chunkexpand <name>` | `ccp.expand` | Add current chunk to an existing claim group |
+| `/unclaimchunk [name]` | `ccp.unclaim` | Unclaim a claim group by name, or current chunk |
+| `/chunksell <name> <price\|cancel>` | `ccp.sell` | Put a claim group up for sale or cancel listing |
+| `/claimbuy [name]` | `ccp.buy` | Purchase a claim group currently for sale |
 | `/checkchunk` | `ccp.check` | Check ownership and claim name of current chunk |
 | `/infochunk` | `ccp.info` | View a list of your claim groups |
-| `/visualizechunk [name]`| `ccp.visualize` | Visualize claim borders with particles |
-| `/chunklang [locale]` | `ccp.lang` | View, list, or set your language |
-| `/chunksettings` | `ccp.settings` | Open the player chunk management GUI |
+| `/visualizechunk [name]` | `ccp.visualize` | Visualize claim borders with particles |
+| `/chunklang [locale]` | `ccp.lang` | View, list, or set your personal language |
+| `/chunksettings` | `ccp.settings` | Open the chunk management GUI |
 | `/chunktp <name>` | `ccp.teleport` | Teleport to a claim group by name |
-| `/chunkadmin` | `chunkclaim.admin` | Open the admin settings GUI & set player limits |
+| `/chunkadmin` | `chunkclaim.admin` | Open admin GUI control panel |
+| `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaim the chunk you are standing in |
+| `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaim a player's claim group or all chunks |
+| `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Set custom claim limit for a player |
+| `/chunkadmin removelimit <player>` | `chunkclaim.admin` | Reset player claim limit to default |
 
 ---
 
 ## 🛠️ Build & Installation
 
-1. Clone the repository:
+1. Clone repository:
    ```bash
    git clone https://github.com/AshinMc/ChunkClaimPlugin2.git
    ```
-2. Build with Gradle:
+2. Build with Gradle (Java 17 or 21):
    ```bash
    # Windows
    .\gradlew.bat build
@@ -61,7 +69,7 @@ A feature-rich, high-performance Minecraft chunk protection plugin designed for 
    # Linux / macOS
    ./gradlew build
    ```
-3. Copy `build/libs/ChunkClaimPlugin.jar` into your server's `plugins/` directory and restart your server!
+3. Put `build/libs/ChunkClaimPlugin.jar` into your server's `plugins/` directory and restart.
 
 ---
 

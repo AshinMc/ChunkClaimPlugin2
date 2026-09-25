@@ -7,12 +7,14 @@ Welcome to the developer documentation for **ChunkClaimPlugin2**. This guide cov
 ## 📋 Table of Contents
 1. [Adding CCP as a Dependency](#1-adding-ccp-as-a-dependency)
 2. [Accessing `ChunkClaimAPI`](#2-accessing-chunkclaimapi)
-3. [Custom Bukkit Events](#3-custom-bukkit-events)
+3. [Admin & Marketplace Operations](#3-admin--marketplace-operations)
+4. [Interacting with `EconomyManager`](#4-interacting-with-economymanager)
+5. [Custom Bukkit Events](#5-custom-bukkit-events)
    - [`ChunkClaimEvent`](#chunkclaimevent)
    - [`ChunkUnclaimEvent`](#chunkunclaimevent)
    - [`ChunkRenameEvent`](#chunkrenameevent)
    - [`ChunkTransferEvent`](#chunktransferevent)
-4. [Code Examples](#4-code-examples)
+6. [Code Examples](#6-code-examples)
 
 ---
 
@@ -28,12 +30,12 @@ softdepend: [CCP]
 ```
 
 ### Maven (`pom.xml`)
-If adding as a local system dependency or JAR reference:
+If adding as a local system dependency or compiled JAR:
 ```xml
 <dependency>
     <groupId>org.ashin</groupId>
     <artifactId>ChunkClaimPlugin</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -41,7 +43,7 @@ If adding as a local system dependency or JAR reference:
 ### Gradle (`build.gradle`)
 ```groovy
 dependencies {
-    compileOnly files('libs/ChunkClaimPlugin.jar')
+    compileOnly files('libs/ChunkClaimPlugin-0.8.0.jar')
 }
 ```
 
@@ -49,21 +51,9 @@ dependencies {
 
 ## 2. Accessing `ChunkManager` & `ChunkClaimAPI`
 
-You can access chunk data and operations either directly via `ChunkClaimPlugin2.getInstance().getChunkManager()` or via the `ChunkClaimAPI` singleton.
+You can access chunk data and operations either directly via `ChunkClaimPlugin2.getInstance().getChunkManager()` or via the `ChunkClaimAPI` singleton. All chunk modifications must be executed synchronously on the Bukkit main thread.
 
-### Option A: Via Main Plugin Instance
-```java
-import org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2;
-import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
-
-// Grab the manager directly from the main plugin class instance
-ChunkManager chunkManager = ChunkClaimPlugin2.getInstance().getChunkManager();
-
-// Check if a chunk is claimed
-boolean isClaimed = chunkManager.isChunkClaimed(chunk);
-```
-
-### Option B: Via `ChunkClaimAPI` Singleton
+### Accessing via `ChunkClaimAPI` Singleton
 ```java
 import org.ashin.chunkClaimPlugin2.api.ChunkClaimAPI;
 import org.bukkit.Chunk;
@@ -81,7 +71,7 @@ UUID ownerUUID = api.getChunkOwner(chunk);
 // Get chunk claim group name (returns null if unclaimed)
 String claimName = api.getChunkClaimName(chunk);
 
-// Check if a player can claim a chunk (evaluates ownership and WorldGuard regions)
+// Check if a player can claim a chunk (evaluates ownership, limits, and WorldGuard regions)
 boolean canClaim = api.canClaimChunk(chunk, player);
 
 // Get player claim stats
@@ -96,7 +86,78 @@ boolean pvpBlocked = api.getClaimFlag(ownerUUID, "Base", "pvp");
 
 ---
 
-## 3. Custom Bukkit Events
+## 3. Admin & Marketplace Operations
+
+`ChunkClaimAPI` exposes programmatic methods to bypass player permissions for admin cleanup, as well as query the claim sale status.
+
+### Admin Force Unclaiming
+```java
+ChunkClaimAPI api = ChunkClaimAPI.getInstance();
+
+// 1. Force unclaim a single chunk (regardless of owner)
+ChunkManager.AdminUnclaimResult result = api.adminUnclaimChunk(chunk);
+if (result != null) {
+    UUID previousOwner = result.getOwner();
+    String groupName = result.getClaimName();
+    int remainingInGroup = result.getRemainingChunks();
+    boolean wasGroupDeleted = result.isGroupDeleted();
+}
+
+// 2. Force unclaim an entire claim group by owner and name
+int chunksRemoved = api.adminUnclaimGroup(playerUUID, "Base");
+
+// 3. Purge all chunks and claim groups owned by a player
+int totalPurged = api.adminUnclaimAll(playerUUID);
+```
+
+### Marketplace Queries
+```java
+ChunkClaimAPI api = ChunkClaimAPI.getInstance();
+
+// Check if a specific claim group is listed for sale
+boolean forSale = api.isClaimForSale(ownerUUID, "MarketDistrict");
+
+// Get the listed price (returns null if not for sale)
+Double price = api.getClaimPrice(ownerUUID, "MarketDistrict");
+```
+
+---
+
+## 4. Interacting with `EconomyManager`
+
+ChunkClaimPlugin2 abstracts economy transactions through its `EconomyManager`. Whether the server is using Vault (with standard digital currency or gold banks like Gringotts) or native physical items (`GOLD_INGOT`), you can interact with the active economy seamlessly:
+
+```java
+import org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2;
+import org.ashin.chunkClaimPlugin2.economy.EconomyManager;
+import org.ashin.chunkClaimPlugin2.economy.EconomyMode;
+
+EconomyManager eco = ChunkClaimPlugin2.getInstance().getEconomyManager();
+
+// Check if an economy is active
+if (eco.isActive()) {
+    EconomyMode mode = eco.getMode(); // AUTO, VAULT, ITEM, or NONE
+
+    // Check player balance
+    double balance = eco.getBalance(player);
+
+    // Verify funds and withdraw
+    double cost = eco.calculateClaimCost(existingPlayerChunkCount);
+    if (eco.has(player, cost)) {
+        eco.withdraw(player, cost);
+    }
+
+    // Format amount into human-readable text (e.g., "15 Gold Ingot(s)" or "$150.00")
+    String display = eco.formatAmount(cost);
+
+    // Deposit to an online or offline player (automatically queues or handles offline Vault accounts)
+    eco.deposit(sellerOfflinePlayer, salePrice);
+}
+```
+
+---
+
+## 5. Custom Bukkit Events
 
 All CCP events extend `org.bukkit.event.Event` and implement `org.bukkit.event.Cancellable`.
 
@@ -170,7 +231,7 @@ public void onChunkTransfer(ChunkTransferEvent event) {
 
 ---
 
-## 4. Code Examples
+## 6. Code Examples
 
 ### Prevent PVP outside claimed land
 ```java
