@@ -4,7 +4,9 @@ import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -15,13 +17,15 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
- * Admin GUI for server-wide settings: max claims, default language, default particle, reload config.
+ * Admin GUI for server-wide settings: max claims, default language, default particle,
+ * greeting display mode, chunk inspector / force unclaim, and config reload.
  */
 public class AdminSettingsGUI {
 
-    public enum View { ADMIN_HOME, ADMIN_MAX_CLAIMS, ADMIN_LANGUAGE, ADMIN_PARTICLE }
+    public enum View { ADMIN_HOME, ADMIN_MAX_CLAIMS, ADMIN_LANGUAGE, ADMIN_PARTICLE, ADMIN_CHUNK_INSPECT }
 
     public static class AdminHolder implements org.bukkit.inventory.InventoryHolder {
         public final View view;
@@ -52,20 +56,79 @@ public class AdminSettingsGUI {
 
         // Default Language item
         String currentLocale = plugin.getConfig().getString("locale", "en_US");
-        inv.setItem(12, namedWithLore(Material.BOOK,
+        inv.setItem(11, namedWithLore(Material.BOOK,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-language")),
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + currentLocale));
 
         // Default Particle item
         String currentParticle = plugin.getConfig().getString("visualization.particle-type", "FLAME");
-        inv.setItem(14, namedWithLore(Material.BLAZE_POWDER,
+        inv.setItem(12, namedWithLore(Material.BLAZE_POWDER,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-particle")),
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + currentParticle));
+
+        // Greeting Display Mode item (NEW)
+        String currentGreeting = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+        inv.setItem(14, namedWithLore(Material.OAK_SIGN,
+                ChatColor.GOLD + "Greeting Display",
+                ChatColor.GRAY + "Mode: " + ChatColor.YELLOW + currentGreeting,
+                ChatColor.DARK_GRAY + "Click to cycle: ACTION_BAR / TITLE / SUBTITLE / CHAT / NONE"));
+
+        // Chunk Inspector / Admin Unclaim item (NEW)
+        Chunk chunk = player.getLocation().getChunk();
+        boolean isClaimed = chunkManager.isChunkClaimed(chunk);
+        inv.setItem(15, namedWithLore(Material.COMPASS,
+                ChatColor.AQUA + "Chunk Inspector",
+                ChatColor.GRAY + "Chunk: " + ChatColor.WHITE + "X: " + (chunk.getX() * 16) + ", Z: " + (chunk.getZ() * 16),
+                ChatColor.GRAY + "Status: " + (isClaimed ? ChatColor.GREEN + "Claimed" : ChatColor.YELLOW + "Unclaimed"),
+                ChatColor.DARK_GRAY + "Click to inspect & manage claim"));
 
         // Reload config item
         inv.setItem(16, named(Material.REDSTONE,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-reload"))));
 
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openChunkInspector(Player player) {
+        Inventory inv = Bukkit.createInventory(new AdminHolder(View.ADMIN_CHUNK_INSPECT), 27, "Admin Chunk Inspector");
+        Chunk chunk = player.getLocation().getChunk();
+        UUID owner = chunkManager.getChunkOwner(chunk);
+
+        if (owner == null) {
+            inv.setItem(13, namedWithLore(Material.GRASS_BLOCK,
+                    ChatColor.YELLOW + "Unclaimed Chunk",
+                    ChatColor.GRAY + "Coordinates: " + ChatColor.WHITE + "X: " + (chunk.getX() * 16) + ", Z: " + (chunk.getZ() * 16),
+                    ChatColor.GRAY + "World: " + ChatColor.WHITE + chunk.getWorld().getName(),
+                    ChatColor.GRAY + "This chunk is in the wilderness."));
+        } else {
+            OfflinePlayer offOwner = Bukkit.getOfflinePlayer(owner);
+            String ownerName = offOwner.getName() != null ? offOwner.getName() : owner.toString();
+            String claimName = chunkManager.getChunkClaimName(chunk);
+            if (claimName == null) claimName = "world";
+            int groupSize = chunkManager.getChunksByName(owner, claimName).size();
+
+            // Info center
+            inv.setItem(13, namedWithLore(Material.GOLDEN_PICKAXE,
+                    ChatColor.GOLD + claimName,
+                    ChatColor.GRAY + "Owner: " + ChatColor.YELLOW + ownerName,
+                    ChatColor.GRAY + "Coordinates: " + ChatColor.WHITE + "X: " + (chunk.getX() * 16) + ", Z: " + (chunk.getZ() * 16),
+                    ChatColor.GRAY + "Group size: " + ChatColor.YELLOW + groupSize + " chunk(s)"));
+
+            // Force unclaim this single chunk
+            inv.setItem(11, namedWithLore(Material.RED_CONCRETE,
+                    ChatColor.RED + "Force Unclaim Chunk",
+                    ChatColor.GRAY + "Removes only this specific chunk",
+                    ChatColor.DARK_RED + "Click to execute"));
+
+            // Force unclaim entire group
+            inv.setItem(15, namedWithLore(Material.TNT,
+                    ChatColor.DARK_RED + "Force Unclaim Entire Group",
+                    ChatColor.GRAY + "Removes all " + groupSize + " chunks in '" + claimName + "'",
+                    ChatColor.DARK_RED + "Click to execute"));
+        }
+
+        inv.setItem(18, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
         player.openInventory(inv);
         playClick(player);
     }
@@ -138,7 +201,7 @@ public class AdminSettingsGUI {
         for (String[] entry : particles) {
             String particleName = entry[0];
             Material icon = Material.matchMaterial(entry[1]);
-            if (icon == null) icon = Material.OAK_LEAVES; // Fallback for 1.19 which lacks CHERRY_LEAVES
+            if (icon == null) icon = Material.OAK_LEAVES; // Fallback for versions lacking CHERRY_LEAVES
             
             boolean selected = particleName.equals(current);
             ItemStack item = new ItemStack(icon);
@@ -158,9 +221,6 @@ public class AdminSettingsGUI {
         playClick(player);
     }
 
-    /**
-     * Returns the available particle options as {particleName, iconMaterial} pairs.
-     */
     public static String[][] getAvailableParticles() {
         return new String[][]{
                 {"FLAME", "BLAZE_POWDER"},
@@ -174,10 +234,6 @@ public class AdminSettingsGUI {
         };
     }
 
-    /**
-     * Convert a particle name string to a Bukkit Particle enum.
-     * Returns FLAME as fallback.
-     */
     public static Particle resolveParticle(String name) {
         if (name == null || name.isEmpty()) return Particle.FLAME;
         try {

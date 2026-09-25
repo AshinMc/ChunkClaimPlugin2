@@ -4,6 +4,7 @@ import org.ashin.chunkClaimPlugin2.gui.AdminSettingsGUI;
 import org.ashin.chunkClaimPlugin2.managers.ChunkManager;
 import org.ashin.chunkClaimPlugin2.managers.MessageManager;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,6 +14,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public class AdminSettingsGUIListener implements Listener {
     private final JavaPlugin plugin;
@@ -41,11 +44,10 @@ public class AdminSettingsGUIListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
+        if (!(event.getWhoClicked() instanceof Player player)) return;
         var top = event.getView().getTopInventory();
         var holder = top != null ? top.getHolder() : null;
-        if (!(holder instanceof AdminSettingsGUI.AdminHolder)) return;
+        if (!(holder instanceof AdminSettingsGUI.AdminHolder ah)) return;
 
         if (event.getClickedInventory() == null || event.getClickedInventory() != top) {
             event.setCancelled(true);
@@ -58,13 +60,12 @@ public class AdminSettingsGUIListener implements Listener {
                 || !clicked.hasItemMeta() || !clicked.getItemMeta().hasDisplayName()) return;
         String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
 
-        AdminSettingsGUI.AdminHolder ah = (AdminSettingsGUI.AdminHolder) holder;
-
         switch (ah.view) {
             case ADMIN_HOME: handleHome(player, clicked, name); break;
             case ADMIN_MAX_CLAIMS: handleMaxClaims(player, clicked, name); break;
             case ADMIN_LANGUAGE: handleLanguage(player, clicked, name); break;
             case ADMIN_PARTICLE: handleParticle(player, clicked, name); break;
+            case ADMIN_CHUNK_INSPECT: handleChunkInspect(player, clicked, name); break;
         }
     }
 
@@ -80,11 +81,56 @@ public class AdminSettingsGUIListener implements Listener {
             gui.openLanguage(player);
         } else if (name.equals(nPart)) {
             gui.openParticle(player);
+        } else if (name.contains("Greeting Display")) {
+            // Cycle greeting display mode: ACTION_BAR -> TITLE -> SUBTITLE -> CHAT -> NONE -> ACTION_BAR
+            String current = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+            String next = switch (current) {
+                case "ACTION_BAR" -> "TITLE";
+                case "TITLE" -> "SUBTITLE";
+                case "SUBTITLE" -> "CHAT";
+                case "CHAT" -> "NONE";
+                default -> "ACTION_BAR";
+            };
+            plugin.getConfig().set("greeting-display", next);
+            saveConfig();
+            player.sendMessage(ChatColor.GREEN + "Greeting display mode set to: " + ChatColor.YELLOW + next);
+            gui.openHome(player);
+        } else if (name.contains("Chunk Inspector")) {
+            gui.openChunkInspector(player);
         } else if (name.equals(nReload)) {
             plugin.reloadConfig();
             messages.reloadLocales();
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-config-reloaded"));
             gui.openHome(player);
+        }
+    }
+
+    private void handleChunkInspect(Player player, ItemStack clicked, String name) {
+        String back = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"));
+        if (name.equals(back) || clicked.getType() == Material.ARROW) {
+            gui.openHome(player);
+            return;
+        }
+
+        Chunk chunk = player.getLocation().getChunk();
+        UUID owner = chunkManager.getChunkOwner(chunk);
+        if (owner == null) return;
+
+        String claimName = chunkManager.getChunkClaimName(chunk);
+        if (claimName == null) claimName = "world";
+
+        if (clicked.getType() == Material.RED_CONCRETE || name.contains("Force Unclaim Chunk")) {
+            ChunkManager.AdminUnclaimResult res = chunkManager.adminUnclaimChunk(chunk);
+            if (res != null && res.success) {
+                chunkManager.saveData();
+                player.sendMessage(ChatColor.GREEN + "Successfully unclaimed chunk at X: " + (chunk.getX() * 16) + ", Z: " + (chunk.getZ() * 16) + "!");
+                gui.openChunkInspector(player);
+            }
+        } else if (clicked.getType() == Material.TNT || name.contains("Force Unclaim Entire Group")) {
+            int count = chunkManager.adminUnclaimGroup(owner, claimName);
+            chunkManager.saveData();
+            player.sendMessage(ChatColor.GREEN + "Successfully removed all " + count + " chunk(s) from claim '" + claimName + "'!");
+            gui.openChunkInspector(player);
         }
     }
 
@@ -123,7 +169,6 @@ public class AdminSettingsGUIListener implements Listener {
         String back = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"));
         if (name.equals(back)) { gui.openHome(player); return; }
 
-        // Name is the locale string
         if (messages.isLocaleAvailable(name)) {
             plugin.getConfig().set("locale", name);
             saveConfig();
@@ -136,7 +181,6 @@ public class AdminSettingsGUIListener implements Listener {
         String back = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"));
         if (name.equals(back)) { gui.openHome(player); return; }
 
-        // name is the particle type name
         try {
             org.bukkit.Particle.valueOf(name);
             plugin.getConfig().set("visualization.particle-type", name);
@@ -144,7 +188,6 @@ public class AdminSettingsGUIListener implements Listener {
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-particle-set", "particle", name));
             gui.openParticle(player);
         } catch (IllegalArgumentException ignored) {
-            // Not a valid particle name, ignore
         }
     }
 
