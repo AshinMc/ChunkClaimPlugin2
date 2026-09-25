@@ -20,13 +20,19 @@ public class SettingsGUIListener implements Listener {
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
+    private final org.ashin.chunkClaimPlugin2.economy.EconomyManager economyManager;
     private final SettingsGUI gui;
 
-    public SettingsGUIListener(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+    public SettingsGUIListener(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages, org.ashin.chunkClaimPlugin2.economy.EconomyManager economyManager) {
         this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
-        this.gui = new SettingsGUI(plugin, chunkManager, messages);
+        this.economyManager = economyManager;
+        this.gui = new SettingsGUI(plugin, chunkManager, messages, economyManager);
+    }
+
+    public SettingsGUIListener(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this(plugin, chunkManager, messages, null);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -288,6 +294,17 @@ public class SettingsGUIListener implements Listener {
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
                     String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
                     gui.openClaimSettings(player, claimName);
+                }
+                return;
+            }
+            // Sell claim button
+            if (clicked.getType() == Material.EMERALD && economyManager != null && economyManager.isEconomyEnabled()) {
+                ItemStack info = top.getItem(11);
+                if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
+                    String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
+                    player.closeInventory();
+                    player.setMetadata("ccp_selling_claim", new org.bukkit.metadata.FixedMetadataValue(plugin, claimName));
+                    player.sendMessage(messages.getFor(player.getUniqueId(), "sell-prompt", "name", claimName));
                 }
                 return;
             }

@@ -80,6 +80,22 @@ public class ChunkClaimExpansion extends PlaceholderExpansion {
                     String name = chunkManager.getChunkClaimName(currentChunk);
                     return name != null ? name : "world";
                 }
+
+                if (params.equalsIgnoreCase("is_for_sale")) {
+                    if (owner == null) return "false";
+                    String name = chunkManager.getChunkClaimName(currentChunk);
+                    return String.valueOf(name != null && chunkManager.isClaimForSale(owner, name));
+                }
+
+                if (params.equalsIgnoreCase("claim_price")) {
+                    if (owner == null) return "0";
+                    String name = chunkManager.getChunkClaimName(currentChunk);
+                    if (name != null && chunkManager.isClaimForSale(owner, name)) {
+                        Double price = chunkManager.getClaimPrice(owner, name);
+                        return price != null ? String.valueOf(price) : "0";
+                    }
+                    return "0";
+                }
             }
         }
 

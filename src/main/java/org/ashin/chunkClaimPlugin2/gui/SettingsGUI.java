@@ -34,11 +34,17 @@ public class SettingsGUI {
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
+    private final org.ashin.chunkClaimPlugin2.economy.EconomyManager economyManager;
 
-    public SettingsGUI(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+    public SettingsGUI(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages, org.ashin.chunkClaimPlugin2.economy.EconomyManager economyManager) {
         this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
+        this.economyManager = economyManager;
+    }
+
+    public SettingsGUI(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this(plugin, chunkManager, messages, null);
     }
 
     public void openHome(Player player) {
@@ -203,6 +209,24 @@ public class SettingsGUI {
 
         // Rename item (name tag)
         inv.setItem(24, named(Material.NAME_TAG, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-rename"))));
+
+        // Sell claim item (emerald) if economy is enabled
+        if (economyManager != null && economyManager.isEconomyEnabled()) {
+            boolean forSale = chunkManager.isClaimForSale(player.getUniqueId(), claimName);
+            Double price = forSale ? chunkManager.getClaimPrice(player.getUniqueId(), claimName) : null;
+            if (forSale && price != null) {
+                String priceStr = economyManager.getProvider().format(price);
+                inv.setItem(25, namedWithLore(Material.EMERALD,
+                        ChatColor.GREEN + "For Sale: " + priceStr,
+                        ChatColor.GRAY + "Listed on the market",
+                        ChatColor.YELLOW + "Click to edit price or cancel"));
+            } else {
+                inv.setItem(25, namedWithLore(Material.EMERALD,
+                        ChatColor.GOLD + "Sell Claim",
+                        ChatColor.GRAY + "Put this claim group up for sale",
+                        ChatColor.YELLOW + "Click to set sale price"));
+            }
+        }
 
         // Claim settings item (redstone torch)
         inv.setItem(20, named(Material.REDSTONE_TORCH, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-claim-settings"))));
@@ -387,6 +411,17 @@ public class SettingsGUI {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(name);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack namedWithLore(Material mat, String name, String... loreLines) {
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(name);
+        List<String> lore = new ArrayList<>();
+        for (String line : loreLines) lore.add(line);
+        meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
     }
