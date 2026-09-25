@@ -203,15 +203,20 @@ Server operators and staff with the `chunkclaim.admin` permission have full cont
   Sets a custom chunk limit for a specific player (0 = unlimited).
 - **`/chunkadmin removelimit <player>`**  
   Resets a player's limit back to the server-wide `max-claims-per-player` default.
+- **`/chunkadmin resetflag <flag> [remove|true|false]`**  
+  Purges or overrides a flag across **all** existing player claims on the server. If `remove` is used, all claims have that flag deleted and revert to the server default (useful for resetting legacy flags like `mob-protection`). Also supports `true` or `false` to force an override server-wide.
 
-### 2. GUI Chunk Inspector
+### 2. GUI Chunk Inspector & Global Flag Manager
 1. Type `/chunkadmin`.
-2. Click the **Chunk Inspector** (Compass icon).
-3. The GUI displays:
+2. **Chunk Inspector** (Compass icon):
    - Current chunk coordinates and world
    - Claim status and group name
    - Owner name and total chunks in that claim group
-4. Click **Force Unclaim Chunk** (Red concrete) or **Force Unclaim Entire Group** (TNT) with single-click confirmation.
+   - Force unclaim single chunk or entire group with confirmation.
+3. **Global Flag Manager** (Repeater icon):
+   - Left-click any flag to purge it from all server claims (reverts to server default).
+   - Right-click to force DISABLE (`false`) across all claims.
+   - Shift-click to force ENABLE (`true`) across all claims.
 
 ---
 

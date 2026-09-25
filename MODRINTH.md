@@ -50,6 +50,7 @@ The plugin is designed to be intuitive for survival players and low-overhead for
 | `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaims specific or all claims of a player |
 | `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Sets a custom claim limit override for a player |
 | `/chunkadmin removelimit <player>` | `chunkclaim.admin` | Clears custom limit override and restores server default |
+| `/chunkadmin resetflag <flag> [action]` | `chunkclaim.admin` | Purges or overrides a claim flag across all server claims |
 
 ---
 

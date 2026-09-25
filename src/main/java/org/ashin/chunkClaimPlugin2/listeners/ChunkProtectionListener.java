@@ -132,10 +132,14 @@ public class ChunkProtectionListener implements Listener {
     /**
      * Prevents players from attacking/destroying entities (minecarts, animals, armor stands, etc.)
      * in chunks claimed by someone else when mob-protection flag is enabled.
+     * Hostile monsters (zombies, creepers, skeletons, etc.) are explicitly excluded so players
+     * can defend friends from hostile threats.
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof Player) return; // Handled in onPvP
+        if (isHostileMob(event.getEntity())) return; // Allow defending players from monsters
+
         Player player = resolveAttacker(event.getDamager());
         if (player == null) return;
 
@@ -148,6 +152,20 @@ public class ChunkProtectionListener implements Listener {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
             }
         }
+    }
+
+    private boolean isHostileMob(Entity entity) {
+        if (entity instanceof org.bukkit.entity.Monster) return true;
+        if (entity instanceof org.bukkit.entity.Slime) return true;
+        if (entity instanceof org.bukkit.entity.Ghast) return true;
+        if (entity instanceof org.bukkit.entity.Phantom) return true;
+        if (entity instanceof org.bukkit.entity.Shulker) return true;
+        if (entity instanceof org.bukkit.entity.Hoglin) return true;
+        if (entity instanceof org.bukkit.entity.Boss) return true;
+        try {
+            if (entity instanceof org.bukkit.entity.Enemy) return true;
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     // ── Fire spread protection (flag-gated) ──

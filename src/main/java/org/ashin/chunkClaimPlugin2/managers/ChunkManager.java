@@ -499,6 +499,49 @@ public class ChunkManager {
     );
 
     /**
+     * Purges a specific claim flag across all registered claim groups.
+     * When removed, claims will fall back to the server default.
+     * @param flag the flag identifier to remove
+     * @return the number of claim groups where the flag was removed
+     */
+    public int removeFlagFromAllClaims(String flag) {
+        int count = 0;
+        for (Map<String, Boolean> flags : claimFlags.values()) {
+            if (flags.remove(flag) != null) {
+                count++;
+            }
+        }
+        if (count > 0) {
+            saveData();
+        }
+        return count;
+    }
+
+    /**
+     * Overrides a specific claim flag value across all registered claim groups.
+     * @param flag the flag identifier to set
+     * @param value the new boolean state
+     * @return the number of claim groups updated
+     */
+    public int setFlagOnAllClaims(String flag, boolean value) {
+        int count = 0;
+        Set<String> allKeys = new HashSet<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            String claimName = chunkNames.getOrDefault(entry.getKey(), "world");
+            allKeys.add(trustKey(entry.getValue(), claimName));
+        }
+        for (String key : allKeys) {
+            Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new HashMap<>());
+            flags.put(flag, value);
+            count++;
+        }
+        if (count > 0) {
+            saveData();
+        }
+        return count;
+    }
+
+    /**
      * Get a claim flag value. Returns the default if not explicitly set.
      */
     public boolean getClaimFlag(UUID owner, String claimName, String flag) {

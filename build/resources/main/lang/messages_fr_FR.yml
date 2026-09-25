@@ -138,3 +138,7 @@ claim-sale-cancelled: "&cLa mise en vente de la zone &e%name% &aa été annulée
 claim-buy-success: "&aFélicitations ! Vous avez acheté &e%name% &a(%count% chunks) de &e%seller% &apour &e%price%&a !"
 claim-sold-notify: "&a%buyer% a acheté votre zone &e%name% &apour &e%price%&a !"
 sell-prompt: "&aÉcrivez le prix de vente pour &e%name% &adans le tchat, ou écrivez 'cancel' pour annuler."
+admin-resetflag-removed: "&aDrapeau &e%flag% &aretiré de &e%count% &agroupe(s) de revendication. Paramètres par défaut rétablis."
+admin-resetflag-enabled: "&aDrapeau &e%flag% &aactivé de force sur &e%count% &agroupe(s) de revendication."
+admin-resetflag-disabled: "&eDrapeau &e%flag% &edésactivé de force sur &e%count% &egroupe(s) de revendication."
+admin-gui-item-flags: "&dGestionnaire global des drapeaux"

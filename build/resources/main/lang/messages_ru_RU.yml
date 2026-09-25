@@ -138,3 +138,7 @@ claim-sale-cancelled: "&cПродажа привата &e%name% &cотменен
 claim-buy-success: "&aПоздравляем! Вы купили приват &e%name% &a(%count% чанков) у &e%seller% &aза &e%price%&a!"
 claim-sold-notify: "&a%buyer% купил ваш приват &e%name% &aза &e%price%&a!"
 sell-prompt: "&aВведите цену продажи для &e%name% &aв чат, или 'cancel' для отмены."
+admin-resetflag-removed: "&aФлаг &e%flag% &aудалён из &e%count% &aгрупп(ы) приватов. Восстановлены стандартные значения."
+admin-resetflag-enabled: "&aФлаг &e%flag% &aпринудительно включён для &e%count% &aгрупп(ы) приватов."
+admin-resetflag-disabled: "&eФлаг &e%flag% &eпринудительно выключен для &e%count% &eгрупп(ы) приватов."
+admin-gui-item-flags: "&dГлобальный менеджер флагов"

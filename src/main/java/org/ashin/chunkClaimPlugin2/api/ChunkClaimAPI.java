@@ -93,4 +93,12 @@ public class ChunkClaimAPI {
     public int adminUnclaimAll(@NotNull UUID owner) {
         return chunkManager.adminUnclaimAll(owner);
     }
+
+    public int removeFlagFromAllClaims(@NotNull String flag) {
+        return chunkManager.removeFlagFromAllClaims(flag);
+    }
+
+    public int setFlagOnAllClaims(@NotNull String flag, boolean value) {
+        return chunkManager.setFlagOnAllClaims(flag, value);
+    }
 }

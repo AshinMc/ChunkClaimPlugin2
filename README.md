@@ -52,6 +52,7 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 | `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaim a player's claim group or all chunks |
 | `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Set custom claim limit for a player |
 | `/chunkadmin removelimit <player>` | `chunkclaim.admin` | Reset player claim limit to default |
+| `/chunkadmin resetflag <flag> [action]` | `chunkclaim.admin` | Purge or override a claim flag across all server claims |
 
 ---
 

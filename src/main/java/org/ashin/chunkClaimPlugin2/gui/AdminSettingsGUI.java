@@ -25,7 +25,7 @@ import java.util.UUID;
  */
 public class AdminSettingsGUI {
 
-    public enum View { ADMIN_HOME, ADMIN_MAX_CLAIMS, ADMIN_LANGUAGE, ADMIN_PARTICLE, ADMIN_CHUNK_INSPECT }
+    public enum View { ADMIN_HOME, ADMIN_MAX_CLAIMS, ADMIN_LANGUAGE, ADMIN_PARTICLE, ADMIN_CHUNK_INSPECT, ADMIN_FLAG_MANAGER }
 
     public static class AdminHolder implements org.bukkit.inventory.InventoryHolder {
         public final View view;
@@ -66,6 +66,12 @@ public class AdminSettingsGUI {
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-particle")),
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + currentParticle));
 
+        // Global Flag Manager item (NEW)
+        inv.setItem(13, namedWithLore(Material.REPEATER,
+                ChatColor.LIGHT_PURPLE + "Global Flag Manager",
+                ChatColor.GRAY + "Purge or override flags across all claims",
+                ChatColor.DARK_GRAY + "Click to manage server-wide flags"));
+
         // Greeting Display Mode item (NEW)
         String currentGreeting = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
         inv.setItem(14, namedWithLore(Material.OAK_SIGN,
@@ -86,6 +92,44 @@ public class AdminSettingsGUI {
         inv.setItem(16, named(Material.REDSTONE,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-reload"))));
 
+        player.openInventory(inv);
+        playClick(player);
+    }
+
+    public void openFlagManager(Player player) {
+        Inventory inv = Bukkit.createInventory(new AdminHolder(View.ADMIN_FLAG_MANAGER), 27, "Global Flag Manager");
+
+        int[] slots = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15};
+        for (int i = 0; i < ChunkManager.ALL_FLAGS.length && i < slots.length; i++) {
+            String flag = ChunkManager.ALL_FLAGS[i];
+            Material mat = switch (flag) {
+                case ChunkManager.FLAG_MOB_GRIEFING -> Material.GRASS_BLOCK;
+                case ChunkManager.FLAG_MOB_SPAWNING -> Material.ROTTEN_FLESH;
+                case ChunkManager.FLAG_MOB_ENTRY -> Material.IRON_BARS;
+                case ChunkManager.FLAG_MOB_PROTECTION -> Material.LEAD;
+                case ChunkManager.FLAG_EXPLOSIONS -> Material.TNT;
+                case ChunkManager.FLAG_PVP -> Material.IRON_SWORD;
+                case ChunkManager.FLAG_FIRE_SPREAD -> Material.FLINT_AND_STEEL;
+                case ChunkManager.FLAG_GREETING_TITLE -> Material.OAK_SIGN;
+                case ChunkManager.FLAG_INTERACT_CHEST -> Material.CHEST;
+                case ChunkManager.FLAG_INTERACT_FURNACE -> Material.FURNACE;
+                case ChunkManager.FLAG_INTERACT_STONECUTTER -> Material.STONECUTTER;
+                case ChunkManager.FLAG_INTERACT_DOOR -> Material.OAK_DOOR;
+                case ChunkManager.FLAG_INTERACT_REDSTONE -> Material.REDSTONE;
+                default -> Material.PAPER;
+            };
+
+            boolean def = chunkManager.getDefaultFlag(flag);
+            inv.setItem(slots[i], namedWithLore(mat,
+                    ChatColor.GOLD + flag,
+                    ChatColor.GRAY + "Default: " + (def ? ChatColor.GREEN + "Enabled" : ChatColor.RED + "Disabled"),
+                    "",
+                    ChatColor.YELLOW + "Left-Click: " + ChatColor.WHITE + "Purge from all claims (use default)",
+                    ChatColor.RED + "Right-Click: " + ChatColor.WHITE + "Force DISABLE (false) on all claims",
+                    ChatColor.AQUA + "Shift-Click: " + ChatColor.WHITE + "Force ENABLE (true) on all claims"));
+        }
+
+        inv.setItem(22, named(Material.ARROW, ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"))));
         player.openInventory(inv);
         playClick(player);
     }

@@ -163,10 +163,47 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.GREEN + "Removed individual chunk limit for " + target.getName() + " (reverted to default).");
                 return true;
             }
+
+            // ── /chunkadmin resetflag <flag> [remove|true|false] ──
+            if (sub.equals("resetflag") || sub.equals("removeflag") || sub.equals("setflag")) {
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /chunkadmin resetflag <flag> [remove|true|false]");
+                    sender.sendMessage(ChatColor.GRAY + "Available flags: " + String.join(", ", ChunkManager.ALL_FLAGS));
+                    return true;
+                }
+                String flagName = args[1].toLowerCase();
+                boolean validFlag = false;
+                for (String f : ChunkManager.ALL_FLAGS) {
+                    if (f.equalsIgnoreCase(flagName)) {
+                        flagName = f;
+                        validFlag = true;
+                        break;
+                    }
+                }
+                if (!validFlag) {
+                    sender.sendMessage(ChatColor.RED + "Unknown flag '" + flagName + "'. Available flags: " + String.join(", ", ChunkManager.ALL_FLAGS));
+                    return true;
+                }
+
+                String action = args.length >= 3 ? args[2].toLowerCase() : (sub.equals("removeflag") ? "remove" : "remove");
+                if (action.equals("remove") || action.equals("reset") || action.equals("default")) {
+                    int count = chunkManager.removeFlagFromAllClaims(flagName);
+                    sender.sendMessage(ChatColor.GREEN + "Removed flag '" + flagName + "' from " + count + " claim group(s). All claims now use server default (" + (chunkManager.getDefaultFlag(flagName) ? "enabled" : "disabled") + ").");
+                } else if (action.equals("true") || action.equals("enable") || action.equals("on")) {
+                    int count = chunkManager.setFlagOnAllClaims(flagName, true);
+                    sender.sendMessage(ChatColor.GREEN + "Force-enabled flag '" + flagName + "' across all " + count + " claim group(s).");
+                } else if (action.equals("false") || action.equals("disable") || action.equals("off")) {
+                    int count = chunkManager.setFlagOnAllClaims(flagName, false);
+                    sender.sendMessage(ChatColor.YELLOW + "Force-disabled flag '" + flagName + "' across all " + count + " claim group(s).");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Unknown action '" + action + "'. Valid options: remove, true, false");
+                }
+                return true;
+            }
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("You must be a player to open the GUI. Available console commands: unclaimplayer, setlimit, removelimit.");
+            sender.sendMessage("You must be a player to open the GUI. Available console commands: unclaimplayer, setlimit, removelimit, resetflag.");
             return true;
         }
 
@@ -181,7 +218,7 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> subs = List.of("unclaim", "unclaimplayer", "setlimit", "removelimit");
+            List<String> subs = List.of("unclaim", "unclaimplayer", "setlimit", "removelimit", "resetflag", "removeflag", "setflag");
             List<String> result = new ArrayList<>();
             for (String s : subs) {
                 if (s.startsWith(args[0].toLowerCase())) result.add(s);
@@ -199,19 +236,37 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
                     }
                 }
                 return names;
+            } else if (sub.equals("resetflag") || sub.equals("removeflag") || sub.equals("setflag")) {
+                List<String> flags = new ArrayList<>();
+                for (String f : ChunkManager.ALL_FLAGS) {
+                    if (f.toLowerCase().startsWith(args[1].toLowerCase())) {
+                        flags.add(f);
+                    }
+                }
+                return flags;
             }
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("unclaimplayer")) {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-            if (target != null) {
-                List<String> claims = chunkManager.getPlayerClaimNames(target.getUniqueId());
-                List<String> result = new ArrayList<>();
-                result.add("--all");
-                for (String c : claims) {
-                    if (c.toLowerCase().startsWith(args[2].toLowerCase())) {
-                        result.add(c);
+        if (args.length == 3) {
+            String sub = args[0].toLowerCase();
+            if (sub.equals("unclaimplayer")) {
+                OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+                if (target != null) {
+                    List<String> claims = chunkManager.getPlayerClaimNames(target.getUniqueId());
+                    List<String> result = new ArrayList<>();
+                    result.add("--all");
+                    for (String c : claims) {
+                        if (c.toLowerCase().startsWith(args[2].toLowerCase())) {
+                            result.add(c);
+                        }
                     }
+                    return result;
+                }
+            } else if (sub.equals("resetflag") || sub.equals("setflag")) {
+                List<String> actions = List.of("remove", "false", "true");
+                List<String> result = new ArrayList<>();
+                for (String a : actions) {
+                    if (a.startsWith(args[2].toLowerCase())) result.add(a);
                 }
                 return result;
             }

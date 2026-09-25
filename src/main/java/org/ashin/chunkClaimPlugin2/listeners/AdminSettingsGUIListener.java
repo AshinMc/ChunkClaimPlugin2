@@ -66,6 +66,7 @@ public class AdminSettingsGUIListener implements Listener {
             case ADMIN_LANGUAGE: handleLanguage(player, clicked, name); break;
             case ADMIN_PARTICLE: handleParticle(player, clicked, name); break;
             case ADMIN_CHUNK_INSPECT: handleChunkInspect(player, clicked, name); break;
+            case ADMIN_FLAG_MANAGER: handleFlagManager(player, event.getClick(), clicked, name); break;
         }
     }
 
@@ -81,6 +82,8 @@ public class AdminSettingsGUIListener implements Listener {
             gui.openLanguage(player);
         } else if (name.equals(nPart)) {
             gui.openParticle(player);
+        } else if (name.contains("Global Flag Manager")) {
+            gui.openFlagManager(player);
         } else if (name.contains("Greeting Display")) {
             // Cycle greeting display mode: ACTION_BAR -> TITLE -> SUBTITLE -> CHAT -> NONE -> ACTION_BAR
             String current = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
@@ -102,6 +105,36 @@ public class AdminSettingsGUIListener implements Listener {
             messages.reloadLocales();
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-config-reloaded"));
             gui.openHome(player);
+        }
+    }
+
+    private void handleFlagManager(Player player, org.bukkit.event.inventory.ClickType click, ItemStack clicked, String name) {
+        String back = ChatColor.stripColor(messages.getFor(player.getUniqueId(), "gui-item-back"));
+        if (name.equals(back) || clicked.getType() == Material.ARROW) {
+            gui.openHome(player);
+            return;
+        }
+
+        String matchedFlag = null;
+        for (String flag : ChunkManager.ALL_FLAGS) {
+            if (name.equalsIgnoreCase(flag)) {
+                matchedFlag = flag;
+                break;
+            }
+        }
+
+        if (matchedFlag != null) {
+            if (click.isShiftClick()) {
+                int count = chunkManager.setFlagOnAllClaims(matchedFlag, true);
+                player.sendMessage(ChatColor.AQUA + "Force-enabled flag '" + matchedFlag + "' on all " + count + " claim group(s).");
+            } else if (click.isRightClick()) {
+                int count = chunkManager.setFlagOnAllClaims(matchedFlag, false);
+                player.sendMessage(ChatColor.YELLOW + "Force-disabled flag '" + matchedFlag + "' on all " + count + " claim group(s).");
+            } else {
+                int count = chunkManager.removeFlagFromAllClaims(matchedFlag);
+                player.sendMessage(ChatColor.GREEN + "Purged flag '" + matchedFlag + "' from all " + count + " claim group(s) (reverted to server default).");
+            }
+            gui.openFlagManager(player);
         }
     }
 

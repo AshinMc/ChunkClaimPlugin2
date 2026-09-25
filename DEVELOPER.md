@@ -108,6 +108,10 @@ int chunksRemoved = api.adminUnclaimGroup(playerUUID, "Base");
 
 // 3. Purge all chunks and claim groups owned by a player
 int totalPurged = api.adminUnclaimAll(playerUUID);
+
+// 4. Global flag management across all claims
+int claimsPurged = api.removeFlagFromAllClaims("mob-protection"); // Reverts all claims to default
+int claimsOverridden = api.setFlagOnAllClaims("explosions", true); // Force-enables explosions on all claims
 ```
 
 ### Marketplace Queries
