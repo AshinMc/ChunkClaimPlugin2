@@ -2,7 +2,7 @@
 
 # Language / Locale
 # Set your language file to use (matches files in plugins/ChunkClaimPlugin2/lang/)
-# Examples: en_US, es_ES
+# Examples: en_US, es_ES, fr_FR, de_DE, pt_BR, ru_RU, zh_CN
 locale: en_US
 
 # Maximum number of chunks a player can claim (0 = unlimited)
@@ -10,6 +10,45 @@ max-claims-per-player: 10
 
 # Item used to claim chunks on right click (Set to "NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
+
+# Greeting display mode when entering a claimed chunk
+# Options: ACTION_BAR, TITLE, SUBTITLE, CHAT, NONE
+greeting-display: ACTION_BAR
+
+# Show a subtle action bar message when leaving claimed land into the wilderness
+show-wilderness-greeting: true
+
+# Title message display duration (used when greeting-display is TITLE or SUBTITLE)
+# 20 ticks = 1 second
+title-duration:
+  fade-in: 10
+  stay: 60
+  fade-out: 15
+
+# Economy & Land Trading System
+# Supports Vault (EssentialsX, CMI, etc.), physical Gold Banks (Gringotts),
+# or native physical items (Gold Ingots, Diamonds, etc.) with NO extra plugins required.
+economy:
+  enabled: false
+
+  # Mode:
+  # - "AUTO"   : Uses Vault if detected on server; otherwise falls back to physical item economy
+  # - "VAULT"  : Uses server Vault economy provider (virtual balance or Gringotts gold chests)
+  # - "ITEM"   : Native physical item currency (deducted directly from player inventory)
+  # - "NONE"   : Disables economy transactions
+  mode: AUTO
+
+  # Physical Item Currency settings (used in ITEM mode or AUTO fallback)
+  item:
+    material: "GOLD_INGOT"       # Any valid Minecraft item: GOLD_INGOT, DIAMOND, EMERALD, etc.
+    display-name: "Gold"         # Currency label in messages (e.g. "10 Gold")
+    convert-blocks: true         # Automatically count and convert 1 block = 9 ingots
+
+  # Pricing and Refunds
+  free-claims: 3                 # Number of chunks each player can claim before incurring costs
+  cost-per-chunk: 10.0           # Base cost to claim a new chunk or expand
+  cost-increase-per-chunk: 2.0   # Additional cost per existing chunk owned (0.0 for flat pricing)
+  unclaim-refund-percentage: 50.0# Percentage refunded upon unclaiming (0.0 to disable refunds)
 
 # Messages
 messages:
@@ -26,8 +65,8 @@ message-toggles:
   deny-interact: true     # Message when interaction is denied
   deny-entity: true       # Message when entity damage is denied
   deny-pvp: true          # Message when PvP is denied
-  claim-success: true    # Message when chunk is claimed
-  unclaim-success: true  # Message when chunk is unclaimed
+  claim-success: true     # Message when chunk is claimed
+  unclaim-success: true   # Message when chunk is unclaimed
 
 # Particle settings
 visualization:
@@ -44,12 +83,6 @@ protection:
   prevent-block-place: true
   prevent-interactions: true
 
-# Title message display duration (ticks: 20 ticks = 1 second)
-title-duration:
-  fade-in: 10
-  stay: 70
-  fade-out: 20
-
 # Default claim flags (applied to new claims)
 # Players can toggle these per-claim in /chunksettings -> Claims -> Claim Settings
 claim-flags:
@@ -60,7 +93,7 @@ claim-flags:
   explosions: true       # Block explosion damage (creepers, TNT, etc.)
   pvp: false             # Block PvP combat
   fire-spread: true      # Block fire spread and burning in claim
-  greeting-title: true   # Show welcome title when entering claim
+  greeting-title: true   # Show welcome greeting when entering claim
   interact-chest: true
   interact-furnace: true
   interact-stonecutter: true

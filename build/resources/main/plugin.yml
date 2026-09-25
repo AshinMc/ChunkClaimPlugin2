@@ -1,8 +1,8 @@
 name: CCP
-version: '0.7.0'
+version: '0.8.0'
 main: org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2
 api-version: '1.13'
-softdepend: [WorldGuard, WorldEdit, PlaceholderAPI]
+softdepend: [WorldGuard, WorldEdit, PlaceholderAPI, Vault]
 commands:
   claimchunk:
     description: Claim the chunk you are standing in with an optional name
@@ -28,6 +28,14 @@ commands:
     description: Expand an existing named claim by adding the current chunk
     usage: /<command> <name>
     permission: ccp.expand
+  chunksell:
+    description: Put a claim group up for sale or cancel sale
+    usage: /<command> <name> <price|cancel>
+    permission: ccp.sell
+  claimbuy:
+    description: Buy a claim group currently for sale
+    usage: /<command> [name]
+    permission: ccp.buy
   chunklang:
     description: View or set your language/locale
     usage: /<command> [get|list|set <locale>]
@@ -48,6 +56,15 @@ permissions:
   ccp.claim:
     description: Allows claiming chunks
     default: true
+  ccp.sell:
+    description: Allows listing claims for sale
+    default: true
+  ccp.buy:
+    description: Allows buying claims that are for sale
+    default: true
+  ccp.admin.unclaim:
+    description: Allows administrators to remove any player chunks
+    default: op
   ccp.unclaim:
     description: Allows unclaiming chunks
     default: true

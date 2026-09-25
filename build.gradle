@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.ashin'
-version = '0.7.0'
+version = '0.8.0'
 
     repositories {
         mavenCentral()
@@ -12,6 +12,7 @@ version = '0.7.0'
         maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
         maven { url = 'https://oss.sonatype.org/content/groups/public/' }
         maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+        maven { url = 'https://jitpack.io' }
     }
 
     dependencies {
@@ -23,6 +24,7 @@ version = '0.7.0'
         compileOnly 'com.sk89q.worldguard:worldguard-bukkit:7.0.9'
         compileOnly 'com.sk89q.worldedit:worldedit-bukkit:7.2.15'
         compileOnly 'me.clip:placeholderapi:2.11.6'
+        compileOnly 'com.github.MilkBowl:VaultAPI:1.7.1'
     }
 
     // WorldGuard 7.0.15 uses strict version constraints that conflict with
