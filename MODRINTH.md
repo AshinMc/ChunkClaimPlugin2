@@ -1,134 +1,121 @@
-# ChunkClaimPlugin - Land Protection for Spigot/Paper
+# ChunkClaimPlugin (CCP)
 
-Protect your land by claiming chunks with named claim groups, per-claim trust management, multi-economy support, action bar greetings, and granular protection flags.
+ChunkClaimPlugin is a lightweight, open-source land protection plugin for modern Spigot and Paper servers (1.19.4 through 26.x). It provides grid-aligned chunk claiming with named groups, granular protection flags, an optional survival-friendly economy layer, and per-player localization.
 
-## 🚀 Features
+The plugin is designed to be intuitive for survival players and low-overhead for server operators. Instead of complex geometric polygons or arbitrary coordinate selection wands, claiming aligns with Minecraft's native chunk boundaries ($16 \times 16 \times \text{world height}$), keeping memory lookups fast and eliminating bounding-box calculations on block interactions.
 
-- **Named Claim Groups** - Claim multiple chunks under one name and expand anytime
-- **Multi-Version Support** - Single JAR runs on Minecraft 1.19.x, 1.20.x, 1.21.x and 26.x
-- **Multi-Economy & Land Trading** - Supports Vault, physical Gold Banks (Gringotts), or native items (Gold Ingots, Diamonds) with zero extra plugins required. Buy and sell claims via `/chunksell` and `/claimbuy`
-- **Action Bar Greetings** - Display welcome messages cleanly in the action bar, title, subtitle, or chat, plus wilderness transition notices
-- **Admin Land Management** - Forcefully unclaim abandoned or griefed claims via `/chunkadmin unclaim`, `/chunkadmin unclaimplayer`, or GUI inspector
-- **GUI-Based Management** - Use `/chunksettings` for player claims and `/chunkadmin` for server-wide administration
-- **Per-Claim Trust System** - Grant specific players building access per claim group
-- **Granular Protection Flags** - Toggle mob griefing, spawning, mob entry wall, explosions, PvP, passive mob protection, and container access
-- **Claim Teleportation** - Use `/chunktp <name>` to teleport to your claims
-- **Transfer Ownership** - Hand off claims to other players with all settings preserved
-- **Multi-Language Support** - 7 languages: English, Spanish, French, German, Portuguese, Russian, Chinese
-- **WorldGuard Integration** - Prevents claiming over WorldGuard regions
-- **Item-Based Claiming** - Right-click with a configurable item (default: Wooden Shovel) to claim chunks
-- **Developer API & PAPI** - Full access via `ChunkClaimAPI`, cancellable events, and PlaceholderAPI expansion
+---
 
-## 📋 Commands
+## Highlights
+
+- **Named Claim Groups:** Group multiple chunks under intuitive names (e.g., `/claimchunk Base`, `/chunkexpand Base`). Flags, permissions, and trusted players are configured per group rather than per block coordinate.
+- **Flexible Economy Support:** Completely optional (`enabled: false` by default). Works with Vault for traditional virtual balances, gold-backed bank plugins like Gringotts, or built-in physical items (`GOLD_INGOT`, `DIAMOND`) with zero external dependencies. Supports player-to-player claim trading via `/chunksell` and `/claimbuy`. No decay mechanics or upkeep taxes that punish players for taking breaks.
+- **Non-Intrusive Territory Alerts:** Territory entrance and wilderness notifications are delivered directly to the action bar by default, keeping the center of the screen clear during building and combat. Title, subtitle, and chat delivery modes are also supported.
+- **Granular Protection Flags:** Per-group toggles for container access, furnaces, doors/trapdoors, redstone inputs, animal protection, creeper/enderman griefing, PvP combat, explosions, and fire spread.
+- **Admin Management Tools:** Server operators can inspect chunks, view ownership details, and forcefully remove claims via `/chunkadmin unclaim`, `/chunkadmin unclaimplayer`, or through an interactive chest GUI.
+- **Per-Player Localization:** Players can set their own display language independently with `/chunklang`. Includes complete translations for English, Spanish, French, German, Portuguese, Russian, and Simplified Chinese.
+- **Extensible API:** Programmatic access via `ChunkClaimAPI`, cancellable Bukkit events for external listeners, and a full PlaceholderAPI expansion.
+- **WorldGuard Safe:** Automatically detects WorldGuard regions and prevents players from claiming over administrative regions.
+
+---
+
+## Technical Specifications & Compatibility
+
+- **Server Software:** Paper, Purpur, or Spigot (Minecraft 1.19.4, 1.20.x, 1.21.x, and 26.x)
+- **Java Runtime:** Java 17 or higher (Java 21 supported)
+- **Optional Dependencies:**
+  - **Vault:** Required only if using digital currency or Vault-backed bank accounts
+  - **WorldGuard 7.x & WorldEdit 7.x:** Optional, for region collision prevention
+  - **PlaceholderAPI:** Optional, for leaderboard and scoreboard tokens
+
+---
+
+## Command Reference
 
 | Command | Permission | Description |
 |---|---|---|
-| `/claimchunk [name]` | `ccp.claim` | Claim the chunk you're standing in |
-| `/chunkexpand <name>` | `ccp.expand` | Add current chunk to an existing claim group |
-| `/unclaimchunk [name]` | `ccp.unclaim` | Unclaim a claim group or current chunk |
-| `/chunksell <name> <price\|cancel>` | `ccp.sell` | Put a claim group up for sale or cancel listing |
-| `/claimbuy [name]` | `ccp.buy` | Purchase a claim group currently for sale |
-| `/checkchunk` | `ccp.check` | See who owns the current chunk |
-| `/infochunk` | `ccp.info` | List all your claim groups |
-| `/chunksettings` | `ccp.settings` | Open player settings GUI |
-| `/chunktp <name>` | `ccp.teleport` | Teleport to a claim |
-| `/visualizechunk [name]` | `ccp.visualize` | Visualize claim boundaries with particles |
-| `/chunklang [locale]` | `ccp.lang` | Change your personal language |
-| `/chunkadmin` | `chunkclaim.admin` | Open admin GUI |
-| `/chunkadmin unclaim` | `chunkclaim.admin` | Unclaim the chunk you are standing in |
-| `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Unclaim a player's claim group or all chunks |
-| `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Set custom chunk claim limit for a player |
-| `/chunkadmin removelimit <player>` | `chunkclaim.admin` | Reset player claim limit to default |
+| `/claimchunk [name]` | `ccp.claim` | Claims the chunk the player is currently standing in |
+| `/chunkexpand <name>` | `ccp.expand` | Adds current chunk to an existing named claim group |
+| `/unclaimchunk [name]` | `ccp.unclaim` | Unclaims a specified claim group or the current chunk |
+| `/chunksell <name> <price\|cancel>` | `ccp.sell` | Lists a claim group on the market or cancels an active listing |
+| `/claimbuy [name]` | `ccp.buy` | Purchases a claim group listed for sale |
+| `/checkchunk` | `ccp.check` | Checks ownership and claim status of current chunk |
+| `/infochunk` | `ccp.info` | Lists all claim groups owned by the player |
+| `/visualizechunk [name]` | `ccp.visualize` | Displays temporary particle borders around claim boundaries |
+| `/chunktp <name>` | `ccp.teleport` | Teleports player to one of their claimed groups |
+| `/chunksettings` | `ccp.settings` | Opens the interactive player management GUI |
+| `/chunklang [locale]` | `ccp.lang` | Sets personal language preference |
+| `/chunkadmin` | `chunkclaim.admin` | Opens administrator management dashboard |
+| `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaims the current chunk |
+| `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaims specific or all claims of a player |
+| `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Sets a custom claim limit override for a player |
+| `/chunkadmin removelimit <player>` | `chunkclaim.admin` | Clears custom limit override and restores server default |
 
-For complete documentation, see the [**Server Owner Wiki**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md) and [**Developer Guide**](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/DEVELOPER.md).
+---
 
-## 🛡️ Protection Flags
+## Protection Flags
 
-Toggle settings per claim group in `/chunksettings`:
+The following flags can be toggled per claim group in `/chunksettings`:
 
-| Flag | Purpose | Default |
+| Flag | Description | Default |
 |---|---|---|
-| Mob Griefing | Block enderman and creeper block damage | ON |
-| Mob Spawning | Prevent natural mob spawns | OFF |
-| Mob Entry | Push mobs out of chunk at borders | OFF |
-| Mob Protection | Prevent visitors from harming passive animals | ON |
-| Explosions | Block TNT and Wither explosion damage | ON |
-| PvP | Prevent player-vs-player combat | OFF |
-| Fire Spread | Block fire burn and spread | ON |
-| Containers | Protect chests, barrels, and shulkers | ON |
-| Furnaces | Protect furnaces, smokers, blast furnaces | ON |
-| Utilities | Protect crafting tables and stonecutters | ON |
-| Doors | Protect doors, trapdoors, and fence gates | ON |
-| Redstone | Protect levers, buttons, repeaters | ON |
+| `mob-griefing` | Prevents Creeper explosions and Endermen from moving blocks | Enabled |
+| `mob-spawning` | Disables hostile mob spawning within the claim | Disabled |
+| `mob-entry` | Prevents hostile mobs from crossing the claim border | Disabled |
+| `passive-mob-protection` | Prevents visitors from attacking or killing friendly animals | Enabled |
+| `explosions` | Blocks TNT, minecart TNT, and Wither explosion damage | Enabled |
+| `pvp` | Disables player-vs-player combat within the claim | Disabled |
+| `fire-spread` | Blocks fire from igniting, burning, or spreading | Enabled |
+| `interact-chest` | Restricts chest, barrel, and shulker box access to trusted members | Enabled |
+| `interact-furnace` | Restricts furnace, smoker, and blast furnace access | Enabled |
+| `interact-doors` | Restricts wooden/iron doors, trapdoors, and fence gates | Enabled |
+| `interact-redstone` | Restricts levers, buttons, repeaters, and comparators | Enabled |
 
-## 🔑 Permissions
+---
 
-- `ccp.claim` - Claim chunks
-- `ccp.unclaim` - Unclaim chunks
-- `ccp.expand` - Expand claims
-- `ccp.sell` - Put claims up for sale
-- `ccp.buy` - Buy claims that are for sale
-- `ccp.check` - Check chunk ownership
-- `ccp.info` - List own claims
-- `ccp.settings` - Open player GUI
-- `ccp.visualize` - Visualize claims
-- `ccp.lang` - Change personal language
-- `ccp.teleport` - Teleport to claims
-- `ccp.flag.*` - Toggle all claim flags in GUI
-- `chunkclaim.admin` - Admin GUI and management commands
-- `chunkclaimprotection.bypass` - Bypass all protection checks
+## Configuration Overview
 
-## 📚 Configuration
-
-The `config.yml` file supports:
+Configuration options are managed in `plugins/ChunkClaimPlugin2/config.yml`. When updating between plugin releases, missing configuration keys are merged automatically without overwriting existing server values.
 
 ```yaml
-locale: "en_US"
+# Default language file (matches plugins/ChunkClaimPlugin2/lang/)
+locale: en_US
+
+# Claim limits (0 = unlimited)
 max-claims-per-player: 10
+
+# Item used for right-click claiming (set to "NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
 
-greeting-display: ACTION_BAR       # Options: ACTION_BAR, TITLE, SUBTITLE, CHAT, NONE
+# Territory alert display style: ACTION_BAR, TITLE, SUBTITLE, CHAT, NONE
+greeting-display: ACTION_BAR
 show-wilderness-greeting: true
 
+# Economy and trading configuration
 economy:
   enabled: false
-  mode: AUTO                       # AUTO, VAULT, ITEM, NONE
+  mode: AUTO                       # AUTO, VAULT, ITEM, or NONE
   item:
     material: "GOLD_INGOT"
     display-name: "Gold"
-    convert-blocks: true
-  free-claims: 3
-  cost-per-chunk: 10.0
-  cost-increase-per-chunk: 2.0
-  unclaim-refund-percentage: 50.0
-
-visualization:
-  duration-seconds: 10
-  particle-height: 100
-  particle-spacing: 0.5
-  particle-type: FLAME
+    convert-blocks: true           # Counts 1 gold block as 9 ingots
+  free-claims: 3                   # Claims granted before costs apply
+  cost-per-chunk: 10.0             # Base claim cost
+  cost-increase-per-chunk: 2.0     # Incremental cost curve per chunk owned
+  unclaim-refund-percentage: 50.0  # Percentage refunded on unclaim
 ```
 
-## 🌍 Localization
+---
 
-Supported languages (100% complete):
-- English (`en_US`)
-- Spanish (`es_ES`)
-- French (`fr_FR`)
-- German (`de_DE`)
-- Portuguese (`pt_BR`)
-- Russian (`ru_RU`)
-- Chinese (`zh_CN`)
+## Documentation & Source
 
-Players can change their language per-account with `/chunklang set <locale>`.
+- [GitHub Repository](https://github.com/AshinMc/ChunkClaimPlugin2)
+- [Server Owner Wiki & Guide](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md)
+- [Developer API Reference](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/DEVELOPER.md)
+- [Issue Tracker](https://github.com/AshinMc/ChunkClaimPlugin2/issues)
 
-## 🎯 What's New in v0.8.0
+---
 
-- 💰 **Multi-Economy & Land Marketplace:** Support for Vault, physical Gold Banks (Gringotts), or native items (Gold Ingots/Diamonds). Players can list claims with `/chunksell` and buy with `/claimbuy` or through `/chunksettings`.
-- 👑 **Admin Chunk Removal:** Force unclaim any chunk with `/chunkadmin unclaim`, remove player groups with `/chunkadmin unclaimplayer`, or use the GUI Chunk Inspector.
-- 💬 **Action Bar Greetings:** Clean entry notices in the action bar instead of center-screen titles, plus wilderness exit notices.
-- 🌐 **100% Localization Coverage:** Added missing translation strings across all 7 language files.
-- 📦 **Backward Compatibility:** Automatic config and data migration when updating from older versions.
+## License
 
-## 📜 License
-Released under the MIT License.
+ChunkClaimPlugin is open source software distributed under the terms of the MIT License.
