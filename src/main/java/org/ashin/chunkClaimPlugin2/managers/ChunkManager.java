@@ -32,6 +32,8 @@ public class ChunkManager {
     private final Map<String, Map<String, Boolean>> claimFlags = new HashMap<>();
     // Player individual limits: UUID -> limit
     private final Map<UUID, Integer> playerLimits = new HashMap<>();
+    // Claim marketplace prices: "ownerUUID:claimNameLowerCase" -> price
+    private final Map<String, Double> claimPrices = new HashMap<>();
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
@@ -158,6 +160,9 @@ public class ChunkManager {
             if (claimFlags.containsKey(oldKey)) {
                 claimFlags.put(newKey, claimFlags.remove(oldKey));
             }
+            if (claimPrices.containsKey(oldKey)) {
+                claimPrices.put(newKey, claimPrices.remove(oldKey));
+            }
         }
         return renamed;
     }
@@ -193,6 +198,8 @@ public class ChunkManager {
             if (claimFlags.containsKey(oldKey)) {
                 claimFlags.put(newKey, claimFlags.remove(oldKey));
             }
+            claimPrices.remove(oldKey);
+            claimPrices.remove(newKey);
         }
         return transferred;
     }
@@ -219,13 +226,120 @@ public class ChunkManager {
             chunkOwners.remove(key);
             chunkNames.remove(key);
         }
-        // Clean up trust data for this claim group
+        // Clean up trust, flag, and price data for this claim group
         if (!toRemove.isEmpty()) {
             String tk = trustKey(playerId, name);
             trustedPlayers.remove(tk);
             claimFlags.remove(tk);
+            claimPrices.remove(tk);
         }
         return toRemove.size();
+    }
+
+    // ── Admin unclaim operations ──
+
+    public static class AdminUnclaimResult {
+        public final UUID owner;
+        public final String claimName;
+        public final boolean success;
+        public final int remainingInGroup;
+
+        public AdminUnclaimResult(UUID owner, String claimName, boolean success, int remainingInGroup) {
+            this.owner = owner;
+            this.claimName = claimName;
+            this.success = success;
+            this.remainingInGroup = remainingInGroup;
+        }
+    }
+
+    /**
+     * Forcibly unclaim a specific chunk by an admin regardless of ownership.
+     */
+    public AdminUnclaimResult adminUnclaimChunk(Chunk chunk) {
+        String key = getChunkKey(chunk);
+        UUID owner = chunkOwners.get(key);
+        if (owner == null) return null;
+        String claimName = chunkNames.getOrDefault(key, "world");
+
+        org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent event =
+                new org.ashin.chunkClaimPlugin2.api.events.ChunkUnclaimEvent(owner, claimName, chunk);
+        plugin.getServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) return new AdminUnclaimResult(owner, claimName, false, -1);
+
+        chunkOwners.remove(key);
+        chunkNames.remove(key);
+
+        int remaining = 0;
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(owner)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(claimName)) remaining++;
+            }
+        }
+
+        if (remaining == 0) {
+            String tk = trustKey(owner, claimName);
+            trustedPlayers.remove(tk);
+            claimFlags.remove(tk);
+            claimPrices.remove(tk);
+        }
+        return new AdminUnclaimResult(owner, claimName, true, remaining);
+    }
+
+    /**
+     * Forcibly unclaim an entire claim group for a specific player by an admin.
+     */
+    public int adminUnclaimGroup(UUID targetOwner, String claimName) {
+        return unclaimByName(targetOwner, claimName);
+    }
+
+    /**
+     * Forcibly unclaim ALL chunks owned by a player across all their claim groups.
+     */
+    public int adminUnclaimAll(UUID targetOwner) {
+        List<String> toRemove = new ArrayList<>();
+        Set<String> affectedGroups = new HashSet<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(targetOwner)) {
+                toRemove.add(entry.getKey());
+                affectedGroups.add(chunkNames.getOrDefault(entry.getKey(), "world"));
+            }
+        }
+        for (String key : toRemove) {
+            chunkOwners.remove(key);
+            chunkNames.remove(key);
+        }
+        for (String group : affectedGroups) {
+            String tk = trustKey(targetOwner, group);
+            trustedPlayers.remove(tk);
+            claimFlags.remove(tk);
+            claimPrices.remove(tk);
+        }
+        return toRemove.size();
+    }
+
+    // ── Claim marketplace operations ──
+
+    public void setClaimPrice(UUID owner, String claimName, Double price) {
+        String key = trustKey(owner, claimName);
+        if (price == null || price <= 0.0) {
+            claimPrices.remove(key);
+        } else {
+            claimPrices.put(key, price);
+        }
+    }
+
+    public Double getClaimPrice(UUID owner, String claimName) {
+        return claimPrices.get(trustKey(owner, claimName));
+    }
+
+    public boolean isClaimForSale(UUID owner, String claimName) {
+        Double p = getClaimPrice(owner, claimName);
+        return p != null && p > 0.0;
+    }
+
+    public Map<String, Double> getAllClaimsForSale() {
+        return new HashMap<>(claimPrices);
     }
 
     // ── Query operations ──
@@ -559,6 +673,20 @@ public class ChunkManager {
                 }
             }
         }
+
+        // Load claim marketplace prices
+        claimPrices.clear();
+        if (dataConfig.contains("claim-prices")) {
+            ConfigurationSection priceSection = dataConfig.getConfigurationSection("claim-prices");
+            if (priceSection != null) {
+                for (String key : priceSection.getKeys(false)) {
+                    double price = priceSection.getDouble(key, 0.0);
+                    if (price > 0.0) {
+                        claimPrices.put(key, price);
+                    }
+                }
+            }
+        }
     }
 
     public void saveData() {
@@ -591,6 +719,12 @@ public class ChunkManager {
         dataConfig.set("player-limits", null);
         for (Map.Entry<UUID, Integer> entry : playerLimits.entrySet()) {
             dataConfig.set("player-limits." + entry.getKey().toString(), entry.getValue());
+        }
+
+        // Save claim marketplace prices
+        dataConfig.set("claim-prices", null);
+        for (Map.Entry<String, Double> entry : claimPrices.entrySet()) {
+            dataConfig.set("claim-prices." + entry.getKey(), entry.getValue());
         }
 
         try {

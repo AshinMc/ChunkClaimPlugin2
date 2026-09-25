@@ -73,4 +73,24 @@ public class ChunkClaimAPI {
     public boolean getClaimFlag(@NotNull UUID owner, @NotNull String claimName, @NotNull String flag) {
         return chunkManager.getClaimFlag(owner, claimName, flag);
     }
+
+    public boolean isClaimForSale(@NotNull UUID owner, @NotNull String claimName) {
+        return chunkManager.isClaimForSale(owner, claimName);
+    }
+
+    public @Nullable Double getClaimPrice(@NotNull UUID owner, @NotNull String claimName) {
+        return chunkManager.getClaimPrice(owner, claimName);
+    }
+
+    public ChunkManager.AdminUnclaimResult adminUnclaimChunk(@NotNull Chunk chunk) {
+        return chunkManager.adminUnclaimChunk(chunk);
+    }
+
+    public int adminUnclaimGroup(@NotNull UUID owner, @NotNull String claimName) {
+        return chunkManager.adminUnclaimGroup(owner, claimName);
+    }
+
+    public int adminUnclaimAll(@NotNull UUID owner) {
+        return chunkManager.adminUnclaimAll(owner);
+    }
 }
