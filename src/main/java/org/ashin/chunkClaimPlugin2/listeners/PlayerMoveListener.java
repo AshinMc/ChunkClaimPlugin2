@@ -58,7 +58,8 @@ public class PlayerMoveListener implements Listener {
                 if (wildernessMsg == null || wildernessMsg.equals("wilderness-actionbar")) {
                     wildernessMsg = "§2~ Wilderness ~";
                 }
-                sendActionBar(player, wildernessMsg);
+                String greetingDisplay = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+                sendGreeting(player, greetingDisplay, wildernessMsg, "", wildernessMsg);
             }
             return;
         }
@@ -107,25 +108,29 @@ public class PlayerMoveListener implements Listener {
             }
 
             String greetingDisplay = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+            sendGreeting(player, greetingDisplay, title, subtitle, actionBar);
+        }
+    }
 
-            switch (greetingDisplay) {
-                case "ACTION_BAR" -> sendActionBar(player, actionBar);
-                case "TITLE" -> {
-                    int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
-                    int stay = plugin.getConfig().getInt("title-duration.stay", 70);
-                    int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 20);
-                    player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
-                }
-                case "SUBTITLE" -> {
-                    int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
-                    int stay = plugin.getConfig().getInt("title-duration.stay", 70);
-                    int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 20);
-                    player.sendTitle("", subtitle, fadeIn, stay, fadeOut);
-                }
-                case "CHAT" -> player.sendMessage(actionBar);
-                case "NONE" -> {}
-                default -> sendActionBar(player, actionBar);
+    private void sendGreeting(Player player, String greetingDisplay, String title, String subtitle, String message) {
+        switch (greetingDisplay) {
+            case "ACTION_BAR" -> sendActionBar(player, message);
+            case "TITLE" -> {
+                int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
+                int stay = plugin.getConfig().getInt("title-duration.stay", 60);
+                int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 15);
+                player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
             }
+            case "SUBTITLE" -> {
+                int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
+                int stay = plugin.getConfig().getInt("title-duration.stay", 60);
+                int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 15);
+                String sub = subtitle.isEmpty() ? title : subtitle;
+                player.sendTitle("", sub, fadeIn, stay, fadeOut);
+            }
+            case "CHAT" -> player.sendMessage(message);
+            case "NONE" -> {}
+            default -> sendActionBar(player, message);
         }
     }
 
