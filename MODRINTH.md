@@ -107,6 +107,52 @@ economy:
 
 ---
 
+## Version History
+
+### v0.8.0
+- **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).
+- **Multi-Economy Support:** Flexible economy integration supporting Vault, Gringotts/gold banks, and native physical item currency (`GOLD_INGOT`, `DIAMOND`) with offline payment queues.
+- **Player Claim Trading:** Real estate marketplace commands (`/chunksell`, `/claimbuy`) and GUI listing management.
+- **Action Bar Greetings:** Customizable territory entry and wilderness notifications delivered via the action bar.
+- **Localization Completion:** 100% complete string parity across all 7 supported languages.
+- **Developer API Expansion:** New administrative and marketplace query methods in `ChunkClaimAPI`.
+- **PlaceholderAPI Additions:** `%ccp_is_for_sale%` and `%ccp_claim_price%`.
+
+### v0.7.0
+- **Developer API & Events:** Public `ChunkClaimAPI` singleton and cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
+- **PlaceholderAPI Integration:** Expansion providing claim counts, limits, ownership, and group details.
+- **Fire Spread Protection:** Added `fire-spread` flag to protect claims against burning and ignite events.
+- **Permission-Based Flags:** Granular `ccp.flag.*` permission nodes for GUI flag toggles.
+- **Per-Player Limits:** Administrator command `/chunkadmin setlimit` for individual player overrides.
+- **Event Command Triggers:** Console command execution hooks upon chunk claim and unclaim events.
+
+### v0.6.0
+- **Command Alias:** Added `/ccp` shortcut alias.
+- **Item-Based Claiming:** Right-click claiming using a configurable tool (default: Wooden Shovel).
+- **Chunk Entry Greetings:** Configurable welcome titles and subtitles upon entering claimed land.
+- **Granular Interaction Settings:** Protection flags for chests, furnaces, utility blocks, doors, and redstone.
+- **Passive Mob Protection:** Flag to prevent visitors from harming animals within claims.
+- **Claim Renaming & Transfer:** Seamless claim renaming and ownership transfer directly from the GUI.
+- **Claim Teleportation:** Teleport to claims by name with `/chunktp`.
+- **New Languages:** Added German (`de_DE`), Portuguese (`pt_BR`), and Russian (`ru_RU`).
+
+### v0.5.0 – v0.5.2
+- **Admin Dashboard:** Initial `/chunkadmin` management GUI.
+- **Named Claim Groups:** Replaced coordinate-only tracking with named claim groups (`/claimchunk <name>`, `/chunkexpand <name>`).
+- **Trust System:** Per-claim trusted player management via GUI player heads.
+- **Particle Selection:** Per-player customizable boundary visualizers in `/chunksettings`.
+- **Chinese Language:** Added Simplified Chinese (`zh_CN`) localization.
+- **Platform Support:** Minecraft 1.21.11 and 26.1 API compatibility.
+
+### v0.2 – v0.4
+- **Core Rewrite & Modernization:** Overhauled engine for modern Spigot/Paper architecture.
+- **Interactive GUI:** Introduced player settings menu (`/chunksettings`) for claims, deletion, and languages.
+- **Boundary Visualizer:** Particle-based chunk border rendering.
+- **WorldGuard Integration:** Full-chunk region overlap validation.
+- **Initial Localization:** English (`en_US`), Spanish (`es_ES`), and French (`fr_FR`).
+
+---
+
 ## Documentation & Source
 
 - [GitHub Repository](https://github.com/AshinMc/ChunkClaimPlugin2)
