@@ -9,9 +9,9 @@ The plugin is designed to be intuitive for survival players and low-overhead for
 ## Highlights
 
 - **Named Claim Groups:** Group multiple chunks under intuitive names (e.g., `/claimchunk Base`, `/chunkexpand Base`). Flags, permissions, and trusted players are configured per group rather than per block coordinate.
-- **Flexible Economy Support:** Completely optional (`enabled: false` by default). Works with Vault for traditional virtual balances, gold-backed bank plugins like Gringotts, or built-in physical items (`GOLD_INGOT`, `DIAMOND`) with zero external dependencies. Supports player-to-player claim trading via `/chunksell` and `/claimbuy`. No decay mechanics or upkeep taxes that punish players for taking breaks.
+- **Flexible Economy Support:** Completely optional (`enabled: false` by default). Works with Vault for traditional virtual balances, gold-backed bank plugins like Gringotts, or built-in physical items (`GOLD_INGOT`, `DIAMOND`) with zero external dependencies. Supports player-to-player claim trading via `/claimtrade`. Includes progressive cost scaling that dynamically drops back down when players unclaim land. No decay mechanics or upkeep taxes that punish players for taking breaks.
 - **Non-Intrusive Territory Alerts:** Territory entrance and wilderness notifications are delivered directly to the action bar by default, keeping the center of the screen clear during building and combat. Title, subtitle, and chat delivery modes are also supported.
-- **Granular Protection Flags:** Per-group toggles for container access, furnaces, doors/trapdoors, redstone inputs, animal protection, creeper/enderman griefing, PvP combat, explosions, and fire spread.
+- **Granular Protection Flags:** Per-group toggles for container access, furnaces, doors/trapdoors, redstone inputs, animal protection, creeper/enderman griefing, PvP combat, explosions, and fire spread. Accessible through `/chunksettings` GUI or CLI subcommands for custom menu integrations.
 - **Admin Management Tools:** Server operators can inspect chunks, view ownership details, and forcefully remove claims via `/chunkadmin unclaim`, `/chunkadmin unclaimplayer`, or through an interactive chest GUI.
 - **Per-Player Localization:** Players can set their own display language independently with `/chunklang`. Includes complete translations for English, Spanish, French, German, Portuguese, Russian, and Simplified Chinese.
 - **Extensible API:** Programmatic access via `ChunkClaimAPI`, cancellable Bukkit events for external listeners, and a full PlaceholderAPI expansion.
@@ -37,13 +37,12 @@ The plugin is designed to be intuitive for survival players and low-overhead for
 | `/claimchunk [name]` | `ccp.claim` | Claims the chunk the player is currently standing in |
 | `/chunkexpand <name>` | `ccp.expand` | Adds current chunk to an existing named claim group |
 | `/unclaimchunk [name]` | `ccp.unclaim` | Unclaims a specified claim group or the current chunk |
-| `/chunksell <name> <price\|cancel>` | `ccp.sell` | Lists a claim group on the market or cancels an active listing |
-| `/claimbuy [name]` | `ccp.buy` | Purchases a claim group listed for sale |
+| `/claimtrade <buy\|sell\|cancel\|list>` | `ccp.trade` | P2P marketplace for buying, selling, or listing claims |
 | `/checkchunk` | `ccp.check` | Checks ownership and claim status of current chunk |
 | `/infochunk` | `ccp.info` | Lists all claim groups owned by the player |
 | `/visualizechunk [name]` | `ccp.visualize` | Displays temporary particle borders around claim boundaries |
 | `/chunktp <name>` | `ccp.teleport` | Teleports player to one of their claimed groups |
-| `/chunksettings` | `ccp.settings` | Opens the interactive player management GUI |
+| `/chunksettings [subcommand]` | `ccp.settings` | Opens management GUI or executes CLI subcommands (flag, trust, particle, rename, transfer) |
 | `/chunklang [locale]` | `ccp.lang` | Sets personal language preference |
 | `/chunkadmin` | `chunkclaim.admin` | Opens administrator management dashboard |
 | `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaims the current chunk |
@@ -113,7 +112,9 @@ economy:
 ### v0.8.0
 - **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).
 - **Multi-Economy Support:** Flexible economy integration supporting Vault, Gringotts/gold banks, and native physical item currency (`GOLD_INGOT`, `DIAMOND`) with offline payment queues.
-- **Player Claim Trading:** Real estate marketplace commands (`/chunksell`, `/claimbuy`) and GUI listing management.
+- **Dynamic Price Scaling & Drops:** Progressive claiming costs that dynamically drop back down when players unclaim land.
+- **Player Claim Trading:** Unified marketplace under `/claimtrade` (`buy`, `sell`, `cancel`, `list`).
+- **CLI Subcommands for Custom GUIs:** Full CLI subcommands in `/chunksettings` for flags, trust, particles, renames, and transfers to integrate with DeluxeMenus.
 - **Action Bar Greetings:** Customizable territory entry and wilderness notifications delivered via the action bar.
 - **Localization Completion:** 100% complete string parity across all 7 supported languages.
 - **Developer API Expansion:** New administrative and marketplace query methods in `ChunkClaimAPI`.

@@ -13,14 +13,14 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 ## Features
 
 - **Named Claim Groups:** Claim single chunks or expand multi-chunk groups under custom names (e.g. `/claimchunk Base`, `/chunkexpand Base`).
-- **Flexible Multi-Economy & Marketplace:** Optional land claiming costs and player-to-player claim trading (`/chunksell`, `/claimbuy`). Works with Vault (EssentialsX, CMI), Gold Banks (Gringotts), or native items (Gold Ingots, Diamonds) with zero external plugin dependencies required.
+- **Flexible Multi-Economy & Marketplace:** Optional progressive land claiming costs and player-to-player claim trading (`/claimtrade`). Works with Vault (EssentialsX, CMI), Gold Banks (Gringotts), or native items (Gold Ingots, Diamonds) with zero external plugin dependencies required.
 - **Action Bar Greetings:** Configurable claim entry alerts in the action bar, title bar, subtitle, or chat, plus wilderness transition notices.
 - **Admin Land Management:** Remove griefed or abandoned land with `/chunkadmin unclaim`, `/chunkadmin unclaimplayer`, or via the GUI Chunk Inspector.
 - **Multi-Language (i18n):** Per-player language settings (`/chunklang`). Supports English (`en_US`), Spanish (`es_ES`), French (`fr_FR`), German (`de_DE`), Portuguese (`pt_BR`), Russian (`ru_RU`), and Chinese (`zh_CN`).
 - **PlaceholderAPI Integration:** Full PAPI expansion for claim stats, ownership, names, and marketplace status (`%ccp_claimed_chunks%`, `%ccp_max_chunks%`, `%ccp_chunk_owner%`, `%ccp_claim_name%`, `%ccp_is_for_sale%`, `%ccp_claim_price%`).
-- **Protection Flags & Anti-Grief:** Per-claim toggles for Chests, Furnaces, Doors, Redstone, Mob Entry Wall, Mob Griefing, PvP, Passive Mob Protection, Explosions, and Fire Spread in `/chunksettings`.
+- **Protection Flags & Anti-Grief:** Per-claim toggles for Chests, Furnaces, Doors, Redstone, Mob Entry Wall, Mob Griefing, PvP, Passive Mob Protection, Explosions, and Fire Spread via GUI or CLI subcommands (`/chunksettings flag`).
 - **Particle Border Visualizer:** Per-player custom particle effects (`FLAME`, `HEART`, `SOUL_FIRE_FLAME`, `CHERRY_LEAVES`, `SNOWFLAKE`, etc.) for visualizing boundaries.
-- **Trust & Ownership Transfer:** Trust players per claim group or transfer ownership to other players.
+- **Trust & Ownership Transfer:** Trust players per claim group or transfer ownership to other players (`/chunksettings trust`, `/chunksettings transfer`).
 - **Developer API:** Programmatic access via `ChunkClaimAPI` and cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
 
 ---
@@ -39,13 +39,12 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 | `/claimchunk [name]` | `ccp.claim` | Claim current chunk with an optional group name |
 | `/chunkexpand <name>` | `ccp.expand` | Add current chunk to an existing claim group |
 | `/unclaimchunk [name]` | `ccp.unclaim` | Unclaim a claim group by name, or current chunk |
-| `/chunksell <name> <price\|cancel>` | `ccp.sell` | Put a claim group up for sale or cancel listing |
-| `/claimbuy [name]` | `ccp.buy` | Purchase a claim group currently for sale |
+| `/claimtrade <buy\|sell\|cancel\|list>` | `ccp.trade` | Buy, sell, cancel listings, or browse player claims for sale |
 | `/checkchunk` | `ccp.check` | Check ownership and claim name of current chunk |
 | `/infochunk` | `ccp.info` | View a list of your claim groups |
 | `/visualizechunk [name]` | `ccp.visualize` | Visualize claim borders with particles |
 | `/chunklang [locale]` | `ccp.lang` | View, list, or set your personal language |
-| `/chunksettings` | `ccp.settings` | Open the chunk management GUI |
+| `/chunksettings [subcommand]` | `ccp.settings` | Open management GUI or run CLI subcommands (flag, trust, particle, rename, transfer) |
 | `/chunktp <name>` | `ccp.teleport` | Teleport to a claim group by name |
 | `/chunkadmin` | `chunkclaim.admin` | Open admin GUI control panel |
 | `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaim the chunk you are standing in |
@@ -61,7 +60,9 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 ### v0.8.0
 - **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).
 - **Multi-Economy Support:** Flexible economy integration supporting Vault, Gringotts/gold banks, and native physical item currency (`GOLD_INGOT`, `DIAMOND`) with offline payment queues.
-- **Player Claim Trading:** Real estate marketplace commands (`/chunksell`, `/claimbuy`) and GUI listing management.
+- **Dynamic Price Scaling & Drops:** Progressive claiming costs that dynamically drop back down when players unclaim land.
+- **Player Claim Trading:** Unified marketplace under `/claimtrade` (`buy`, `sell`, `cancel`, `list`).
+- **CLI Subcommands for Custom GUIs:** Full CLI subcommands in `/chunksettings` for flags, trust, particles, renames, and transfers to integrate with DeluxeMenus.
 - **Action Bar Greetings:** Customizable territory entry and wilderness notifications delivered via the action bar.
 - **Localization Completion:** 100% complete string parity across all 7 supported languages.
 - **Developer API Expansion:** New administrative and marketplace query methods in `ChunkClaimAPI`.
