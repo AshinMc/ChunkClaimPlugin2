@@ -1,9 +1,9 @@
 # ChunkClaimPlugin (CCP)
 
-[![](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DfhaubcVdf)
-[![](https://img.shields.io/badge/Ko--fi-Support%20Development-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/ashinmc)
-[![](https://img.shields.io/badge/GitHub-Source%20Code-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AshinMc/ChunkClaimPlugin2)
-[![](https://img.shields.io/badge/Wiki-Documentation-blue?style=for-the-badge&logo=gitbook&logoColor=white)](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DfhaubcVdf)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Development-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/ashinmc)
+[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AshinMc/ChunkClaimPlugin2)
+[![Wiki](https://img.shields.io/badge/Wiki-Documentation-blue?style=for-the-badge&logo=gitbook&logoColor=white)](https://github.com/AshinMc/ChunkClaimPlugin2/blob/main/WIKI.md)
 
 ChunkClaimPlugin is a lightweight, high-performance land protection plugin for modern Spigot and Paper servers (1.19.4 through 26.x). It provides grid-aligned chunk claiming with named territories, granular protection flags, an optional progressive economy engine, and per-player localization.
 

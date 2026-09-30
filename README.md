@@ -1,4 +1,4 @@
-<img src="https://cdn.modrinth.com/data/8C4QfJDU/070d802c6f909b3c1324b3cad46d6b4d9ab5131f_96.webp" width="128">
+<img src="https://cdn.modrinth.com/data/8C4QfJDU/070d802c6f909b3c1324b3cad46d6b4d9ab5131f_96.webp" alt="ChunkClaimPlugin Logo" width="128">
 
 # CCP (Chunk Claim Plugin 2)
 
