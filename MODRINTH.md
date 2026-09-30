@@ -7,7 +7,7 @@
 
 ChunkClaimPlugin is a lightweight, high-performance land protection plugin for modern Spigot and Paper servers (1.19.4 through 26.x). It provides grid-aligned chunk claiming with named territories, granular protection flags, an optional progressive economy engine, and per-player localization.
 
-Designed from the ground up for survival servers, CCP replaces complex wand selection and arbitrary polygon math with native Minecraft chunk boundaries ($16 \times 16 \times \text{world height}$), guaranteeing zero tick overhead on block interactions.
+Designed from the ground up for survival servers, CCP replaces complex wand selection and arbitrary polygon math with native Minecraft chunk boundaries (16 × 16 × world height), guaranteeing zero tick overhead on block interactions.
 
 ---
 
@@ -91,7 +91,7 @@ Players can independently configure their display language using `/chunklang set
 
 ## Technical Specifications & Architecture
 
-* **Spatial Lookup Complexity:** $O(1)$ memory lookup via chunk coordinate keys (`world:x:z`). No bounding-box geometric intersections or polygon parsing on block interact events.
+* **Spatial Lookup Complexity:** O(1) memory lookup via chunk coordinate keys (`world:x:z`). No bounding-box geometric intersections or polygon parsing on block interact events.
 * **Server Compatibility:** Paper, Purpur, and Spigot (Minecraft 1.19.4, 1.20.x, 1.21.x, and 26.x).
 * **Java Runtime:** Java 17 or higher (Java 21 fully supported).
 * **WorldGuard Compatible:** Automatically queries WorldGuard regions to prevent claiming over protected administrative territories.
