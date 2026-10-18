@@ -1,106 +1,133 @@
-# ChunkClaimPlugin2 Configuration
-# Configuration specification version - do not modify
+# ==============================================================================
+#                      CHUNKCLAIMPLUGIN2 CONFIGURATION
+# ==============================================================================
+# Specification version - do not modify
 config-version: 2
 
-# Language / Locale
-# Set your language file to use (matches files in plugins/ChunkClaimPlugin2/lang/)
-# Examples: en_US, es_ES, fr_FR, de_DE, pt_BR, ru_RU, zh_CN
+# ==============================================================================
+#  1. GENERAL & CLAIMING RULES
+# ==============================================================================
+# Server default language (matches plugins/ChunkClaimPlugin2/lang/messages_<locale>.yml)
+# Available: en_US, es_ES, fr_FR, de_DE, pt_BR, ru_RU, zh_CN
 locale: en_US
 
 # Maximum number of chunks a player can claim (0 = unlimited)
+# Admins can override per-player: /chunkadmin setlimit <player> <amount>
 max-claims-per-player: 10
 
-# Item used to claim chunks on right click (Set to "NONE" to disable)
+# Item used to claim chunks on right-click ("NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
 
-# Greeting display mode when entering a claimed chunk
-# Options: ACTION_BAR, TITLE, SUBTITLE, CHAT, NONE
+
+# ==============================================================================
+#  2. TERRITORY GREETINGS & NOTIFICATIONS
+# ==============================================================================
+# How claim entrance greetings appear to players
+# Options: ACTION_BAR (recommended), TITLE, SUBTITLE, CHAT, NONE
 greeting-display: ACTION_BAR
 
-# Show a subtle action bar message when leaving claimed land into the wilderness
+# Send a subtle notice when stepping out of a claim into the wilderness
 show-wilderness-greeting: true
 
-# Title message display duration (used when greeting-display is TITLE or SUBTITLE)
-# 20 ticks = 1 second
+# Display timings when greeting-display is set to TITLE or SUBTITLE (20 ticks = 1s)
 title-duration:
   fade-in: 10
   stay: 60
   fade-out: 15
 
-# Economy & Land Trading System
-# Supports Vault (EssentialsX, CMI, etc.), physical Gold Banks (Gringotts),
-# or native physical items (Gold Ingots, Diamonds, etc.) with NO extra plugins required.
+
+# ==============================================================================
+#  3. CLAIM BORDER VISUALIZER (/visualizechunk)
+# ==============================================================================
+visualization:
+  # Duration in seconds (-1 for indefinite until toggled off)
+  duration-seconds: 10
+  # Vertical particle beam height in blocks
+  particle-height: 100
+  # Distance between particle markers along borders
+  particle-spacing: 0.5
+  # Default particle (FLAME, END_ROD, HEART, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES)
+  particle-type: FLAME
+
+
+# ==============================================================================
+#  4. DEFAULT CLAIM PROTECTION FLAGS
+#  These defaults apply to all newly created claims.
+#  Players can toggle these per-claim group in /chunksettings
+# ==============================================================================
+claim-flags:
+  # --- Mob & Creature Protections ---
+  mob-griefing: true        # Prevent Creeper explosions, Enderman block moving, etc.
+  mob-spawning: false       # Prevent natural hostile monster spawning
+  mob-entry: false          # Push hostile mobs out at border (invisible barrier)
+  mob-protection: true      # Protect farm animals (cows, sheep, bees) from visitors
+
+  # --- Combat & Environmental Hazard ---
+  pvp: false                # Disable PvP combat inside the claim
+  explosions: true          # Block TNT and Wither explosion damage
+  fire-spread: true         # Prevent fire from burning or spreading
+
+  # --- Visitor Block & Container Interactions ---
+  interact-chest: true      # Lock chests, barrels, and shulker boxes to trusted players
+  interact-furnace: true    # Lock furnaces, blast furnaces, and smokers
+  interact-stonecutter: true# Lock workbenches, anvils, and utility blocks
+  interact-door: true       # Lock wooden/iron doors, trapdoors, and fence gates
+  interact-redstone: true   # Lock buttons, levers, repeaters, and comparators
+
+  # --- Claim Greetings ---
+  greeting-title: true      # Display territory welcome greetings
+
+
+# ==============================================================================
+#  5. ECONOMY & MARKETPLACE ENGINE (/claimtrade)
+# ==============================================================================
 economy:
   enabled: false
 
   # Mode:
-  # - "AUTO"   : Uses Vault if detected on server; otherwise falls back to physical item economy
-  # - "VAULT"  : Uses server Vault economy provider (virtual balance or Gringotts gold chests)
-  # - "ITEM"   : Native physical item currency (deducted directly from player inventory)
-  # - "NONE"   : Disables economy transactions
+  # - AUTO  : Uses Vault if detected; otherwise falls back to physical items
+  # - VAULT : Uses server Vault economy (EssentialsX, CMI, Gringotts gold chests)
+  # - ITEM  : Native physical item currency (deducted directly from player inventory)
+  # - NONE  : Disables economy transactions
   mode: AUTO
 
   # Physical Item Currency settings (used in ITEM mode or AUTO fallback)
   item:
-    material: "GOLD_INGOT"       # Any valid Minecraft item: GOLD_INGOT, DIAMOND, EMERALD, etc.
-    display-name: "Gold"         # Currency label in messages (e.g. "10 Gold")
-    convert-blocks: true         # Automatically count and convert 1 block = 9 ingots
+    material: "GOLD_INGOT"        # Any valid item: GOLD_INGOT, DIAMOND, EMERALD, etc.
+    display-name: "Gold"          # Label used in chat messages
+    convert-blocks: true          # Automatically count 1 block = 9 ingots
 
-  # Pricing and Refunds
-  free-claims: 3                 # Number of chunks each player can claim before incurring costs
-  cost-per-chunk: 10.0           # Base cost to claim a new chunk or expand
-  cost-increase-per-chunk: 2.0   # Additional cost per existing chunk owned (0.0 for flat pricing)
-  unclaim-refund-percentage: 50.0# Percentage refunded upon unclaiming (0.0 to disable refunds)
+  # Pricing and Progressive Curves
+  free-claims: 3                  # Free starter chunks before charging players
+  cost-per-chunk: 10.0            # Base cost for a chunk
+  cost-increase-per-chunk: 2.0    # Price increase per chunk currently owned (0.0 for flat rate)
+  unclaim-refund-percentage: 50.0 # Percentage refunded upon unclaiming (0.0 to disable)
 
-# Messages
-messages:
-  # Optional: override messages by key here.
-  # Example:
-  # chunk-claim-success: "&aChunk claimed!"
-  # max-claims-reached: "&cYou have reached your maximum number of claims (%max%)."
 
-# Message toggles - turn on/off specific action messages for all players
-# Set to true to show the message, false to hide it
+# ==============================================================================
+#  6. CHAT ALERTS & ACTION DENIALS
+# ==============================================================================
+# Turn on/off specific warning messages sent to players
 message-toggles:
-  deny-break: true        # Message when block break is denied
-  deny-place: true        # Message when block place is denied
-  deny-interact: true     # Message when interaction is denied
-  deny-entity: true       # Message when entity damage is denied
-  deny-pvp: true          # Message when PvP is denied
-  claim-success: true     # Message when chunk is claimed
-  unclaim-success: true   # Message when chunk is unclaimed
+  deny-break: true                # Message when breaking protected blocks
+  deny-place: true                # Message when placing blocks
+  deny-interact: true             # Message when interacting with locked containers/doors
+  deny-entity: true               # Message when harming protected animals
+  deny-pvp: true                  # Message when PvP is blocked
+  claim-success: true             # Message when successfully claiming land
+  unclaim-success: true           # Message when unclaiming land
 
-# Particle settings
-visualization:
-  duration-seconds: 10
-  particle-height: 100
-  particle-spacing: 0.5
-  # Default particle type for chunk borders. Players can override this per-player.
-  # Valid types: FLAME, END_ROD, HEART, VILLAGER_HAPPY, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES
-  particle-type: FLAME
+# Optional custom string overrides (leave empty to use lang/ locale files)
+messages: {}
 
-# Default claim flags (applied to new claims)
-# Players can toggle these per-claim in /chunksettings -> Claims -> Claim Settings
-claim-flags:
-  mob-griefing: true     # Block mob griefing (snow trails, enderman, etc.)
-  mob-spawning: false    # Block natural mob spawning
-  mob-entry: false       # Block all mobs from entering the chunk (invisible wall)
-  mob-protection: true   # Block players from attacking non-hostile mobs (cows, pigs, etc.)
-  explosions: true       # Block explosion damage (creepers, TNT, etc.)
-  pvp: false             # Block PvP combat
-  fire-spread: true      # Block fire spread and burning in claim
-  greeting-title: true   # Show welcome greeting when entering claim
-  interact-chest: true
-  interact-furnace: true
-  interact-stonecutter: true
-  interact-door: true
-  interact-redstone: true
 
-# Commands to run from console on certain events
-# Available placeholders: %player%, %claim%
+# ==============================================================================
+#  7. CONSOLE EVENT COMMAND TRIGGERS
+#  Placeholders: %player%, %claim%
+# ==============================================================================
 event-commands:
   claim-success: []
   # Example:
-  # - "give %player% diamond 1"
+  # - "eco give %player% 10"
   claim-fail: []
   unclaim-success: []
