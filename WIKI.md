@@ -42,6 +42,9 @@ Welcome to the official documentation for **ChunkClaimPlugin2**. This guide cove
 The primary configuration file is located at `plugins/ChunkClaimPlugin2/config.yml`.
 
 ```yaml
+# Configuration specification version (do not modify)
+config-version: 2
+
 # Default server language file (matches files in plugins/ChunkClaimPlugin2/lang/)
 # Options: en_US, es_ES, fr_FR, de_DE, pt_BR, ru_RU, zh_CN
 locale: en_US
@@ -100,12 +103,6 @@ visualization:
   particle-height: 100           # Vertical beam height in blocks
   particle-spacing: 0.5          # Distance between particles along borders
   particle-type: FLAME           # Server default (FLAME, END_ROD, HEART, DUST, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES)
-
-# General protection toggles
-protection:
-  prevent-block-break: true
-  prevent-block-place: true
-  prevent-interactions: true
 
 # Message toggles - turn on/off specific warning messages for all players
 message-toggles:

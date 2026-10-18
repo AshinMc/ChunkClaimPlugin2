@@ -547,7 +547,7 @@ public class ChunkManager {
     public boolean getClaimFlag(UUID owner, String claimName, String flag) {
         Map<String, Boolean> flags = claimFlags.get(trustKey(owner, claimName));
         if (flags != null && flags.containsKey(flag)) return flags.get(flag);
-        return DEFAULT_FLAGS.getOrDefault(flag, false);
+        return getDefaultFlag(flag);
     }
 
     /**
@@ -557,7 +557,7 @@ public class ChunkManager {
         UUID owner = getChunkOwner(chunk);
         if (owner == null) return false;
         String name = getChunkClaimName(chunk);
-        if (name == null) return DEFAULT_FLAGS.getOrDefault(flag, false);
+        if (name == null) return getDefaultFlag(flag);
         return getClaimFlag(owner, name, flag);
     }
 
@@ -590,8 +590,12 @@ public class ChunkManager {
 
     /**
      * Get the default value for a flag.
+     * Checks server config.yml under claim-flags.<flag>, falling back to hardcoded DEFAULT_FLAGS.
      */
-    public static boolean getDefaultFlag(String flag) {
+    public boolean getDefaultFlag(String flag) {
+        if (plugin != null && plugin.getConfig() != null && plugin.getConfig().contains("claim-flags." + flag)) {
+            return plugin.getConfig().getBoolean("claim-flags." + flag);
+        }
         return DEFAULT_FLAGS.getOrDefault(flag, false);
     }
 

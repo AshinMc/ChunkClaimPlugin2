@@ -1,4 +1,6 @@
 # ChunkClaimPlugin2 Configuration
+# Configuration specification version - do not modify
+config-version: 2
 
 # Language / Locale
 # Set your language file to use (matches files in plugins/ChunkClaimPlugin2/lang/)
@@ -76,12 +78,6 @@ visualization:
   # Default particle type for chunk borders. Players can override this per-player.
   # Valid types: FLAME, END_ROD, HEART, VILLAGER_HAPPY, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES
   particle-type: FLAME
-
-# Protection settings
-protection:
-  prevent-block-break: true
-  prevent-block-place: true
-  prevent-interactions: true
 
 # Default claim flags (applied to new claims)
 # Players can toggle these per-claim in /chunksettings -> Claims -> Claim Settings

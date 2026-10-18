@@ -37,10 +37,8 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        // Initialize config & auto-update missing default keys for existing installations
-        saveDefaultConfig();
-        getConfig().options().copyDefaults(true);
-        saveConfig();
+        // Initialize and migrate config from older versions if needed
+        org.ashin.chunkClaimPlugin2.config.ConfigMigrator.migrate(this);
 
         // Initialize managers
         chunkManager = new ChunkManager(this);
