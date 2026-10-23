@@ -347,7 +347,8 @@ public class SettingsGUI {
             { ChunkManager.FLAG_INTERACT_FURNACE, "FURNACE",    "gui-flag-interact-furnace" },
             { ChunkManager.FLAG_INTERACT_STONECUTTER, "STONECUTTER", "gui-flag-interact-stonecutter" },
             { ChunkManager.FLAG_INTERACT_DOOR, "OAK_DOOR",      "gui-flag-interact-door" },
-            { ChunkManager.FLAG_INTERACT_REDSTONE, "REDSTONE",  "gui-flag-interact-redstone" }
+            { ChunkManager.FLAG_INTERACT_REDSTONE, "REDSTONE",  "gui-flag-interact-redstone" },
+            { ChunkManager.FLAG_INTERACT_VILLAGERS, "EMERALD",  "gui-flag-interact-villagers" }
         };
 
         int slot = 10;

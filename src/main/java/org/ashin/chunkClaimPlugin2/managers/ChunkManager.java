@@ -474,11 +474,12 @@ public class ChunkManager {
     public static final String FLAG_INTERACT_STONECUTTER = "interact-stonecutter";
     public static final String FLAG_INTERACT_DOOR = "interact-door";
     public static final String FLAG_INTERACT_REDSTONE = "interact-redstone";
+    public static final String FLAG_INTERACT_VILLAGERS = "interact-villagers";
 
     /** Ordered list for GUI display. */
     public static final String[] ALL_FLAGS = {
         FLAG_MOB_GRIEFING, FLAG_MOB_SPAWNING, FLAG_MOB_ENTRY, FLAG_MOB_PROTECTION, FLAG_EXPLOSIONS, FLAG_PVP, FLAG_FIRE_SPREAD, FLAG_GREETING_TITLE,
-        FLAG_INTERACT_CHEST, FLAG_INTERACT_FURNACE, FLAG_INTERACT_STONECUTTER, FLAG_INTERACT_DOOR, FLAG_INTERACT_REDSTONE
+        FLAG_INTERACT_CHEST, FLAG_INTERACT_FURNACE, FLAG_INTERACT_STONECUTTER, FLAG_INTERACT_DOOR, FLAG_INTERACT_REDSTONE, FLAG_INTERACT_VILLAGERS
     };
 
     /** Default values: true = protection enabled / blocked action, false = allowed action */
@@ -495,7 +496,8 @@ public class ChunkManager {
         Map.entry(FLAG_INTERACT_FURNACE, true),    // protect furnaces by default
         Map.entry(FLAG_INTERACT_STONECUTTER, true),// protect stonecutters by default
         Map.entry(FLAG_INTERACT_DOOR, true),       // protect doors by default
-        Map.entry(FLAG_INTERACT_REDSTONE, true)    // protect redstone (buttons/levers) by default
+        Map.entry(FLAG_INTERACT_REDSTONE, true),   // protect redstone (buttons/levers) by default
+        Map.entry(FLAG_INTERACT_VILLAGERS, true)   // protect villager trading by default
     );
 
     /**

@@ -24,6 +24,13 @@ Welcome to the official documentation for **ChunkClaimPlugin2**. This guide cove
 9. [PlaceholderAPI Reference](#-placeholderapi-reference)
 10. [Localization & Multi-Language (`lang/`)](#-localization--multi-language-lang)
 11. [Data Migration & Upgrading from Previous Versions](#-data-migration--upgrading-from-previous-versions)
+12. [Frequently Asked Questions (FAQ)](#-frequently-asked-questions-faq)
+    - [Claiming & Territory Management](#-claiming--territory-management-faq)
+    - [Protection, Mobs & Combat Systems](#-protection-mobs--combat-systems-faq)
+    - [Villagers & Trading Halls](#-villagers--trading-halls-faq)
+    - [Economy, Pricing & Refunds](#-economy-pricing--refunds-faq)
+    - [Custom GUIs & DeluxeMenus](#-custom-guis--deluxemenus-faq)
+    - [Server Administration & Upgrades](#-server-administration--upgrades-faq)
 
 ---
 
@@ -466,6 +473,7 @@ Flags can be toggled per claim group in `/chunksettings`:
 | `interact-stonecutter` | Stonecutter | Protects stonecutters, crafting tables, and utilities | `true` |
 | `interact-door` | Oak Door | Protects doors, trapdoors, and fence gates | `true` |
 | `interact-redstone` | Redstone | Protects levers, buttons, repeaters, and comparators | `true` |
+| `interact-villagers` | Emerald | Restricts trading with villagers and wandering traders to members | `true` |
 
 ---
 
@@ -531,3 +539,100 @@ Plugin messages are stored in `plugins/ChunkClaimPlugin2/lang/`. Each player can
 - **Seamless Auto-Update:** When dropping in ChunkClaimPlugin2 v0.8.0 on an existing server, newly added configuration settings (`greeting-display`, `economy`, etc.) are automatically merged into your existing `config.yml` without overwriting your custom changes.
 - **Data Safety:** Claim records in `chunkclaims.yml` retain 100% compatibility with older v0.5.x, v0.6.x, and v0.7.x schemas.
 - **Language Updates:** Any missing language keys are automatically populated from the internal resource defaults.
+
+---
+
+## ❓ Frequently Asked Questions (FAQ)
+
+### 📌 Claiming & Territory Management FAQ
+
+#### Q: How do I expand my base without creating disconnected claims?
+> Stand in an adjacent chunk next to your existing base and run `/chunkexpand <claimName>`. All chunks added to this named territory share the exact same permissions, trusted members, and protection flags.
+
+#### Q: Can I unclaim just one single chunk from a large territory?
+> Yes! Stand inside the specific chunk you wish to abandon and run `/unclaimchunk` with no arguments. To unclaim the entire group all at once, specify the name: `/unclaimchunk <claimName>`.
+
+#### Q: Can players claim land inside WorldGuard spawn or protected regions?
+> No. CCP features native WorldGuard integration. If any block inside the chunk intersects a WorldGuard region, the claim attempt is automatically blocked.
+
+#### Q: How do I give VIP or staff players higher chunk limits?
+> Server owners can override individual player limits using:
+> ```text
+> /chunkadmin setlimit <player> <amount>
+> ```
+> Set `<amount>` to `0` for unlimited claims, or run `/chunkadmin removelimit <player>` to revert back to the server default.
+
+#### Q: What happens if I die or log out? Do I lose my land?
+> No. Claim ownership is persistent and safely tied to your player UUID in `chunkclaims.yml`. Chunks remain claimed indefinitely until manually unclaimed by you or removed by an administrator.
+
+---
+
+### 🛡️ Protection, Mobs & Combat Systems FAQ
+
+#### Q: Why couldn't I hit an angry bee or wolf attacking me inside a claim?
+> In vanilla Minecraft, bees and wolves are classified as animals rather than monsters. By default, `mob-protection: true` guards peaceful farm animals against visitors. In CCP v0.8.0+, angry or attacking neutral mobs (bees with anger, aggressive zombified piglins, wolves) are automatically detected as hostile threats, allowing you to defend yourself without having to disable passive mob protection!
+
+#### Q: Do custom right-click weapon systems (holding M2 to attack) work inside claims?
+> Yes! In CCP v0.8.0+, right-click interactions on hostile monsters and aggressive mobs are never cancelled, allowing custom sword plugins, spears, and auto-attack mechanics to trigger freely.
+
+#### Q: How do Creeper and TNT explosions behave?
+> When the `explosions` flag is enabled (`true` by default), block damage from Creepers, TNT, Minecart TNT, and Withers is completely neutralized inside the claimed territory.
+
+#### Q: Can I allow PvP in the wilderness while disabling it inside claims?
+> Yes. Leave `pvp: false` in `claim-flags` (default). PvP damage inside the claim will be blocked with a warning message, while wilderness combat functions as normal.
+
+---
+
+### 🧑‍🌾 Villagers & Trading Halls FAQ
+
+#### Q: How do I stop random visitors from exhausting my librarian's trades?
+> Ensure `interact-villagers: true` (default) is set on your claim group via `/chunksettings flag <claim> interact-villagers true`. Only you and your trusted members will be allowed to trade with villagers and wandering traders.
+
+#### Q: Can I build a public shopping mall or community trading hall?
+> Yes! Simply set `interact-villagers: false` on your market claim. Any player on the server will be able to trade with your villagers freely, while your chests, furnaces, doors, and building blocks remain 100% locked and safe.
+
+#### Q: What message do visitors see if villager trading is locked?
+> Strangers receive the localized denial message: `"You cannot trade with villagers in this claim."` (controlled by `deny-interact` in `message-toggles`).
+
+---
+
+### 💰 Economy, Pricing & Refunds FAQ
+
+#### Q: Do I need an economy plugin like EssentialsX to use claim costs?
+> No! CCP includes a native physical item economy (`mode: ITEM`). It directly deducts and refunds in-game items (like `GOLD_INGOT` or `DIAMOND`) from the player's inventory, automatically handling 1 Block = 9 items conversions with zero external plugins. Virtual balance plugins (EssentialsX, CMI, Gringotts) are also supported via `mode: VAULT`.
+
+#### Q: If a player unclaims land, does the cost of their next claim decrease?
+> Yes! CCP calculates claim costs dynamically based strictly on the player's **current active chunk count**. When land is unclaimed, their next chunk purchase immediately drops back down to the lower tier, and they receive the configured unclaim refund percentage.
+
+#### Q: What happens if a player sells a claim on `/claimtrade` while offline?
+> CCP automatically queues offline marketplace sales in `plugins/ChunkClaimPlugin2/data/pending_economy.yml`. As soon as the seller logs in, their earnings are credited to their balance or delivered directly to their inventory.
+
+---
+
+### 🛠️ Custom GUIs & DeluxeMenus FAQ
+
+#### Q: Can I replace the built-in `/chunksettings` GUI with my own DeluxeMenus menu?
+> Yes! Every action in `/chunksettings` features dedicated CLI subcommands (`flag`, `trust`, `untrust`, `particle`, `rename`, `transfer`, `unclaim`) with full tab-completion. Server owners can bind buttons in DeluxeMenus or ChestCommands directly to these subcommands.
+
+#### Q: How do administrators change a flag across all server claims at once?
+> Use the admin CLI command:
+> ```text
+> /chunkadmin resetflag <flag> <true|false|remove>
+> ```
+> Setting `false` force-disables it everywhere; `true` force-enables it everywhere; `remove` clears overrides so all claims follow the server default in `config.yml`.
+
+#### Q: How do staff or admins bypass claim protections?
+> Grant the permission node `chunkclaimprotection.bypass` to staff groups. Players with this permission can build, break, and interact everywhere regardless of claim ownership.
+
+---
+
+### ⚙️ Server Administration & Upgrades FAQ
+
+#### Q: What happens to my old configuration when updating the plugin?
+> CCP v0.8.0 includes an automatic `ConfigMigrator`. On startup, it creates a timestamped safety backup (`config.yml.old`), writes the clean new template, and transfers all of your customized limits, economy settings, and flags without losing any data.
+
+#### Q: Where is territory data stored?
+> All claims, trusted players, flags, and custom player limits are saved in `plugins/ChunkClaimPlugin2/data/chunkclaims.yml`. This file is saved asynchronously and during server shutdowns.
+
+#### Q: How do players change their personal display language?
+> Players can run `/chunklang set <locale>` (e.g. `en_US`, `es_ES`, `fr_FR`, `de_DE`, `pt_BR`, `ru_RU`, `zh_CN`). Their preference is saved and persists across server restarts.

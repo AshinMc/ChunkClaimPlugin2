@@ -162,6 +162,13 @@ public class ChunkProtectionListener implements Listener {
         if (entity instanceof org.bukkit.entity.Shulker) return true;
         if (entity instanceof org.bukkit.entity.Hoglin) return true;
         if (entity instanceof org.bukkit.entity.Boss) return true;
+
+        // Check if neutral mob is currently aggressive/angry
+        if (entity instanceof org.bukkit.entity.Bee bee && bee.getAnger() > 0) return true;
+        if (entity instanceof org.bukkit.entity.PigZombie pz && pz.isAngry()) return true;
+        if (entity instanceof org.bukkit.entity.Wolf wolf && wolf.isAngry()) return true;
+        if (entity instanceof org.bukkit.entity.IronGolem golem && golem.getTarget() instanceof Player) return true;
+
         try {
             if (entity instanceof org.bukkit.entity.Enemy) return true;
         } catch (Throwable ignored) {}
@@ -221,17 +228,42 @@ public class ChunkProtectionListener implements Listener {
     /**
      * Prevents players from interacting with entities (right-click on villagers, minecart chests,
      * storage minecarts, etc.) in claimed chunks.
+     * Hostile monsters and angry mobs are explicitly permitted for custom weapons and defense.
+     * Villager and Wandering Trader trading is governed by the interact-villagers claim flag.
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         // Don't block interaction with other players
         if (event.getRightClicked() instanceof Player) return;
 
+        // Allow interacting with hostile monsters (e.g. name tags, custom right-click combat systems)
+        if (isHostileMob(event.getRightClicked())) return;
+
         Chunk chunk = event.getRightClicked().getLocation().getChunk();
         if (canModifyChunk(event.getPlayer(), chunk)) return;
 
+        Entity clicked = event.getRightClicked();
+
+        // Villager and Wandering Trader trading protection
+        if (clicked instanceof org.bukkit.entity.AbstractVillager) {
+            if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_VILLAGERS)) {
+                event.setCancelled(true);
+                if (messages.isMessageEnabled("deny-interact")) {
+                    String msg = messages.getFor(event.getPlayer().getUniqueId(), "deny-villager-trade");
+                    if (msg == null || msg.isEmpty() || msg.startsWith("Unknown message")) {
+                        msg = messages.getFor(event.getPlayer().getUniqueId(), "deny-interact");
+                    }
+                    event.getPlayer().sendMessage(msg);
+                }
+            }
+            return;
+        }
+
+        // Other entities (storage minecarts, boats, animals, etc.)
         event.setCancelled(true);
-        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+        if (messages.isMessageEnabled("deny-interact")) {
+            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
+        }
     }
 
     /**

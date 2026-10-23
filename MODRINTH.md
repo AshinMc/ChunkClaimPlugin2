@@ -74,8 +74,10 @@ Flags can be toggled per claim group in `/chunksettings` or via CLI commands:
 | `fire-spread` | Blocks fire from igniting, burning, or spreading | Enabled |
 | `interact-chest` | Restricts chests, barrels, and shulker boxes to trusted members | Enabled |
 | `interact-furnace` | Restricts furnaces, blast furnaces, and smokers | Enabled |
-| `interact-doors` | Restricts doors, trapdoors, and fence gates | Enabled |
+| `interact-stonecutter` | Restricts crafting tables, stonecutters, and workbenches | Enabled |
+| `interact-door` | Restricts doors, trapdoors, and fence gates | Enabled |
 | `interact-redstone` | Restricts levers, buttons, repeaters, and comparators | Enabled |
+| `interact-villagers` | Restricts trading with villagers and wandering traders to prevent trade lockout | Enabled |
 
 ### Custom Menu Ready (DeluxeMenus / ChestCommands)
 Every setting in `/chunksettings` features dedicated CLI subcommands (`flag`, `trust`, `untrust`, `particle`, `rename`, `transfer`, `unclaim`) with full tab-completion. Server owners can bind buttons in DeluxeMenus or custom GUI plugins directly to CCP subcommands.
@@ -114,6 +116,7 @@ Players can independently configure their display language using `/chunklang set
 
 ### v0.8.0
 - **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).
+- **Villager Trade Protection & Combat Upgrades:** Added `interact-villagers` claim flag to prevent strangers from exhausting villager trades or to permit public trading malls. Unblocked right-click interactions on hostile monsters for custom sword combat and allowed defending against angry bees and neutral mobs.
 - **Multi-Economy Support:** Flexible economy integration supporting Vault, Gringotts/gold banks, and native physical item currency (`GOLD_INGOT`, `DIAMOND`) with offline payment queues.
 - **Dynamic Price Scaling & Drops:** Progressive claiming costs that dynamically drop back down when players unclaim land.
 - **Player Claim Trading:** Unified marketplace under `/claimtrade` (`buy`, `sell`, `cancel`, `list`).

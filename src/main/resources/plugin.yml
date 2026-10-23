@@ -131,6 +131,9 @@ permissions:
   ccp.flag.interact-redstone:
     description: Allows toggling redstone interaction flag
     default: true
+  ccp.flag.interact-villagers:
+    description: Allows toggling villager trading interaction flag
+    default: true
   chunkclaimprotection.bypass:
     description: Allows bypassing chunk protection checks
     default: op

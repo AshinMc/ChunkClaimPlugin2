@@ -99,7 +99,7 @@ public class AdminSettingsGUI {
     public void openFlagManager(Player player) {
         Inventory inv = Bukkit.createInventory(new AdminHolder(View.ADMIN_FLAG_MANAGER), 27, "Global Flag Manager");
 
-        int[] slots = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15};
+        int[] slots = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16};
         for (int i = 0; i < ChunkManager.ALL_FLAGS.length && i < slots.length; i++) {
             String flag = ChunkManager.ALL_FLAGS[i];
             Material mat = switch (flag) {
@@ -116,6 +116,7 @@ public class AdminSettingsGUI {
                 case ChunkManager.FLAG_INTERACT_STONECUTTER -> Material.STONECUTTER;
                 case ChunkManager.FLAG_INTERACT_DOOR -> Material.OAK_DOOR;
                 case ChunkManager.FLAG_INTERACT_REDSTONE -> Material.REDSTONE;
+                case ChunkManager.FLAG_INTERACT_VILLAGERS -> Material.EMERALD;
                 default -> Material.PAPER;
             };
 

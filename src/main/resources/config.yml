@@ -73,6 +73,7 @@ claim-flags:
   interact-stonecutter: true# Lock workbenches, anvils, and utility blocks
   interact-door: true       # Lock wooden/iron doors, trapdoors, and fence gates
   interact-redstone: true   # Lock buttons, levers, repeaters, and comparators
+  interact-villagers: true  # Lock villager and wandering trader trading to trusted players
 
   # --- Claim Greetings ---
   greeting-title: true      # Display territory welcome greetings
