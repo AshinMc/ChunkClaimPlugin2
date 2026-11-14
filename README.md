@@ -29,6 +29,7 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 
 - [Server Owner Wiki & Guide (WIKI.md)](WIKI.md) — Setup, configuration reference, economy setup, permissions, admin commands, and PlaceholderAPI.
 - [Developer API Guide (DEVELOPER.md)](DEVELOPER.md) — API methods, events, and code examples.
+- [Engineering Roadmap & Task Backlog (ROADMAP.md)](ROADMAP.md) — Technical tasks, vulnerability audit findings, performance optimizations, and pending fixes.
 
 ---
 
