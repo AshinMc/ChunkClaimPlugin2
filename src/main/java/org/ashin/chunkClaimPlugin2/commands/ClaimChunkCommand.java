@@ -108,8 +108,9 @@ public class ClaimChunkCommand implements CommandExecutor {
             // Run success commands
             java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-success");
             for (String cmd : cmds) {
+                String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
                 org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
-                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
+                        stripped.replace("%player%", player.getName()).replace("%claim%", claimName));
             }
         } else {
             // Refund if paid
@@ -120,8 +121,9 @@ public class ClaimChunkCommand implements CommandExecutor {
             // Run fail commands
             java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-fail");
             for (String cmd : cmds) {
+                String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
                 org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
-                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
+                        stripped.replace("%player%", player.getName()).replace("%claim%", claimName));
             }
         }
 

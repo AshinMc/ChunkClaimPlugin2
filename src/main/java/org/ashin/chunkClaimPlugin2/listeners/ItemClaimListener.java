@@ -120,11 +120,25 @@ public class ItemClaimListener implements Listener {
                 String formatted = economyManager.getProvider().format(cost);
                 player.sendMessage(messages.getFor(player.getUniqueId(), "claim-cost-notice", "cost", formatted));
             }
+            // Run success commands (matches /claimchunk behaviour)
+            java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-success");
+            for (String cmd : cmds) {
+                String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
+                org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                        stripped.replace("%player%", player.getName()).replace("%claim%", claimName));
+            }
         } else {
             if (paid) {
                 economyManager.getProvider().deposit(player, cost);
             }
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-fail"));
+            // Run fail commands
+            java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.claim-fail");
+            for (String cmd : cmds) {
+                String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
+                org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                        stripped.replace("%player%", player.getName()).replace("%claim%", claimName));
+            }
         }
     }
 }

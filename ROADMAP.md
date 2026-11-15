@@ -258,6 +258,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/commands/UnclaimChunkCommand.java`
 - **Issue:** `Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd)` fails if an admin writes `/give %player% diamond 1` in `config.yml` because the console command dispatcher does not accept leading slashes.
 - **Task:** Strip leading `/` before dispatching console event commands.
+- **Status:** ✅ **FIXED** — Added `String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;` before every `Bukkit.dispatchCommand` call in `ClaimChunkCommand`, `ChunkExpandCommand`, `UnclaimChunkCommand`, and `ItemClaimListener`.
 
 ### Synchronous Mojang API Lookups in Admin Commands
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkAdminCommand.java`
@@ -290,6 +291,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimChunkCommand.java` (lines 109–126)
 - **Issue:** Claiming via `/claimchunk` dispatches `event-commands.claim-success` and `claim-fail`. Right-clicking with the claim tool (`claim-item: "WOODEN_SHOVEL"`) completely bypasses console event command dispatching, breaking third-party server integrations (e.g. permission upgrades, Discord webhooks).
 - **Task:** Dispatch `event-commands.claim-success` and `claim-fail` inside `ItemClaimListener.java` matching command execution behavior.
+- **Status:** ✅ **FIXED** — `ItemClaimListener` now dispatches `event-commands.claim-success` on successful item-claim and `event-commands.claim-fail` on failure, with leading-slash stripping applied.
 
 ### Message Toggle Inconsistency in `/chunkexpand`
 - **Files:**
