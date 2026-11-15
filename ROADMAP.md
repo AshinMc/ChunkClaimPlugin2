@@ -10,6 +10,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/UnclaimChunkCommand.java`
 - **Issue:** Running `/unclaimchunk` without arguments calls `chunkManager.unclaimByName(...)`, unclaiming all chunks in the named claim group instead of just the chunk the player is standing in.
 - **Task:** Update no-args logic to invoke `chunkManager.unclaimChunk(player, chunk)`.
+- **Status:** ✅ **FIXED** — Split `onCommand` into two distinct paths. The no-args path now calls `chunkManager.unclaimChunk(player, chunk)` to remove exactly one chunk and issues a 1-chunk refund. The with-args path retains `unclaimByName` to unclaim entire named groups. Also pre-emptively stripped leading `/` from event-commands in both paths (see Console Event Command fix).
 
 ### Atomic & Asynchronous Data Persistence
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`

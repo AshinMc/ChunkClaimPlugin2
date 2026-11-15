@@ -32,24 +32,46 @@ public class UnclaimChunkCommand implements CommandExecutor {
             return true;
         }
 
-        String claimName;
-        if (args.length > 0) {
-            claimName = String.join(" ", args);
-        } else {
-            // No args: use the claim name of the chunk the player is standing on
+        // No args: unclaim only the SINGLE chunk the player is standing on
+        if (args.length == 0) {
             Chunk chunk = player.getLocation().getChunk();
             UUID owner = chunkManager.getChunkOwner(chunk);
             if (owner == null || !owner.equals(player.getUniqueId())) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
                 return true;
             }
-            claimName = chunkManager.getChunkClaimName(chunk);
-            if (claimName == null) {
+            int countBefore = chunkManager.getPlayerChunkCount(player.getUniqueId());
+            String singleClaimName = chunkManager.getChunkClaimName(chunk);
+            boolean success = chunkManager.unclaimChunk(player, chunk);
+            if (success) {
+                chunkManager.saveData();
+                if (messages.isMessageEnabled("unclaim-success")) {
+                    player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-success"));
+                }
+                // Refund 1 chunk
+                double refund = economyManager.getUnclaimRefund(countBefore, 1);
+                if (refund > 0.0) {
+                    economyManager.getProvider().deposit(player, refund);
+                    String formatted = economyManager.getProvider().format(refund);
+                    player.sendMessage(messages.getFor(player.getUniqueId(), "unclaim-refund-notice",
+                            "amount", formatted, "count", "1"));
+                }
+                // Run success commands
+                String resolvedClaimName = singleClaimName != null ? singleClaimName : "";
+                java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.unclaim-success");
+                for (String cmd : cmds) {
+                    String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
+                    org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
+                            stripped.replace("%player%", player.getName()).replace("%claim%", resolvedClaimName));
+                }
+            } else {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-fail"));
-                return true;
             }
+            return true;
         }
 
+        // With args: unclaim the entire named claim group
+        String claimName = String.join(" ", args);
         int currentCount = chunkManager.getPlayerChunkCount(player.getUniqueId());
         int count = chunkManager.unclaimByName(player.getUniqueId(), claimName);
         if (count > 0) {
@@ -71,8 +93,9 @@ public class UnclaimChunkCommand implements CommandExecutor {
             // Run success commands
             java.util.List<String> cmds = plugin.getConfig().getStringList("event-commands.unclaim-success");
             for (String cmd : cmds) {
+                String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;
                 org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(),
-                        cmd.replace("%player%", player.getName()).replace("%claim%", claimName));
+                        stripped.replace("%player%", player.getName()).replace("%claim%", claimName));
             }
         } else {
             player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-name-fail", "name", claimName));
