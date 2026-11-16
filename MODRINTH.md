@@ -21,9 +21,9 @@ Designed from the ground up for survival servers, CCP replaces complex wand sele
 | `/chunkexpand <name>` | `ccp.expand` | Adds the current chunk to an existing named claim group |
 | `/unclaimchunk [name]` | `ccp.unclaim` | Unclaims a specified claim group, or the chunk you are standing in |
 | `/checkchunk` | `ccp.check` | Checks ownership and claim status of the current chunk |
-| `/infochunk` | `ccp.info` | Lists all claim groups owned by you |
-| `/visualizechunk [name]` | `ccp.visualize` | Displays temporary particle borders around claim boundaries |
-| `/chunktp <name>` | `ccp.teleport` | Teleports you to one of your claimed groups |
+| `/infochunk [page]` | `ccp.info` | Lists your claim groups with page-based navigation |
+| `/visualizechunk [name]` | `ccp.visualize` | Displays temporary per-player particle borders around exact claim perimeters |
+| `/chunktp <name>` | `ccp.teleport` | Safely teleports you to one of your claimed groups |
 | `/chunksettings [subcommand]` | `ccp.settings` | Opens the interactive settings GUI or runs CLI subcommands |
 | `/chunklang [locale]` | `ccp.lang` | Sets your personal display language |
 
@@ -33,14 +33,16 @@ Designed from the ground up for survival servers, CCP replaces complex wand sele
 |---|---|---|
 | `/claimtrade sell <claim> <price>` | `ccp.trade` | Lists an owned claim group for sale on the server market |
 | `/claimtrade cancel <claim>` | `ccp.trade` | Removes your claim group from the market |
-| `/claimtrade buy [claim]` | `ccp.trade` | Purchases a claim (standing inside it or by name) |
+| `/claimtrade buy [<seller> <claim>\|<seller>:<claim>\|<claim>]` | `ccp.trade` | Purchases a claim (standing inside it or by seller/claim name) |
 | `/claimtrade list` | `ccp.trade` | Displays all claims currently listed for sale across the server |
+| `/claimtrade claim` | `ccp.trade` | Collects pending economy payouts once inventory space is available |
 
 ### Administrator Commands
 
 | Command | Permission | Description |
 |---|---|---|
 | `/chunkadmin` | `chunkclaim.admin` | Opens administrator management dashboard |
+| `/chunkadmin reload` | `chunkclaim.admin` | Reloads `config.yml`, locale files, cached settings, and economy engine |
 | `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaims the chunk you are standing in |
 | `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaims specific or all claims of a player |
 | `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Sets a custom claim limit override for a player (0 = unlimited) |
@@ -70,7 +72,7 @@ Flags can be toggled per claim group in `/chunksettings` or via CLI commands:
 | `mob-entry` | Pushes hostile mobs away at the border (invisible barrier) | Disabled |
 | `mob-protection` | Protects friendly farm animals from outside visitors | Enabled |
 | `explosions` | Blocks TNT, minecart TNT, and Wither explosion damage | Enabled |
-| `pvp` | Disables player-vs-player combat within the claim | Disabled |
+| `pvp` | Blocks player-vs-player combat (and Crystal/Anchor PvP) within the claim (`block-pvp` in `config.yml`) | Enabled |
 | `fire-spread` | Blocks fire from igniting, burning, or spreading | Enabled |
 | `interact-chest` | Restricts chests, barrels, and shulker boxes to trusted members | Enabled |
 | `interact-furnace` | Restricts furnaces, blast furnaces, and smokers | Enabled |
@@ -93,10 +95,10 @@ Players can independently configure their display language using `/chunklang set
 
 ## Technical Specifications & Architecture
 
-* **Spatial Lookup Complexity:** O(1) memory lookup via chunk coordinate keys (`world:x:z`). No bounding-box geometric intersections or polygon parsing on block interact events.
+* **Spatial Lookup Complexity:** O(1) concurrent memory lookup (`ConcurrentHashMap`) via chunk coordinate keys (`world:x:z`), async-safe for PlaceholderAPI expansions and backed by atomic async disk persistence.
 * **Server Compatibility:** Paper, Purpur, and Spigot (Minecraft 1.19.4, 1.20.x, 1.21.x, and 26.x).
 * **Java Runtime:** Java 17 or higher (Java 21 fully supported).
-* **WorldGuard Compatible:** Automatically queries WorldGuard regions to prevent claiming over protected administrative territories.
+* **World Controls & WorldGuard:** Native `disabled-worlds` blacklist plus WorldGuard region overlap protection (`Flags.BUILD` & `__global__`-safe).
 * **PlaceholderAPI:** Full expansion for player claim statistics, limits, group names, and marketplace pricing (`%ccp_claimed_chunks%`, `%ccp_max_chunks%`, `%ccp_claim_name%`, `%ccp_is_for_sale%`, `%ccp_claim_price%`).
 * **Developer API:** Programmatic singleton `ChunkClaimAPI` with cancellable Bukkit events (`ChunkClaimEvent`, `ChunkUnclaimEvent`, `ChunkRenameEvent`, `ChunkTransferEvent`).
 
@@ -113,6 +115,18 @@ Players can independently configure their display language using `/chunklang set
 ---
 
 ## Version History
+
+### v0.8.5 (Major Security, Performance & Stability Release)
+- **Full Grief & Exploit Audit (50 Fixes):**
+  - Blocked bucket placement/pickup, fluid & dragon-egg cross-border inflow, piston extend/retract across claim borders, direct Flint & Steel / Fireball ignition, End Crystal & Respawn Anchor explosions, lingering potion clouds, Chorus Fruit & Ender Pearl vault infiltration, Frost Walker ice griefing, 1.20+ sign text editing, fishing-rod entity pulling, leash/unleash theft, Bad Omen raids, boat/minecart placement & entity mounting, entity crop/turtle egg trampling, cross-border tree growth, and Nether portal overwriting.
+  - Protected dyed shulker boxes, pressure plates, tripwire, anchors, cauldrons, composters, cakes, bells, lecterns, chiseled bookshelves, and decorated pots; decoupled `ArmorStand` break protection from `mob-protection`.
+- **Performance & Thread Safety:**
+  - Replaced global world entity scans in `mob-entry` with loaded-chunk-only checks and protected pets (`Tameable`), custom-named mobs, villagers, and iron golems from removal.
+  - Added async atomic saving (`chunkclaims.yml.tmp`), converted all `ChunkManager` collections to `ConcurrentHashMap`, removed async `.getChunk()` calls in PlaceholderAPI, added bitshift pre-checks in `PlayerMoveListener`, cached hot-path config settings in memory, and eliminated blocking Mojang API lookups in `/chunkadmin`.
+- **Economy & Marketplace Hardening:**
+  - Tracked historical purchase prices per chunk and zeroed traded claim refunds to eliminate infinite money arbitrage; added `/claimtrade buy <seller> <claim>` disambiguation, `/claimtrade claim` overflow recovery, RPG/custom-meta item protection, `Material.AIR` crash prevention, and `singular-name` / `plural-name` currency labels.
+- **Navigation, Worlds & Admin Config:**
+  - Added safe vertical Nether/underground scanning in `/chunktp`, accurate per-chunk outer perimeter particle borders (per-player packets, configurable height & spacing, `REDSTONE`/`DUST` aliasing), WorldGuard `__global__` bypass fix, `disabled-worlds` blacklist, `/infochunk [page]` pagination, `/chunkadmin reload`, comment-preserving YAML writes, and `block-pvp: true` config semantics.
 
 ### v0.8.0
 - **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).

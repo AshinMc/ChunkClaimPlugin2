@@ -6,7 +6,7 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 
 - **Target Platforms:** Spigot / Paper 1.19.4, 1.20.x, 1.21.x, and 26.x
 - **Java Runtime:** Java 17+ (Java 21 supported)
-- **Current Version:** 0.8.0
+- **Current Version:** 0.8.5
 
 ---
 
@@ -40,14 +40,15 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 | `/claimchunk [name]` | `ccp.claim` | Claim current chunk with an optional group name |
 | `/chunkexpand <name>` | `ccp.expand` | Add current chunk to an existing claim group |
 | `/unclaimchunk [name]` | `ccp.unclaim` | Unclaim a claim group by name, or current chunk |
-| `/claimtrade <buy\|sell\|cancel\|list>` | `ccp.trade` | Buy, sell, cancel listings, or browse player claims for sale |
+| `/claimtrade <buy\|sell\|cancel\|list\|claim>` | `ccp.trade` | Buy, sell, list, cancel listings, or collect pending payouts |
 | `/checkchunk` | `ccp.check` | Check ownership and claim name of current chunk |
-| `/infochunk` | `ccp.info` | View a list of your claim groups |
-| `/visualizechunk [name]` | `ccp.visualize` | Visualize claim borders with particles |
+| `/infochunk [page]` | `ccp.info` | View paginated list of your claim groups |
+| `/visualizechunk [name]` | `ccp.visualize` | Visualize claim borders with per-player particles |
 | `/chunklang [locale]` | `ccp.lang` | View, list, or set your personal language |
 | `/chunksettings [subcommand]` | `ccp.settings` | Open management GUI or run CLI subcommands (flag, trust, particle, rename, transfer) |
-| `/chunktp <name>` | `ccp.teleport` | Teleport to a claim group by name |
+| `/chunktp <name>` | `ccp.teleport` | Safely teleport to a claim group by name |
 | `/chunkadmin` | `chunkclaim.admin` | Open admin GUI control panel |
+| `/chunkadmin reload` | `chunkclaim.admin` | Reload `config.yml`, localization files, caches, and economy engine |
 | `/chunkadmin unclaim` | `chunkclaim.admin` | Forcefully unclaim the chunk you are standing in |
 | `/chunkadmin unclaimplayer <player> [name\|--all]` | `chunkclaim.admin` | Forcefully unclaim a player's claim group or all chunks |
 | `/chunkadmin setlimit <player> <amount>` | `chunkclaim.admin` | Set custom claim limit for a player |
@@ -57,6 +58,12 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
 ---
 
 ## Version History
+
+### v0.8.5 (Security, Performance & Reliability Hardening)
+- **Grief & Exploit Prevention (17 Fixes):** Blocked cross-border bucket empty/fill, fluid/dragon-egg inflow (`BlockFromToEvent`), cross-chunk piston extend/retract, direct player/dispenser fire ignition, End Crystal & Respawn Anchor indirect explosion damage, lingering potion clouds, Chorus Fruit / Ender Pearl vault infiltration, Frost Walker water freezing, 1.20+ sign text editing, fishing-rod entity pulling, leash/unleash theft, Bad Omen raid triggering, vehicle placement & `EntityMountEvent`, entity farmland/turtle egg trampling, cross-border tree growth, Nether portal overwriting, and expanded interactive block protection (dyed shulkers, pressure plates, tripwire, anchors, cauldrons, composters, cakes, bells, lecterns, chiseled bookshelves, decorated pots). Decoupled `ArmorStand` break protection from `mob-protection`.
+- **Data Integrity & Concurrency:** Added async snapshot + atomic temp-file saving (`chunkclaims.yml.tmp`), converted all `ChunkManager` collections to `ConcurrentHashMap`, eliminated async `.getChunk()` calls in PlaceholderAPI, enforced `^[a-zA-Z0-9_-]+$` (24-char max) claim names, cleared seller trust lists on claim transfer, expired stale chat rename/sell prompts after 60s, and eliminated blocking Mojang API lookups in `/chunkadmin`.
+- **Economy & Marketplace Anti-Exploit:** Tracked historical per-chunk paid cost (zeroing refund on traded/transferred claims to eliminate progressive refund arbitrage), required seller disambiguation on duplicate `/claimtrade buy` names, protected custom-meta/RPG items from currency withdrawal, routed inventory overflow payouts to `pending_economy.yml` with `/claimtrade claim`, validated item materials (`!isAir && isItem`), and added `singular-name` / `plural-name` formatting.
+- **Navigation, World & Config Polish:** Fixed Nether roof & cave `/chunktp` safety scanning, rendered exact L-shaped/disconnected per-chunk outer borders with per-player particles, fixed WorldGuard `__global__` bypass, added `disabled-worlds` blacklist and `/infochunk [page]` pagination, prevented config comment wiping on startup/migration/GUI saves, wired `particle-height` & `particle-spacing` + `REDSTONE`/`DUST` aliasing, added `/chunkadmin reload` (syncing economy, locales, and hot-path caches), fixed `block-pvp: true` config semantics, and guarded against blank YAML `NullPointerException`s.
 
 ### v0.8.0
 - **Admin Land Management:** CLI and GUI tools to inspect and forcefully unclaim player land (`/chunkadmin unclaim`, `/chunkadmin unclaimplayer`).
@@ -119,7 +126,7 @@ A lightweight chunk protection plugin for modern Spigot and Paper servers (1.19.
    # Linux / macOS
    ./gradlew build
    ```
-3. Copy `build/libs/ChunkClaimPlugin-0.8.0.jar` into your server's `plugins/` directory and restart.
+3. Copy `build/libs/ChunkClaimPlugin-0.8.5.jar` into your server's `plugins/` directory and restart.
 
 ---
 

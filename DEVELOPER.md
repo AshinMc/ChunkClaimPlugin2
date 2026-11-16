@@ -35,7 +35,7 @@ If adding as a local system dependency or compiled JAR:
 <dependency>
     <groupId>org.ashin</groupId>
     <artifactId>ChunkClaimPlugin</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.5</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -43,7 +43,7 @@ If adding as a local system dependency or compiled JAR:
 ### Gradle (`build.gradle`)
 ```groovy
 dependencies {
-    compileOnly files('libs/ChunkClaimPlugin-0.8.0.jar')
+    compileOnly files('libs/ChunkClaimPlugin-0.8.5.jar')
 }
 ```
 

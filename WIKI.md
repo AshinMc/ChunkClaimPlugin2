@@ -69,6 +69,12 @@ max-claims-per-player: 10
 # Item used to claim chunks on right-click ("NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
 
+# Worlds where claiming and expanding chunks is disabled
+disabled-worlds: []
+# Example:
+# - "world_the_end"
+# - "minigames"
+
 
 # ==============================================================================
 #  2. TERRITORY GREETINGS & NOTIFICATIONS
@@ -97,7 +103,7 @@ visualization:
   particle-height: 100
   # Distance between particle markers along borders
   particle-spacing: 0.5
-  # Default particle (FLAME, END_ROD, HEART, REDSTONE, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES)
+  # Default particle (FLAME, END_ROD, HEART, DUST, SNOWFLAKE, SOUL_FIRE_FLAME, CHERRY_LEAVES)
   particle-type: FLAME
 
 
@@ -109,12 +115,12 @@ visualization:
 claim-flags:
   # --- Mob & Creature Protections ---
   mob-griefing: true        # Prevent Creeper explosions, Enderman block moving, etc.
-  mob-spawning: false       # Prevent natural hostile monster spawning
-  mob-entry: false          # Push hostile mobs out at border (invisible barrier)
+  mob-spawning: false       # Block natural hostile monster spawning (true = block spawns, false = allow spawns)
+  mob-entry: false          # Block mobs from entering claim borders (true = repel mobs, false = allow entry)
   mob-protection: true      # Protect farm animals (cows, sheep, bees) from visitors
 
   # --- Combat & Environmental Hazard ---
-  pvp: false                # Disable PvP combat inside the claim
+  block-pvp: true           # Block PvP combat inside the claim (true = PvP disabled, false = PvP allowed)
   explosions: true          # Block TNT and Wither explosion damage
   fire-spread: true         # Prevent fire from burning or spreading
 
@@ -124,6 +130,7 @@ claim-flags:
   interact-stonecutter: true# Lock workbenches, anvils, and utility blocks
   interact-door: true       # Lock wooden/iron doors, trapdoors, and fence gates
   interact-redstone: true   # Lock buttons, levers, repeaters, and comparators
+  interact-villagers: true  # Lock villager and wandering trader trading to trusted players
 
   # --- Claim Greetings ---
   greeting-title: true      # Display territory welcome greetings
@@ -145,7 +152,8 @@ economy:
   # Physical Item Currency settings (used in ITEM mode or AUTO fallback)
   item:
     material: "GOLD_INGOT"        # Any valid item: GOLD_INGOT, DIAMOND, EMERALD, etc.
-    display-name: "Gold"          # Label used in chat messages
+    singular-name: "Gold"         # Label used when amount == 1 (e.g. "1 Gold", "1 Diamond")
+    plural-name: "Gold"           # Label used when amount != 1 (e.g. "10 Gold", "10 Diamonds")
     convert-blocks: true          # Automatically count 1 block = 9 ingots
 
   # Pricing and Progressive Curves
@@ -427,6 +435,8 @@ Admins can cycle the greeting display mode directly inside the `/chunkadmin` GUI
 Server operators and staff with the `chunkclaim.admin` permission have full control over claims:
 
 ### 1. In-Game Commands
+- **`/chunkadmin reload`**  
+  Reloads `config.yml`, localization files, cached settings, and the economy provider without requiring a server restart.
 - **`/chunkadmin unclaim`**  
   Unclaims the specific chunk the administrator is currently standing in, regardless of who owns it. Automatically notifies the owner if online and purges empty claim groups.
 - **`/chunkadmin unclaimplayer <player> <claimName>`**  
@@ -465,7 +475,7 @@ Flags can be toggled per claim group in `/chunksettings`:
 | `mob-entry` | Iron Bars | Prevents mobs from entering claim (invisible wall) | `false` |
 | `mob-protection` | Cow Spawn Egg | Prevents visitors from attacking passive animals & mobs | `true` |
 | `explosions` | TNT | Prevents TNT, Creeper, and Wither explosions | `true` |
-| `pvp` | Iron Sword | Prevents player vs player combat | `false` |
+| `pvp` | Iron Sword | Blocks player vs player combat (`block-pvp` in `config.yml`) | `true` |
 | `fire-spread` | Flint & Steel | Prevents fire spread and block burning | `true` |
 | `greeting-title` | Oak Sign | Displays greeting when entering claim | `true` |
 | `interact-chest` | Chest | Protects chests, barrels, ender chests, and shulkers | `true` |
@@ -536,7 +546,7 @@ Plugin messages are stored in `plugins/ChunkClaimPlugin2/lang/`. Each player can
 
 ## 📦 Data Migration & Upgrading from Previous Versions
 
-- **Seamless Auto-Update:** When dropping in ChunkClaimPlugin2 v0.8.0 on an existing server, newly added configuration settings (`greeting-display`, `economy`, etc.) are automatically merged into your existing `config.yml` without overwriting your custom changes.
+- **Seamless Auto-Update:** When dropping in ChunkClaimPlugin2 v0.8.5 on an existing server, newly added configuration settings (`disabled-worlds`, `block-pvp`, `economy`, etc.) are automatically merged into your existing `config.yml` without overwriting your custom changes or wiping comments.
 - **Data Safety:** Claim records in `chunkclaims.yml` retain 100% compatibility with older v0.5.x, v0.6.x, and v0.7.x schemas.
 - **Language Updates:** Any missing language keys are automatically populated from the internal resource defaults.
 
@@ -579,7 +589,7 @@ Plugin messages are stored in `plugins/ChunkClaimPlugin2/lang/`. Each player can
 > When the `explosions` flag is enabled (`true` by default), block damage from Creepers, TNT, Minecart TNT, and Withers is completely neutralized inside the claimed territory.
 
 #### Q: Can I allow PvP in the wilderness while disabling it inside claims?
-> Yes. Leave `pvp: false` in `claim-flags` (default). PvP damage inside the claim will be blocked with a warning message, while wilderness combat functions as normal.
+> Yes. Leave `block-pvp: true` in `claim-flags` (default). PvP damage (including End Crystal and Respawn Anchor PvP) inside the claim will be blocked with a warning message, while wilderness combat functions as normal.
 
 ---
 
@@ -629,7 +639,7 @@ Plugin messages are stored in `plugins/ChunkClaimPlugin2/lang/`. Each player can
 ### ⚙️ Server Administration & Upgrades FAQ
 
 #### Q: What happens to my old configuration when updating the plugin?
-> CCP v0.8.0 includes an automatic `ConfigMigrator`. On startup, it creates a timestamped safety backup (`config.yml.old`), writes the clean new template, and transfers all of your customized limits, economy settings, and flags without losing any data.
+> CCP v0.8.5 includes an automatic `ConfigMigrator`. On startup, it creates a safety backup (`config.yml.old`), writes the clean new template, migrates legacy flags (`pvp` → `block-pvp`), and transfers all customized limits, economy settings, and flags while preserving YAML comments and section banners.
 
 #### Q: Where is territory data stored?
 > All claims, trusted players, flags, and custom player limits are saved in `plugins/ChunkClaimPlugin2/data/chunkclaims.yml`. This file is saved asynchronously and during server shutdowns.
