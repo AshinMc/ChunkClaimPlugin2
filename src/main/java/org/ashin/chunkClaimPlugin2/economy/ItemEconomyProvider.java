@@ -21,7 +21,8 @@ public class ItemEconomyProvider implements EconomyProvider {
 
     public ItemEconomyProvider(Material baseMaterial, String displayName, boolean convertBlocks,
                                BiConsumer<OfflinePlayer, Double> offlineDepositHandler) {
-        this.baseMaterial = baseMaterial != null ? baseMaterial : Material.GOLD_INGOT;
+        this.baseMaterial = (baseMaterial != null && baseMaterial.isItem() && !baseMaterial.isAir())
+                ? baseMaterial : Material.GOLD_INGOT;
         this.blockMaterial = findBlockEquivalent(this.baseMaterial);
         this.displayName = (displayName != null && !displayName.isEmpty()) ? displayName : formatDefaultName(this.baseMaterial);
         this.convertBlocks = convertBlocks;

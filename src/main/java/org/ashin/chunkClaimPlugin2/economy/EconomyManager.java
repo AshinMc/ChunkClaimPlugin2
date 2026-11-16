@@ -72,7 +72,10 @@ public class EconomyManager {
         String matName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
                 .getNonBlankString(config, "economy.item.material", "GOLD_INGOT");
         Material mat = Material.matchMaterial(matName);
-        if (mat == null) mat = Material.GOLD_INGOT;
+        if (mat == null || !mat.isItem() || mat.isAir()) {
+            plugin.getLogger().severe("Invalid economy.item.material '" + matName + "' (must be a valid holdable item, not AIR or a non-item block). Falling back to GOLD_INGOT.");
+            mat = Material.GOLD_INGOT;
+        }
 
         String displayName = config.getString("economy.item.display-name", "Gold");
         boolean convertBlocks = config.getBoolean("economy.item.convert-blocks", true);

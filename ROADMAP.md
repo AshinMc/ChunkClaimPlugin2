@@ -359,6 +359,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java` (lines 24–25, 127)
 - **Issue:** Setting `economy.item.material: "AIR"` or specifying a technical non-item block (`WATER`, `PISTON_HEAD`) resolves to a non-null `Material`. Calling `new ItemStack(mat)` subsequently throws `IllegalArgumentException` during economy transactions.
 - **Task:** Validate `mat != null && mat.isItem() && !mat.isAir()`, logging a severe error and falling back to `GOLD_INGOT` if invalid.
+- **Status:** ✅ **FIXED** — Added `mat == null || !mat.isItem() || mat.isAir()` validation with severe logger warning and `GOLD_INGOT` fallback in `EconomyManager.reload()`, plus constructor guard in `ItemEconomyProvider`.
 
 ### Naive Pluralization in Item Currency Display
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java` (line 71)
