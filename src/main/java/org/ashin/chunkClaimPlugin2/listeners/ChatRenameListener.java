@@ -12,6 +12,8 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ChatRenameListener implements Listener {
+    private static final long PROMPT_TIMEOUT_MS = 60_000L;
+
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
@@ -24,16 +26,34 @@ public class ChatRenameListener implements Listener {
         this.economyManager = economyManager;
     }
 
+    private boolean consumeIfExpired(Player player, String metaKey, String timeKey) {
+        if (!player.hasMetadata(timeKey)) {
+            player.removeMetadata(metaKey, plugin);
+            return true;
+        }
+        long createdAt = player.getMetadata(timeKey).get(0).asLong();
+        if (System.currentTimeMillis() - createdAt > PROMPT_TIMEOUT_MS) {
+            player.removeMetadata(metaKey, plugin);
+            player.removeMetadata(timeKey, plugin);
+            return true;
+        }
+        return false;
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
 
         if (player.hasMetadata("ccp_renaming_claim")) {
+            if (consumeIfExpired(player, "ccp_renaming_claim", "ccp_renaming_claim_time")) {
+                return;
+            }
             event.setCancelled(true);
             String oldName = player.getMetadata("ccp_renaming_claim").get(0).asString();
             String newName = event.getMessage().trim();
 
             player.removeMetadata("ccp_renaming_claim", plugin);
+            player.removeMetadata("ccp_renaming_claim_time", plugin);
 
             if (newName.equalsIgnoreCase("cancel")) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "rename-cancel"));
@@ -53,10 +73,14 @@ public class ChatRenameListener implements Listener {
         }
 
         if (player.hasMetadata("ccp_selling_claim")) {
+            if (consumeIfExpired(player, "ccp_selling_claim", "ccp_selling_claim_time")) {
+                return;
+            }
             event.setCancelled(true);
             String claimName = player.getMetadata("ccp_selling_claim").get(0).asString();
             String input = event.getMessage().trim();
             player.removeMetadata("ccp_selling_claim", plugin);
+            player.removeMetadata("ccp_selling_claim_time", plugin);
 
             if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("off") || input.equals("0")) {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {

@@ -270,7 +270,10 @@ public class SettingsGUIListener implements Listener {
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
                     String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
                     player.closeInventory();
+                    player.removeMetadata("ccp_selling_claim", plugin);
+                    player.removeMetadata("ccp_selling_claim_time", plugin);
                     player.setMetadata("ccp_renaming_claim", new org.bukkit.metadata.FixedMetadataValue(plugin, claimName));
+                    player.setMetadata("ccp_renaming_claim_time", new org.bukkit.metadata.FixedMetadataValue(plugin, System.currentTimeMillis()));
                     player.sendMessage(messages.getFor(player.getUniqueId(), "rename-prompt", "name", claimName));
                 }
                 return;
@@ -304,7 +307,10 @@ public class SettingsGUIListener implements Listener {
                 if (info != null && info.hasItemMeta() && info.getItemMeta().hasDisplayName()) {
                     String claimName = ChatColor.stripColor(info.getItemMeta().getDisplayName());
                     player.closeInventory();
+                    player.removeMetadata("ccp_renaming_claim", plugin);
+                    player.removeMetadata("ccp_renaming_claim_time", plugin);
                     player.setMetadata("ccp_selling_claim", new org.bukkit.metadata.FixedMetadataValue(plugin, claimName));
+                    player.setMetadata("ccp_selling_claim_time", new org.bukkit.metadata.FixedMetadataValue(plugin, System.currentTimeMillis()));
                     player.sendMessage(messages.getFor(player.getUniqueId(), "sell-prompt", "name", claimName));
                 }
                 return;

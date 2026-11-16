@@ -30,6 +30,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java`
 - **Issue:** The player metadata flags `ccp_renaming_claim` and `ccp_selling_claim` have no expiration. Unrelated chat messages sent hours later are intercepted as claim names or prices.
 - **Task:** Store a millisecond timestamp in the metadata and ignore/remove it if older than 60 seconds.
+- **Status:** ✅ **FIXED** — Stored `ccp_renaming_claim_time` and `ccp_selling_claim_time` millisecond timestamps alongside the prompt metadata in `SettingsGUIListener`, and updated `ChatRenameListener` with `consumeIfExpired(...)` (60s TTL) so expired prompts are cleared without cancelling normal chat.
 
 ### Claim Name Validation
 - **Files:**
