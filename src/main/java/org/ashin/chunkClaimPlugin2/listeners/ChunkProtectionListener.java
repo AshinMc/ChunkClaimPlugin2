@@ -258,12 +258,42 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockIgnite(org.bukkit.event.block.BlockIgniteEvent event) {
         Chunk chunk = event.getBlock().getChunk();
-        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_FIRE_SPREAD)) {
-            if (event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.SPREAD
-                    || event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LAVA
-                    || event.getCause() == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LIGHTNING) {
-                event.setCancelled(true);
+        if (!chunkManager.isChunkClaimed(chunk)) {
+            return;
+        }
+
+        // Player-driven ignition (flint & steel, fire charge, etc.) requires build trust regardless of fire-spread flag
+        if (event.getPlayer() != null) {
+            checkModifyOrCancel(event.getPlayer(), chunk, event, "deny-place");
+            return;
+        }
+
+        if (event.getIgnitingEntity() != null) {
+            Player attacker = resolveAttacker(event.getIgnitingEntity());
+            if (attacker != null) {
+                checkModifyOrCancel(attacker, chunk, event, "deny-place");
+                return;
             }
+        }
+
+        org.bukkit.event.block.BlockIgniteEvent.IgniteCause cause = event.getCause();
+        if (cause == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL
+                || cause == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FIREBALL) {
+            // Block dispenser/fireball ignition originating from outside the claim
+            org.bukkit.block.Block ignitingBlock = event.getIgnitingBlock();
+            UUID targetOwner = chunkManager.getChunkOwner(chunk);
+            UUID sourceOwner = ignitingBlock != null ? chunkManager.getChunkOwner(ignitingBlock.getChunk()) : null;
+            if (!targetOwner.equals(sourceOwner)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_FIRE_SPREAD)
+                && (cause == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.SPREAD
+                        || cause == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LAVA
+                        || cause == org.bukkit.event.block.BlockIgniteEvent.IgniteCause.LIGHTNING)) {
+            event.setCancelled(true);
         }
     }
 

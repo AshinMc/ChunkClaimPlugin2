@@ -67,6 +67,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `BlockIgniteEvent` only cancels `SPREAD`, `LAVA`, and `LIGHTNING`. Ignition from Flint & Steel (`IgniteCause.FLINT_AND_STEEL`) and Fire Charges (`IgniteCause.FIREBALL`) is not blocked.
 - **Task:** Check `canModifyChunk(player, chunk)` for player-driven ignition causes.
+- **Status:** ✅ **FIXED** — Updated `onBlockIgnite` to require `canModifyChunk` for `event.getPlayer()` and projectile-resolved attackers (`FLINT_AND_STEEL`, `FIREBALL`, flaming arrows), and blocked dispenser-fired `FIREBALL`/`FLINT_AND_STEEL` ignition crossing from non-matching chunks.
 
 ### Indirect Damage & End Crystal Explosions
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
