@@ -13,7 +13,7 @@ import java.util.*;
 
 public class MessageManager {
     private final JavaPlugin plugin;
-    private final String serverDefaultLocale;
+    private volatile String serverDefaultLocale;
     private final YamlConfiguration defaultLangConfig; // en_US from jar
     private final Map<String, YamlConfiguration> localeCache = new HashMap<>();
 
@@ -24,7 +24,8 @@ public class MessageManager {
     public MessageManager(JavaPlugin plugin) {
         this.plugin = plugin;
         FileConfiguration config = plugin.getConfig();
-        this.serverDefaultLocale = config.getString("locale", "en_US");
+        String configuredLocale = config.getString("locale");
+        this.serverDefaultLocale = (configuredLocale != null && !configuredLocale.isBlank()) ? configuredLocale : "en_US";
 
         // Ensure lang folder exists
         File langDir = new File(plugin.getDataFolder(), "lang");
@@ -174,6 +175,8 @@ public class MessageManager {
      * Reload all locale caches (called after config reload by admin).
      */
     public void reloadLocales() {
+        String configuredLocale = plugin.getConfig().getString("locale");
+        this.serverDefaultLocale = (configuredLocale != null && !configuredLocale.isBlank()) ? configuredLocale : "en_US";
         localeCache.clear();
         getLocaleYaml(serverDefaultLocale);
     }

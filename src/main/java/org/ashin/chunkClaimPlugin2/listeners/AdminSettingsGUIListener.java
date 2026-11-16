@@ -205,6 +205,7 @@ public class AdminSettingsGUIListener implements Listener {
 
         if (messages.isLocaleAvailable(name)) {
             org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "locale", name);
+            messages.reloadLocales();
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-language-set", "locale", name));
             gui.openLanguage(player);
         }

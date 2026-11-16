@@ -287,6 +287,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java`
 - **Issue:** `serverDefaultLocale` is declared `private final String` initialized on startup. Changing default language in `/chunkadmin` updates `config.yml`, but `serverDefaultLocale` remains unchanged in memory.
 - **Task:** Make `serverDefaultLocale` non-final and update it during config reload.
+- **Status:** ✅ **FIXED** — Changed `serverDefaultLocale` to `private volatile String` with blank-value safety, updated `MessageManager.reloadLocales()` to re-read `locale` from `config.yml`, and invoked `messages.reloadLocales()` immediately when the Admin GUI switches default language.
 
 ### Console Event Command Leading Slash Failure
 - **Files:**
