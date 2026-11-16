@@ -156,6 +156,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`
 - **Issue:** When giving change or refunding unclaims with a full inventory, items are dropped on the ground via `dropItemNaturally()`, risking loss in lava or theft.
 - **Task:** Store overflow currency into `pending_economy.yml` for claim via login or command when inventory space is available.
+- **Status:** ✅ **FIXED** — Updated `ItemEconomyProvider` (`withdraw` change and `giveItems`) to divert full-inventory overflow into `pending_economy.yml` via `offlineDepositHandler` instead of dropping items on the ground, cleared `pending` records prior to delivery in `EconomyManager.deliverPendingPayments()` so partial deliveries re-queue safely, and added `/claimtrade claim` to collect pending payouts on demand.
 
 ### Unclaim Refund Exploitation (Infinite Money Exploit)
 - **Files:**

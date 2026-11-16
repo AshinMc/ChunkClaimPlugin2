@@ -135,24 +135,26 @@ public class EconomyManager {
         savePendingConfig();
     }
 
-    public void deliverPendingPayments(Player player) {
-        if (player == null) return;
+    public boolean deliverPendingPayments(Player player) {
+        if (player == null) return false;
         String key = "pending." + player.getUniqueId().toString();
-        if (!pendingConfig.contains(key + ".amount")) return;
+        if (!pendingConfig.contains(key + ".amount")) return false;
 
         double amount = pendingConfig.getDouble(key + ".amount", 0.0);
+        // Clear pending entry BEFORE depositing so any remaining inventory overflow re-queues cleanly
+        pendingConfig.set(key, null);
+        savePendingConfig();
+
         if (amount > 0) {
+            player.sendMessage(org.bukkit.ChatColor.GREEN + "[CCP] Delivering " + org.bukkit.ChatColor.YELLOW +
+                    provider.format(amount) + org.bukkit.ChatColor.GREEN + " from pending economy payouts.");
             if (provider instanceof ItemEconomyProvider itemProvider) {
                 itemProvider.giveItems(player, (int) Math.round(amount));
             } else if (provider instanceof VaultEconomyProvider vaultProvider) {
                 vaultProvider.deposit(player, amount);
             }
-            player.sendMessage(org.bukkit.ChatColor.GREEN + "[CCP] You received " + org.bukkit.ChatColor.YELLOW +
-                    provider.format(amount) + org.bukkit.ChatColor.GREEN + " from pending claim sales while you were offline!");
         }
-
-        pendingConfig.set(key, null);
-        savePendingConfig();
+        return true;
     }
 
     private void savePendingConfig() {

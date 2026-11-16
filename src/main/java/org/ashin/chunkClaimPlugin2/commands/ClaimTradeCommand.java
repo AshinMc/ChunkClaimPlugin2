@@ -70,6 +70,11 @@ public class ClaimTradeCommand implements CommandExecutor, TabCompleter {
             case "cancel" -> handleCancel(player, label, args);
             case "buy" -> handleBuy(player, label, args);
             case "list" -> handleList(player, label);
+            case "claim", "collect" -> {
+                if (!economyManager.deliverPendingPayments(player)) {
+                    player.sendMessage(ChatColor.YELLOW + "You have no pending economy payouts to claim.");
+                }
+            }
             default -> sendHelp(player, label);
         }
 
@@ -305,7 +310,7 @@ public class ClaimTradeCommand implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player player)) return Collections.emptyList();
 
         if (args.length == 1) {
-            List<String> subs = List.of("buy", "sell", "cancel", "list", "help");
+            List<String> subs = List.of("buy", "sell", "cancel", "list", "claim", "help");
             List<String> res = new ArrayList<>();
             for (String s : subs) {
                 if (s.toLowerCase().startsWith(args[0].toLowerCase())) res.add(s);

@@ -136,10 +136,7 @@ public class ItemEconomyProvider implements EconomyProvider {
                     needed -= take;
                     int change = provided - take;
                     if (change > 0) {
-                        HashMap<Integer, ItemStack> overflow = player.getInventory().addItem(new ItemStack(baseMaterial, change));
-                        for (ItemStack drop : overflow.values()) {
-                            player.getWorld().dropItemNaturally(player.getLocation(), drop);
-                        }
+                        giveOrStoreOverflow(player, new ItemStack(baseMaterial, change), false);
                     }
                 }
                 if (item.getAmount() <= 0) {
@@ -175,23 +172,63 @@ public class ItemEconomyProvider implements EconomyProvider {
     public void giveItems(Player player, int total) {
         if (total <= 0) return;
 
+        int overflowTotal = 0;
+
         // Compact into blocks if convertBlocks is enabled
         if (convertBlocks && blockMaterial != null && total >= 9) {
             int blocks = total / 9;
             total = total % 9;
-            HashMap<Integer, ItemStack> overflow = player.getInventory().addItem(new ItemStack(blockMaterial, blocks));
-            for (ItemStack drop : overflow.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), drop);
-            }
+            overflowTotal += giveOrStoreOverflow(player, new ItemStack(blockMaterial, blocks), true);
         }
 
         if (total > 0) {
-            HashMap<Integer, ItemStack> overflow = player.getInventory().addItem(new ItemStack(baseMaterial, total));
-            for (ItemStack drop : overflow.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), drop);
+            overflowTotal += giveOrStoreOverflow(player, new ItemStack(baseMaterial, total), true);
+        }
+
+        if (overflowTotal > 0) {
+            if (offlineDepositHandler != null) {
+                offlineDepositHandler.accept(player, (double) overflowTotal);
+                player.sendMessage(org.bukkit.ChatColor.YELLOW + "[CCP] Inventory full! Saved "
+                        + format(overflowTotal) + " to pending payouts (rejoin or run /claimtrade claim after freeing space).");
+            } else {
+                // Should never happen when EconomyManager provides handler, drop safely as last resort
+                if (convertBlocks && blockMaterial != null && overflowTotal >= 9) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), new ItemStack(blockMaterial, overflowTotal / 9));
+                    overflowTotal %= 9;
+                }
+                if (overflowTotal > 0) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), new ItemStack(baseMaterial, overflowTotal));
+                }
             }
         }
         player.updateInventory();
+    }
+
+    private int giveOrStoreOverflow(Player player, ItemStack stack, boolean deferToCaller) {
+        HashMap<Integer, ItemStack> overflow = player.getInventory().addItem(stack);
+        if (overflow.isEmpty()) return 0;
+
+        int leftoverUnits = 0;
+        for (ItemStack item : overflow.values()) {
+            if (blockMaterial != null && item.getType() == blockMaterial) {
+                leftoverUnits += item.getAmount() * 9;
+            } else {
+                leftoverUnits += item.getAmount();
+            }
+        }
+        if (deferToCaller || leftoverUnits <= 0) {
+            return leftoverUnits;
+        }
+        if (offlineDepositHandler != null) {
+            offlineDepositHandler.accept(player, (double) leftoverUnits);
+            player.sendMessage(org.bukkit.ChatColor.YELLOW + "[CCP] Inventory full! Saved "
+                    + format(leftoverUnits) + " change to pending payouts (rejoin or run /claimtrade claim after freeing space).");
+        } else {
+            for (ItemStack item : overflow.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), item);
+            }
+        }
+        return 0;
     }
 
     public Material getBaseMaterial() {
