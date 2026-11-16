@@ -222,6 +222,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `PlayerLeashEntityEvent` and `PlayerUnleashEntityEvent` are missing. Visitors can attach leads to private animals or punch leads off fence posts.
 - **Task:** Intercept both events and verify `canModifyChunk()`.
+- **Status:** ✅ **FIXED** — Registered `onPlayerLeashEntity(PlayerLeashEntityEvent)` (checking both entity and leash-holder chunks) and `onPlayerUnleashEntity(PlayerUnleashEntityEvent)` verifying `canModifyChunk()`, while `onHangingBreak` covers `LeashHitch` fence punching.
 
 ### Chorus Fruit & Pearl Vault Infiltration
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

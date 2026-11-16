@@ -387,6 +387,31 @@ public class ChunkProtectionListener implements Listener {
     }
 
     /**
+     * Prevents untrusted visitors from attaching leads to entities or hitch posts inside claims.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerLeashEntity(org.bukkit.event.entity.PlayerLeashEntityEvent event) {
+        Player player = event.getPlayer();
+        Chunk entityChunk = event.getEntity().getLocation().getChunk();
+        Chunk holderChunk = event.getLeashHolder().getLocation().getChunk();
+        if (!canModifyChunk(player, entityChunk) || !canModifyChunk(player, holderChunk)) {
+            event.setCancelled(true);
+            if (messages.isMessageEnabled("deny-interact")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "deny-interact"));
+            }
+        }
+    }
+
+    /**
+     * Prevents untrusted visitors from unleashing entities inside claims.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerUnleashEntity(org.bukkit.event.player.PlayerUnleashEntityEvent event) {
+        Chunk chunk = event.getEntity().getLocation().getChunk();
+        checkModifyOrCancel(event.getPlayer(), chunk, event, "deny-interact");
+    }
+
+    /**
      * Prevents untrusted visitors from mounting claimed animals or vehicles.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
