@@ -148,19 +148,55 @@ public class ClaimTradeCommand implements CommandExecutor, TabCompleter {
         String claimName = null;
 
         if (args.length > 1) {
-            String targetName = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+            List<Map.Entry<UUID, String>> matches = new ArrayList<>();
+            String sellerFilter = null;
+            String targetClaim;
+
+            if (args.length >= 3) {
+                sellerFilter = args[1];
+                targetClaim = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
+            } else if (args[1].contains(":")) {
+                String[] split = args[1].split(":", 2);
+                sellerFilter = split[0];
+                targetClaim = split[1];
+            } else {
+                targetClaim = args[1];
+            }
+
             for (Map.Entry<String, Double> entry : chunkManager.getAllClaimsForSale().entrySet()) {
                 String[] parts = entry.getKey().split(":", 2);
-                if (parts.length == 2 && parts[1].equalsIgnoreCase(targetName)) {
-                    sellerUUID = UUID.fromString(parts[0]);
-                    claimName = parts[1];
-                    break;
+                if (parts.length != 2) continue;
+                UUID candidateUUID = UUID.fromString(parts[0]);
+                String candidateClaim = parts[1];
+                if (!candidateClaim.equalsIgnoreCase(targetClaim)) continue;
+
+                if (sellerFilter != null) {
+                    String sellerName = Bukkit.getOfflinePlayer(candidateUUID).getName();
+                    if (sellerName == null || !sellerName.equalsIgnoreCase(sellerFilter)) continue;
                 }
+                matches.add(Map.entry(candidateUUID, candidateClaim));
             }
-            if (sellerUUID == null) {
-                player.sendMessage(ChatColor.RED + "No claim named '" + targetName + "' was found for sale.");
+
+            if (matches.isEmpty()) {
+                player.sendMessage(ChatColor.RED + "No matching claim was found for sale" +
+                        (sellerFilter != null ? " by '" + sellerFilter + "'." : " named '" + targetClaim + "'."));
                 return;
             }
+            if (matches.size() > 1) {
+                player.sendMessage(ChatColor.YELLOW + "Multiple claims named '" + targetClaim + "' are for sale. Specify the seller:");
+                for (Map.Entry<UUID, String> match : matches) {
+                    String sName = Bukkit.getOfflinePlayer(match.getKey()).getName();
+                    if (sName == null) sName = match.getKey().toString();
+                    Double p = chunkManager.getClaimPrice(match.getKey(), match.getValue());
+                    String priceStr = p != null ? economyManager.getProvider().format(p) : "?";
+                    player.sendMessage(ChatColor.GRAY + " - " + ChatColor.WHITE + "/" + label + " buy " + sName + " " + match.getValue()
+                            + ChatColor.GOLD + " (" + priceStr + ")");
+                }
+                return;
+            }
+
+            sellerUUID = matches.get(0).getKey();
+            claimName = matches.get(0).getValue();
         } else {
             // Check chunk player is currently standing in
             Chunk currentChunk = player.getLocation().getChunk();
@@ -260,7 +296,7 @@ public class ClaimTradeCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(ChatColor.YELLOW + "• " + ChatColor.AQUA + name +
                     ChatColor.GRAY + " (" + chunksCount + " chunks) by " +
                     ChatColor.WHITE + sellerName + ChatColor.GRAY + " - " +
-                    ChatColor.GOLD + priceStr + ChatColor.DARK_GRAY + " [/" + label + " buy " + name + "]");
+                    ChatColor.GOLD + priceStr + ChatColor.DARK_GRAY + " [/" + label + " buy " + sellerName + " " + name + "]");
         }
     }
 
@@ -301,13 +337,35 @@ public class ClaimTradeCommand implements CommandExecutor, TabCompleter {
                 for (Map.Entry<String, Double> entry : chunkManager.getAllClaimsForSale().entrySet()) {
                     String[] parts = entry.getKey().split(":", 2);
                     if (parts.length == 2 && !parts[0].equals(player.getUniqueId().toString())) {
-                        if (parts[1].toLowerCase().startsWith(args[1].toLowerCase())) {
-                            res.add(parts[1]);
+                        String sellerName = Bukkit.getOfflinePlayer(UUID.fromString(parts[0])).getName();
+                        if (sellerName != null) {
+                            String qualified = sellerName + ":" + parts[1];
+                            if (sellerName.toLowerCase().startsWith(args[1].toLowerCase()) && !res.contains(sellerName)) {
+                                res.add(sellerName);
+                            }
+                            if (qualified.toLowerCase().startsWith(args[1].toLowerCase())) {
+                                res.add(qualified);
+                            }
                         }
                     }
                 }
                 return res;
             }
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("buy")) {
+            List<String> res = new ArrayList<>();
+            for (Map.Entry<String, Double> entry : chunkManager.getAllClaimsForSale().entrySet()) {
+                String[] parts = entry.getKey().split(":", 2);
+                if (parts.length == 2) {
+                    String sellerName = Bukkit.getOfflinePlayer(UUID.fromString(parts[0])).getName();
+                    if (sellerName != null && sellerName.equalsIgnoreCase(args[1])
+                            && parts[1].toLowerCase().startsWith(args[2].toLowerCase())) {
+                        res.add(parts[1]);
+                    }
+                }
+            }
+            return res;
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("sell")) {

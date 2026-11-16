@@ -144,6 +144,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java`
 - **Issue:** `/claimtrade buy <claimName>` iterates `allClaimsForSale.entrySet()`. If two players sell claims with the same name (e.g. `"Base"`), it purchases whichever listing appears first in the map regardless of seller or price.
 - **Task:** Enforce buying syntax by listing ID or `seller:claimName` (e.g. `/claimtrade buy <seller> <claim>`).
+- **Status:** ✅ **FIXED** — Updated `ClaimTradeCommand` to support `/claimtrade buy <seller> <claim>` and `<seller>:<claim>`, block ambiguous single-name purchases when multiple listings share a claim name (prompting the exact `<seller> <claim>` options with prices), and updated `/claimtrade list` + tab-completion.
 
 ### Item Economy Meta Protection
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`
