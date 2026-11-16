@@ -22,6 +22,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
 - **Issue:** `transferClaim()` copies the previous owner's trusted player set to the new owner, granting the seller's friends access to the buyer's chests and blocks.
 - **Task:** Clear `trustedPlayers` associated with the claim group upon ownership transfer.
+- **Status:** ✅ **FIXED** — Updated `ChunkManager.transferClaim()` to remove `trustedPlayers` under `oldKey` instead of transferring it to `newKey`, ensuring the seller's trusted friends no longer retain access after purchase/transfer.
 
 ### Chat Input Metadata Expiration
 - **Files:**

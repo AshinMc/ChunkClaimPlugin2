@@ -205,9 +205,8 @@ public class ChunkManager {
             String oldKey = trustKey(oldOwner, claimName);
             String newKey = trustKey(newOwner, claimName);
 
-            if (trustedPlayers.containsKey(oldKey)) {
-                trustedPlayers.put(newKey, trustedPlayers.remove(oldKey));
-            }
+            // Clear seller's trusted players upon ownership transfer so friends do not retain access
+            trustedPlayers.remove(oldKey);
             if (claimFlags.containsKey(oldKey)) {
                 claimFlags.put(newKey, claimFlags.remove(oldKey));
             }
