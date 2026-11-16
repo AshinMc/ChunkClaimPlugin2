@@ -358,6 +358,35 @@ public class ChunkProtectionListener implements Listener {
     }
 
     /**
+     * Prevents untrusted visitors from pulling claimed animals, villagers, armor stands, or vehicles
+     * across boundaries using fishing rods, and protects players in PvP-disabled claims.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerFish(org.bukkit.event.player.PlayerFishEvent event) {
+        Entity caught = event.getCaught();
+        if (caught == null) return;
+
+        Chunk targetChunk = caught.getLocation().getChunk();
+        if (caught instanceof Player victim) {
+            if (!victim.equals(event.getPlayer()) && chunkManager.isChunkFlagEnabled(targetChunk, ChunkManager.FLAG_PVP)) {
+                event.setCancelled(true);
+                event.getHook().remove();
+                if (messages.isMessageEnabled("deny-pvp")) {
+                    event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-pvp"));
+                }
+            }
+            return;
+        }
+
+        if (isHostileMob(caught)) return;
+        if (caught instanceof org.bukkit.entity.Item) return;
+
+        if (!checkModifyOrCancel(event.getPlayer(), targetChunk, event, "deny-entity")) {
+            event.getHook().remove();
+        }
+    }
+
+    /**
      * Prevents untrusted visitors from mounting claimed animals or vehicles.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

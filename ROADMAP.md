@@ -216,6 +216,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `PlayerFishEvent` is missing. Visitors can cast fishing rods onto claimed horses, farm animals, or armor stands from the wilderness and pull them out across boundaries.
 - **Task:** Register `PlayerFishEvent` and cancel if `event.getCaught()` is in a protected chunk without modify permissions.
+- **Status:** ✅ **FIXED** — Registered `onPlayerFish(PlayerFishEvent)` cancelling catches on claimed non-hostile entities, armor stands, and vehicles when `!canModifyChunk(...)` (removing the hook as well), and blocking fishing-rod pulls against players in PvP-protected claims.
 
 ### Leash / Lead Breaking
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
