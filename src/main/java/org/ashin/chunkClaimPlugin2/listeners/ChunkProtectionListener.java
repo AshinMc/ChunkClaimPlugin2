@@ -15,6 +15,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -70,6 +71,23 @@ public class ChunkProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onBucketFill(PlayerBucketFillEvent event) {
         checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-break");
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockFromTo(BlockFromToEvent event) {
+        org.bukkit.block.Block from = event.getBlock();
+        org.bukkit.block.Block to = event.getToBlock();
+        if ((from.getX() >> 4) == (to.getX() >> 4) && (from.getZ() >> 4) == (to.getZ() >> 4)) {
+            return;
+        }
+        UUID toOwner = chunkManager.getChunkOwner(to.getChunk());
+        if (toOwner == null) {
+            return;
+        }
+        UUID fromOwner = chunkManager.getChunkOwner(from.getChunk());
+        if (!toOwner.equals(fromOwner)) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)

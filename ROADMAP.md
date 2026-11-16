@@ -55,6 +55,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `BlockFromToEvent` is not implemented. Liquids poured outside a claim can flow across chunk boundaries, washing away redstone, crops, and burning wooden blocks.
 - **Task:** Implement `BlockFromToEvent`. If destination block belongs to a claimed chunk and source chunk does not share the same owner, cancel the event.
+- **Status:** ✅ **FIXED** — Implemented `onBlockFromTo(BlockFromToEvent)` with a chunk-coordinate fast-exit and ownership comparison, cancelling any fluid flow (or dragon egg teleport) into a claimed chunk unless the source chunk shares the same owner.
 
 ### Piston Push & Pull Protection
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
