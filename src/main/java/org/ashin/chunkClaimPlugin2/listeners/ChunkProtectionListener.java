@@ -412,6 +412,24 @@ public class ChunkProtectionListener implements Listener {
     }
 
     /**
+     * Prevents untrusted visitors from warping inside claims using Chorus Fruit or Ender Pearls.
+     * Teleporting out into wilderness remains permitted.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerTeleport(org.bukkit.event.player.PlayerTeleportEvent event) {
+        if (event.getTo() == null) return;
+        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause = event.getCause();
+        if (cause != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT
+                && cause != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL) {
+            return;
+        }
+        Chunk toChunk = event.getTo().getChunk();
+        if (chunkManager.isChunkClaimed(toChunk)) {
+            checkModifyOrCancel(event.getPlayer(), toChunk, event, "deny-interact");
+        }
+    }
+
+    /**
      * Prevents untrusted visitors from mounting claimed animals or vehicles.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

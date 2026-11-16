@@ -228,6 +228,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `PlayerTeleportEvent` is not handled. Eating Chorus Fruit outside enclosed claims teleports players randomly through walls into locked vaults.
 - **Task:** Register `PlayerTeleportEvent` and block `TeleportCause.CHORUS_FRUIT` and `TeleportCause.ENDER_PEARL` into claims without modify access.
+- **Status:** ✅ **FIXED** — Registered `onPlayerTeleport(PlayerTeleportEvent)` blocking `CHORUS_FRUIT` and `ENDER_PEARL` teleports into claimed chunks when `!canModifyChunk(...)`, while still allowing visitors to teleport out into wilderness.
 
 ### Frost Walker Water Griefing
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
