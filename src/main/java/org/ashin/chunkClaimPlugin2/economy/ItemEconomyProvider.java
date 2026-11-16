@@ -15,18 +15,38 @@ import java.util.function.BiConsumer;
 public class ItemEconomyProvider implements EconomyProvider {
     private final Material baseMaterial;
     private final Material blockMaterial;
-    private final String displayName;
+    private final String singularName;
+    private final String pluralName;
     private final boolean convertBlocks;
     private final BiConsumer<OfflinePlayer, Double> offlineDepositHandler;
 
     public ItemEconomyProvider(Material baseMaterial, String displayName, boolean convertBlocks,
                                BiConsumer<OfflinePlayer, Double> offlineDepositHandler) {
+        this(baseMaterial, displayName, inferPlural(displayName), convertBlocks, offlineDepositHandler);
+    }
+
+    public ItemEconomyProvider(Material baseMaterial, String singularName, String pluralName, boolean convertBlocks,
+                               BiConsumer<OfflinePlayer, Double> offlineDepositHandler) {
         this.baseMaterial = (baseMaterial != null && baseMaterial.isItem() && !baseMaterial.isAir())
                 ? baseMaterial : Material.GOLD_INGOT;
         this.blockMaterial = findBlockEquivalent(this.baseMaterial);
-        this.displayName = (displayName != null && !displayName.isEmpty()) ? displayName : formatDefaultName(this.baseMaterial);
+        String defaultName = formatDefaultName(this.baseMaterial);
+        this.singularName = (singularName != null && !singularName.isBlank()) ? singularName.trim() : defaultName;
+        this.pluralName = (pluralName != null && !pluralName.isBlank()) ? pluralName.trim() : inferPlural(this.singularName);
         this.convertBlocks = convertBlocks;
         this.offlineDepositHandler = offlineDepositHandler;
+    }
+
+    private static String inferPlural(String singular) {
+        if (singular == null || singular.isBlank()) return "Gold";
+        String trimmed = singular.trim();
+        String lower = trimmed.toLowerCase();
+        if (lower.equals("gold") || lower.equals("iron") || lower.equals("copper")
+                || lower.equals("redstone") || lower.equals("netherite") || lower.equals("lapis")
+                || lower.endsWith("s")) {
+            return trimmed;
+        }
+        return trimmed + "s";
     }
 
     private Material findBlockEquivalent(Material base) {
@@ -69,7 +89,7 @@ public class ItemEconomyProvider implements EconomyProvider {
     @Override
     public String format(double amount) {
         int count = (int) Math.round(amount);
-        return count + " " + displayName + (count == 1 ? "" : "s");
+        return count + " " + (count == 1 ? singularName : pluralName);
     }
 
     private boolean isPlainCurrencyItem(ItemStack item, Material expectedType) {

@@ -365,6 +365,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java` (line 71)
 - **Issue:** Currency formatting blindly appends `"s"` to `display-name` (e.g. `count + " " + displayName + (count == 1 ? "" : "s")`), generating grammatically invalid labels such as `"10 Golds"`.
 - **Task:** Add `singular-name` and `plural-name` configuration fields in `config.yml` under `economy.item`.
+- **Status:** ✅ **FIXED** — Added `singular-name` and `plural-name` under `economy.item` in `config.yml`, updated `EconomyManager.reload()` with legacy `display-name` fallback, and updated `ItemEconomyProvider.format()` + smart `inferPlural()` (preventing `"10 Golds"`).
 
 ### High-Frequency Dynamic Config Lookups on Hot Paths
 - **Files:**

@@ -101,7 +101,8 @@ economy:
   # Physical Item Currency settings (used in ITEM mode or AUTO fallback)
   item:
     material: "GOLD_INGOT"        # Any valid item: GOLD_INGOT, DIAMOND, EMERALD, etc.
-    display-name: "Gold"          # Label used in chat messages
+    singular-name: "Gold"         # Label used when amount == 1 (e.g. "1 Gold", "1 Diamond")
+    plural-name: "Gold"           # Label used when amount != 1 (e.g. "10 Gold", "10 Diamonds")
     convert-blocks: true          # Automatically count 1 block = 9 ingots
 
   # Pricing and Progressive Curves

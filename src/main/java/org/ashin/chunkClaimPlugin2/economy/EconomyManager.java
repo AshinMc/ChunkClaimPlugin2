@@ -77,13 +77,19 @@ public class EconomyManager {
             mat = Material.GOLD_INGOT;
         }
 
-        String displayName = config.getString("economy.item.display-name", "Gold");
+        String legacyDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(config, "economy.item.display-name", "Gold");
+        String singularName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(config, "economy.item.singular-name", legacyDisplay);
+        String pluralName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(config, "economy.item.plural-name",
+                        config.contains("economy.item.singular-name") ? singularName : null);
         boolean convertBlocks = config.getBoolean("economy.item.convert-blocks", true);
 
-        this.provider = new ItemEconomyProvider(mat, displayName, convertBlocks, (offlinePlayer, amount) -> {
+        this.provider = new ItemEconomyProvider(mat, singularName, pluralName, convertBlocks, (offlinePlayer, amount) -> {
             addPendingPayment(offlinePlayer.getUniqueId(), amount, "Claim Sale");
         });
-        plugin.getLogger().info("Using Physical Item economy with " + mat.name() + " (" + displayName + ")");
+        plugin.getLogger().info("Using Physical Item economy with " + mat.name() + " (" + singularName + "/" + pluralName + ")");
     }
 
     public boolean isEconomyEnabled() {
