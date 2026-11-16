@@ -120,6 +120,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
       return;
   }
   ```
+- **Status:** ✅ **FIXED** — Added the bitshift chunk-coordinate and world equality pre-check at the start of `onPlayerMove` before invoking `getChunk()`, eliminating chunk lookups on intra-chunk movements and also fixing cross-world teleports at matching coordinates.
 
 ### Per-Player Visualization Packets
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`

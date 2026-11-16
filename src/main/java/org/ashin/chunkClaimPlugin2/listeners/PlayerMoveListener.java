@@ -32,12 +32,16 @@ public class PlayerMoveListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         if (event.getTo() == null) return;
 
-        Chunk fromChunk = event.getFrom().getChunk();
-        Chunk toChunk = event.getTo().getChunk();
-
-        if (fromChunk.getX() == toChunk.getX() && fromChunk.getZ() == toChunk.getZ()) {
+        org.bukkit.Location from = event.getFrom();
+        org.bukkit.Location to = event.getTo();
+        if ((from.getBlockX() >> 4) == (to.getBlockX() >> 4)
+                && (from.getBlockZ() >> 4) == (to.getBlockZ() >> 4)
+                && from.getWorld() == to.getWorld()) {
             return; // completely within same chunk
         }
+
+        Chunk fromChunk = from.getChunk();
+        Chunk toChunk = to.getChunk();
 
         Player player = event.getPlayer();
         UUID fromOwner = chunkManager.getChunkOwner(fromChunk);
