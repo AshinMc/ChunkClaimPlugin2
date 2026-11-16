@@ -43,6 +43,8 @@ public class ChunkManager {
     private final Map<UUID, Integer> playerLimits = new ConcurrentHashMap<>();
     // Claim marketplace prices: "ownerUUID:claimNameLowerCase" -> price
     private final Map<String, Double> claimPrices = new ConcurrentHashMap<>();
+    // Recorded original server purchase cost per chunk key ("world:x:z" -> cost; 0.0 for free/traded chunks)
+    private final Map<String, Double> chunkPaidCosts = new ConcurrentHashMap<>();
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
@@ -148,6 +150,7 @@ public class ChunkManager {
         if (event.isCancelled()) return false;
         chunkOwners.remove(key);
         chunkNames.remove(key);
+        chunkPaidCosts.remove(key);
         return true;
     }
 
@@ -161,6 +164,7 @@ public class ChunkManager {
         if (event.isCancelled()) return false;
         chunkOwners.remove(key);
         chunkNames.remove(key);
+        chunkPaidCosts.remove(key);
         return true;
     }
 
@@ -219,6 +223,8 @@ public class ChunkManager {
                 String n = chunkNames.getOrDefault(entry.getKey(), "world");
                 if (n.equalsIgnoreCase(claimName)) {
                     entry.setValue(newOwner);
+                    // Traded/transferred claims carry zero server refund value to prevent refund arbitrage
+                    chunkPaidCosts.put(entry.getKey(), 0.0);
                     transferred++;
                 }
             }
@@ -260,6 +266,7 @@ public class ChunkManager {
         for (String key : toRemove) {
             chunkOwners.remove(key);
             chunkNames.remove(key);
+            chunkPaidCosts.remove(key);
         }
         // Clean up trust, flag, and price data for this claim group
         if (!toRemove.isEmpty()) {
@@ -303,6 +310,7 @@ public class ChunkManager {
 
         chunkOwners.remove(key);
         chunkNames.remove(key);
+        chunkPaidCosts.remove(key);
 
         int remaining = 0;
         for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
@@ -343,6 +351,7 @@ public class ChunkManager {
         for (String key : toRemove) {
             chunkOwners.remove(key);
             chunkNames.remove(key);
+            chunkPaidCosts.remove(key);
         }
         for (String group : affectedGroups) {
             String tk = trustKey(targetOwner, group);
@@ -351,6 +360,36 @@ public class ChunkManager {
             claimPrices.remove(tk);
         }
         return toRemove.size();
+    }
+
+    /**
+     * Records the original server purchase cost of a chunk (0.0 for free/transferred claims).
+     */
+    public void setChunkPaidCost(Chunk chunk, double cost) {
+        chunkPaidCosts.put(getChunkKey(chunk), Math.max(0.0, cost));
+    }
+
+    /**
+     * Returns the recorded paid cost for a chunk, or null if untracked (legacy chunk).
+     */
+    public Double getTrackedChunkPaidCost(Chunk chunk) {
+        return chunkPaidCosts.get(getChunkKey(chunk));
+    }
+
+    /**
+     * Returns recorded paid costs (nullable entries for legacy chunks) for all chunks in a claim group.
+     */
+    public List<Double> getGroupTrackedPaidCosts(UUID playerId, String claimName) {
+        List<Double> costs = new ArrayList<>();
+        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                String n = chunkNames.getOrDefault(entry.getKey(), "world");
+                if (n.equalsIgnoreCase(claimName)) {
+                    costs.add(chunkPaidCosts.get(entry.getKey()));
+                }
+            }
+        }
+        return costs;
     }
 
     // ── Claim marketplace operations ──
@@ -672,6 +711,7 @@ public class ChunkManager {
     public void loadData() {
         chunkOwners.clear();
         chunkNames.clear();
+        chunkPaidCosts.clear();
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
 
         // New format: claims-v2.<key>.owner / claims-v2.<key>.name
@@ -685,6 +725,9 @@ public class ChunkManager {
                         try {
                             chunkOwners.put(key, UUID.fromString(owner));
                             chunkNames.put(key, name);
+                            if (section.contains(key + ".paid-cost")) {
+                                chunkPaidCosts.put(key, Math.max(0.0, section.getDouble(key + ".paid-cost", 0.0)));
+                            }
                         } catch (IllegalArgumentException e) {
                             plugin.getLogger().warning("Invalid UUID in claims-v2: " + key);
                         }
@@ -826,7 +869,8 @@ public class ChunkManager {
         }
         Map<UUID, Integer> limitsCopy = new HashMap<>(playerLimits);
         Map<String, Double> pricesCopy = new HashMap<>(claimPrices);
-        return new DataSnapshot(ownersCopy, namesCopy, trustsCopy, flagsCopy, limitsCopy, pricesCopy);
+        Map<String, Double> paidCostsCopy = new HashMap<>(chunkPaidCosts);
+        return new DataSnapshot(ownersCopy, namesCopy, trustsCopy, flagsCopy, limitsCopy, pricesCopy, paidCostsCopy);
     }
 
     private void writeSnapshotAtomically(DataSnapshot snapshot) {
@@ -835,6 +879,10 @@ public class ChunkManager {
             String key = entry.getKey();
             yaml.set("claims-v2." + key + ".owner", entry.getValue().toString());
             yaml.set("claims-v2." + key + ".name", snapshot.names.getOrDefault(key, "world"));
+            Double paidCost = snapshot.paidCosts.get(key);
+            if (paidCost != null) {
+                yaml.set("claims-v2." + key + ".paid-cost", paidCost);
+            }
         }
         for (Map.Entry<String, List<String>> entry : snapshot.trusts.entrySet()) {
             yaml.set("trusts." + entry.getKey(), entry.getValue());
@@ -877,6 +925,7 @@ public class ChunkManager {
             Map<String, List<String>> trusts,
             Map<String, Map<String, Boolean>> flags,
             Map<UUID, Integer> limits,
-            Map<String, Double> prices
+            Map<String, Double> prices,
+            Map<String, Double> paidCosts
     ) {}
 }

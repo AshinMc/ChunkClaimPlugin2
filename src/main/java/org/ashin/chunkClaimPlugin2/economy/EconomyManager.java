@@ -117,6 +117,30 @@ public class EconomyManager {
         return Math.max(0.0, totalRefund);
     }
 
+    /**
+     * Calculates unclaim refunds using tracked actual purchase cost per chunk where present
+     * (preventing progressive refund arbitrage on traded/free claims), falling back to the
+     * theoretical formula only for legacy untracked chunks.
+     */
+    public double getUnclaimRefundForTracked(java.util.List<Double> trackedCosts, int currentOwnedChunks) {
+        if (!isEconomyEnabled() || refundPercentage <= 0.0 || trackedCosts == null || trackedCosts.isEmpty()) {
+            return 0.0;
+        }
+        double totalRefund = 0.0;
+        int legacyCount = 0;
+        for (Double paid : trackedCosts) {
+            if (paid != null) {
+                totalRefund += paid * (refundPercentage / 100.0);
+            } else {
+                legacyCount++;
+            }
+        }
+        if (legacyCount > 0) {
+            totalRefund += getUnclaimRefund(currentOwnedChunks, legacyCount);
+        }
+        return Math.max(0.0, totalRefund);
+    }
+
     // ── Pending payment storage for offline sales ──
 
     private void loadPendingConfig() {

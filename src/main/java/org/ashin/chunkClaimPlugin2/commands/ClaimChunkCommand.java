@@ -99,6 +99,7 @@ public class ClaimChunkCommand implements CommandExecutor {
 
         // Actually claim the chunk with the name
         if (chunkManager.claimChunk(player, chunk, claimName)) {
+            chunkManager.setChunkPaidCost(chunk, cost);
             chunkManager.saveData();
             if (messages.isMessageEnabled("claim-success")) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-claim-success", "name", claimName));

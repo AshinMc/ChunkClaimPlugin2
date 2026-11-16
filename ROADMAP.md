@@ -164,6 +164,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java`
 - **Issue:** `getUnclaimRefund()` calculates refunds based on theoretical server progressive price formulas rather than historical cost. Players can buy multi-chunk bases cheaply on `/claimtrade` and immediately unclaim them to generate free money from the server treasury.
 - **Task:** Do not refund claims obtained via marketplace trading, or track actual paid cost per chunk.
+- **Status:** ✅ **FIXED** — Added persistent per-chunk `paid-cost` tracking in `ChunkManager` (`chunkPaidCosts`, serialized under `claims-v2.<key>.paid-cost`), recorded actual paid amounts at claim/expand time, zeroed `paid-cost` on every transferred/traded chunk in `transferClaim()`, and updated `UnclaimChunkCommand` + `EconomyManager.getUnclaimRefundForTracked()` to compute refunds from recorded historical purchase costs.
 
 ---
 

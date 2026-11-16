@@ -92,6 +92,7 @@ public class ChunkExpandCommand implements CommandExecutor {
 
         // Expand: add this chunk to the existing claim group
         if (chunkManager.claimChunk(player, chunk, claimName)) {
+            chunkManager.setChunkPaidCost(chunk, cost);
             chunkManager.saveData();
             int total = chunkManager.getChunksByName(player.getUniqueId(), claimName).size();
             player.sendMessage(messages.getFor(player.getUniqueId(), "expand-success",

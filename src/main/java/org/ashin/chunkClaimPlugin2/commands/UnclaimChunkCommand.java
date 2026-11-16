@@ -42,14 +42,16 @@ public class UnclaimChunkCommand implements CommandExecutor {
             }
             int countBefore = chunkManager.getPlayerChunkCount(player.getUniqueId());
             String singleClaimName = chunkManager.getChunkClaimName(chunk);
+            Double trackedCost = chunkManager.getTrackedChunkPaidCost(chunk);
             boolean success = chunkManager.unclaimChunk(player, chunk);
             if (success) {
                 chunkManager.saveData();
                 if (messages.isMessageEnabled("unclaim-success")) {
                     player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-unclaim-success"));
                 }
-                // Refund 1 chunk
-                double refund = economyManager.getUnclaimRefund(countBefore, 1);
+                // Refund 1 chunk based on tracked cost
+                double refund = economyManager.getUnclaimRefundForTracked(
+                        java.util.Collections.singletonList(trackedCost), countBefore);
                 if (refund > 0.0) {
                     economyManager.getProvider().deposit(player, refund);
                     String formatted = economyManager.getProvider().format(refund);
@@ -73,6 +75,7 @@ public class UnclaimChunkCommand implements CommandExecutor {
         // With args: unclaim the entire named claim group
         String claimName = String.join(" ", args);
         int currentCount = chunkManager.getPlayerChunkCount(player.getUniqueId());
+        java.util.List<Double> trackedCosts = chunkManager.getGroupTrackedPaidCosts(player.getUniqueId(), claimName);
         int count = chunkManager.unclaimByName(player.getUniqueId(), claimName);
         if (count > 0) {
             chunkManager.saveData();
@@ -81,8 +84,8 @@ public class UnclaimChunkCommand implements CommandExecutor {
                         "name", claimName, "count", String.valueOf(count)));
             }
 
-            // Refund if economy enabled
-            double refund = economyManager.getUnclaimRefund(currentCount, count);
+            // Refund based on tracked paid costs per chunk
+            double refund = economyManager.getUnclaimRefundForTracked(trackedCosts, currentCount);
             if (refund > 0.0) {
                 economyManager.getProvider().deposit(player, refund);
                 String formatted = economyManager.getProvider().format(refund);
