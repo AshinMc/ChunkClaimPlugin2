@@ -44,9 +44,7 @@ public final class ConfigMigrator {
         int detectedVersion = existing.getInt("config-version", 1);
 
         if (detectedVersion >= CURRENT_CONFIG_VERSION) {
-            // Up-to-date layout; ensure any minor new keys are populated without overwriting
-            plugin.getConfig().options().copyDefaults(true);
-            plugin.saveConfig();
+            // Up-to-date layout; Bukkit reads JAR defaults in-memory so skip rewriting disk file on startup
             return;
         }
 

@@ -311,6 +311,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/config/ConfigMigrator.java` (lines 48–50)
 - **Issue:** When `detectedVersion >= CURRENT_CONFIG_VERSION`, `ConfigMigrator` executes `plugin.getConfig().options().copyDefaults(true)` and `plugin.saveConfig()`. In Bukkit, calling `saveConfig()` without comment preservation erases all 7 section headers and inline comments from `config.yml` on every single server boot.
 - **Task:** Remove unconditional `saveConfig()` on startup when no schema migration is required.
+- **Status:** ✅ **FIXED** — Removed `copyDefaults(true)` and unconditional `plugin.saveConfig()` on up-to-date configs (`detectedVersion >= CURRENT_CONFIG_VERSION`), eliminating startup disk rewrites and comment stripping.
 
 ### NullPointerException Crashes on Blank Config Keys
 - **Files:**
