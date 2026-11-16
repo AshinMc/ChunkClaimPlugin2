@@ -101,8 +101,10 @@ public class ChunkExpandCommand implements CommandExecutor {
             chunkManager.setChunkPaidCost(chunk, cost);
             chunkManager.saveData();
             int total = chunkManager.getChunksByName(player.getUniqueId(), claimName).size();
-            player.sendMessage(messages.getFor(player.getUniqueId(), "expand-success",
-                    "name", claimName, "total", String.valueOf(total)));
+            if (messages.isMessageEnabled("claim-success")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "expand-success",
+                        "name", claimName, "total", String.valueOf(total)));
+            }
             if (cost > 0.0) {
                 String formatted = economyManager.getProvider().format(cost);
                 player.sendMessage(messages.getFor(player.getUniqueId(), "claim-cost-notice", "cost", formatted));

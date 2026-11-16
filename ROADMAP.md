@@ -342,6 +342,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (line 116)
 - **Issue:** `/claimchunk` and shovel claiming respect `message-toggles.claim-success: false`. `/chunkexpand` sends the success message unconditionally, ignoring the administrator's configured message toggle.
 - **Task:** Wrap expand success message delivery with `if (messages.isMessageEnabled("claim-success"))`.
+- **Status:** ✅ **FIXED** — Wrapped `expand-success` delivery in `ChunkExpandCommand` with `if (messages.isMessageEnabled("claim-success"))`, matching `/claimchunk` and shovel claiming.
 
 ### Deprecated Particle Enum in Config Comments (`REDSTONE` vs `DUST`)
 - **Files:**
