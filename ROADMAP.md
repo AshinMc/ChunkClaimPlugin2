@@ -272,6 +272,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/AdminSettingsGUIListener.java`
 - **Issue:** Using `plugin.saveConfig()` invokes standard SnakeYAML, which strips all YAML comments and section headers when saving or migrating.
 - **Task:** Use Bukkit's comment-preserving YAML API (`parseComments` / `copyDefaults`) or modify keys directly without dumping SnakeYAML output over formatted files.
+- **Status:** ✅ **FIXED** — Implemented `ConfigMigrator.setConfigValuePreservingComments(...)` and in-place scalar line patching (`updateScalarInFilePreservingComments(...)`) with `YamlConfigurationOptions#parseComments(true)` fallback, replacing `plugin.saveConfig()` across both `AdminSettingsGUIListener` and `ConfigMigrator.migrate()`.
 
 ### Reload Desynchronization (`/chunkadmin reload`)
 - **Files:**

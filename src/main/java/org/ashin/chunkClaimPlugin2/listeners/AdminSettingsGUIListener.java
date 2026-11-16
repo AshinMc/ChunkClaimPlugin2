@@ -94,8 +94,7 @@ public class AdminSettingsGUIListener implements Listener {
                 case "CHAT" -> "NONE";
                 default -> "ACTION_BAR";
             };
-            plugin.getConfig().set("greeting-display", next);
-            saveConfig();
+            org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "greeting-display", next);
             player.sendMessage(ChatColor.GREEN + "Greeting display mode set to: " + ChatColor.YELLOW + next);
             gui.openHome(player);
         } else if (name.contains("Chunk Inspector")) {
@@ -181,8 +180,7 @@ public class AdminSettingsGUIListener implements Listener {
         else if (name.equals("+5")) delta = 5;
         else if (name.equals("+10")) delta = 10;
         else if (name.contains("Unlimited")) {
-            plugin.getConfig().set("max-claims-per-player", 0);
-            saveConfig();
+            org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "max-claims-per-player", 0);
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-max-claims-set", "max", "Unlimited"));
             gui.openMaxClaims(player);
             return;
@@ -190,8 +188,7 @@ public class AdminSettingsGUIListener implements Listener {
 
         if (delta != 0) {
             int newVal = Math.max(0, current + delta);
-            plugin.getConfig().set("max-claims-per-player", newVal);
-            saveConfig();
+            org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "max-claims-per-player", newVal);
             String display = newVal == 0 ? "Unlimited" : String.valueOf(newVal);
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-max-claims-set", "max", display));
             gui.openMaxClaims(player);
@@ -203,8 +200,7 @@ public class AdminSettingsGUIListener implements Listener {
         if (name.equals(back)) { gui.openHome(player); return; }
 
         if (messages.isLocaleAvailable(name)) {
-            plugin.getConfig().set("locale", name);
-            saveConfig();
+            org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "locale", name);
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-language-set", "locale", name));
             gui.openLanguage(player);
         }
@@ -216,15 +212,10 @@ public class AdminSettingsGUIListener implements Listener {
 
         try {
             org.bukkit.Particle.valueOf(name);
-            plugin.getConfig().set("visualization.particle-type", name);
-            saveConfig();
+            org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "visualization.particle-type", name);
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-particle-set", "particle", name));
             gui.openParticle(player);
         } catch (IllegalArgumentException ignored) {
         }
-    }
-
-    private void saveConfig() {
-        plugin.saveConfig();
     }
 }

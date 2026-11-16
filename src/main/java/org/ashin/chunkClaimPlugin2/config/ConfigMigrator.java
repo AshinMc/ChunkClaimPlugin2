@@ -7,10 +7,15 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Handles automatic migration and upgrade of config.yml from legacy installations.
@@ -95,20 +100,35 @@ public final class ConfigMigrator {
             }
         }
 
-        // 4. Overwrite config.yml with clean template from JAR, then re-apply preserved values
+        // 4. Overwrite config.yml with clean commented template from JAR, then re-apply preserved values cleanly
         try {
             plugin.saveResource("config.yml", true);
-            plugin.reloadConfig();
 
-            FileConfiguration modernConfig = plugin.getConfig();
-            modernConfig.set("config-version", CURRENT_CONFIG_VERSION);
-
+            Map<String, Object> remainingForYaml = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : preservedValues.entrySet()) {
-                modernConfig.set(entry.getKey(), entry.getValue());
+                Object val = entry.getValue();
+                if (!(val instanceof List) && !(val instanceof Map) && !(val instanceof ConfigurationSection)) {
+                    if (!updateScalarInFilePreservingComments(configFile, entry.getKey(), val)) {
+                        remainingForYaml.put(entry.getKey(), val);
+                    }
+                } else {
+                    remainingForYaml.put(entry.getKey(), val);
+                }
             }
 
-            plugin.saveConfig();
-            plugin.getLogger().info("Successfully upgraded config.yml to v" + CURRENT_CONFIG_VERSION + " with all custom settings preserved!");
+            if (!remainingForYaml.isEmpty()) {
+                YamlConfiguration modernYaml = new YamlConfiguration();
+                enableParseComments(modernYaml);
+                modernYaml.load(configFile);
+                modernYaml.set("config-version", CURRENT_CONFIG_VERSION);
+                for (Map.Entry<String, Object> entry : remainingForYaml.entrySet()) {
+                    modernYaml.set(entry.getKey(), entry.getValue());
+                }
+                modernYaml.save(configFile);
+            }
+
+            plugin.reloadConfig();
+            plugin.getLogger().info("Successfully upgraded config.yml to v" + CURRENT_CONFIG_VERSION + " with comments and custom settings preserved!");
         } catch (Exception e) {
             plugin.getLogger().severe("Unable to write migrated config.yml to disk (" + e.getMessage() + "). Running with migrated values in-memory.");
             // Apply preserved values in-memory so server functionality is unaffected
@@ -118,6 +138,119 @@ public final class ConfigMigrator {
                 memConfig.set(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    /**
+     * Updates a configuration key in memory and writes it to config.yml without stripping comments or section banners.
+     */
+    public static void setConfigValuePreservingComments(org.bukkit.plugin.java.JavaPlugin plugin, String path, Object value) {
+        plugin.getConfig().set(path, value);
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
+        try {
+            if (configFile.exists() && !(value instanceof List) && !(value instanceof Map)
+                    && updateScalarInFilePreservingComments(configFile, path, value)) {
+                return;
+            }
+            YamlConfiguration yaml = new YamlConfiguration();
+            enableParseComments(yaml);
+            if (configFile.exists()) {
+                yaml.load(configFile);
+            }
+            yaml.set(path, value);
+            yaml.save(configFile);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Could not save config.yml preserving comments (" + e.getMessage() + "); falling back to default save.");
+            plugin.saveConfig();
+        }
+    }
+
+    private static void enableParseComments(YamlConfiguration yaml) {
+        try {
+            yaml.options().parseComments(true);
+        } catch (Throwable ignored) {
+            // Older Spigot builds (<1.18.1) lack YamlConfigurationOptions#parseComments
+        }
+    }
+
+    /**
+     * Updates a scalar key line-by-line in config.yml while keeping all headers, blank lines, and inline comments intact.
+     * Returns true if the key was found and updated in-place.
+     */
+    private static boolean updateScalarInFilePreservingComments(File configFile, String dotPath, Object value) throws IOException {
+        List<String> lines = Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8);
+        String[] segments = dotPath.split("\\.");
+        int[] sectionIndent = new int[segments.length];
+        java.util.Arrays.fill(sectionIndent, -1);
+        int matchedDepth = 0;
+
+        Pattern keyPattern = Pattern.compile("^(\\s*)([^#\\s][^:]*?):(.*)$");
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("#")) {
+                continue;
+            }
+
+            Matcher matcher = keyPattern.matcher(line);
+            if (!matcher.matches()) {
+                continue;
+            }
+
+            int indent = matcher.group(1).length();
+            String key = matcher.group(2).trim();
+            if ((key.startsWith("\"") && key.endsWith("\"")) || (key.startsWith("'") && key.endsWith("'"))) {
+                key = key.substring(1, key.length() - 1);
+            }
+
+            // Pop any parent sections whose indentation is >= current line indentation
+            while (matchedDepth > 0 && indent <= sectionIndent[matchedDepth - 1]) {
+                matchedDepth--;
+            }
+
+            if (matchedDepth < segments.length && key.equals(segments[matchedDepth])) {
+                if (matchedDepth == segments.length - 1) {
+                    // Found exact target scalar line
+                    String rest = matcher.group(3);
+                    String inlineComment = extractInlineComment(rest);
+                    String formattedValue = formatYamlScalar(value);
+                    String newLine = matcher.group(1) + matcher.group(2) + ": " + formattedValue
+                            + (inlineComment.isEmpty() ? "" : " " + inlineComment);
+                    lines.set(i, newLine);
+                    Files.write(configFile.toPath(), lines, StandardCharsets.UTF_8);
+                    return true;
+                } else {
+                    sectionIndent[matchedDepth] = indent;
+                    matchedDepth++;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static String extractInlineComment(String rest) {
+        boolean inSingle = false;
+        boolean inDouble = false;
+        for (int i = 0; i < rest.length(); i++) {
+            char c = rest.charAt(i);
+            if (c == '\'' && !inDouble) inSingle = !inSingle;
+            else if (c == '"' && !inSingle) inDouble = !inDouble;
+            else if (c == '#' && !inSingle && !inDouble) {
+                return rest.substring(i).trim();
+            }
+        }
+        return "";
+    }
+
+    private static String formatYamlScalar(Object value) {
+        if (value == null) return "null";
+        if (value instanceof Number || value instanceof Boolean) {
+            return String.valueOf(value);
+        }
+        String s = String.valueOf(value);
+        if (s.isEmpty() || s.contains(":") || s.contains("#") || s.contains("\"")) {
+            return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        }
+        return s;
     }
 
     private static void copyIfPresent(YamlConfiguration source, Map<String, Object> target, String path) {
