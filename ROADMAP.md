@@ -174,6 +174,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkTeleportCommand.java`
 - **Issue:** Uses `world.getHighestBlockYAt(centerX, centerZ) + 1`. In the Nether, this targets Y=128 (above bedrock ceiling). In caves or underground bases, it teleports to the surface.
 - **Task:** In Nether or below-ground environments, scan vertically for 2 contiguous air blocks above a solid, non-hazardous block (no lava or fire).
+- **Status:** ✅ **FIXED** — Replaced blind `getHighestBlockYAt + 1` with `findSafeLocationInChunk(...)` which caps Nether scanning below bedrock (`y <= 122`), scans vertically for 2 passable non-hazardous blocks above a solid non-hazardous floor (`!LAVA`, `!FIRE`, `!MAGMA_BLOCK`, etc.), probes across the chunk if the center column is blocked, and supports multi-word claim names.
 
 ### Accurate Border Visualization
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`
