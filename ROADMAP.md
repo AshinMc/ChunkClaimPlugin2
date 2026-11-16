@@ -134,6 +134,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
 - **Issue:** Placeholder expansions are evaluated asynchronously by scoreboard and tablist plugins. `ChunkManager` uses raw `HashMap` collections, causing `ConcurrentModificationException` and server deadlocks on concurrent read/write operations.
 - **Task:** Convert `chunkOwners`, `chunkNames`, `trustedPlayers`, `claimFlags`, `playerLimits`, and `claimPrices` to `ConcurrentHashMap`. Use bitshifts for player location chunks instead of async `.getChunk()` calls.
+- **Status:** ✅ **FIXED** — Converted all shared maps and nested trust/flag collections in `ChunkManager` to `ConcurrentHashMap` / `ConcurrentHashMap.newKeySet()`, added lock-free `getTotalClaimedChunkCount()`, and updated `ChunkClaimExpansion` to resolve chunk keys via bitshifts (`>> 4`) instead of async `getChunk()` calls.
 
 ---
 

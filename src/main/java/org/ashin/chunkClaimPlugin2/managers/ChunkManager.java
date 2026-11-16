@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -31,17 +32,17 @@ import java.util.concurrent.TimeUnit;
 public class ChunkManager {
     private final JavaPlugin plugin;
     // chunkKey -> owner UUID
-    private final Map<String, UUID> chunkOwners = new HashMap<>();
+    private final Map<String, UUID> chunkOwners = new ConcurrentHashMap<>();
     // chunkKey -> claim name
-    private final Map<String, String> chunkNames = new HashMap<>();
+    private final Map<String, String> chunkNames = new ConcurrentHashMap<>();
     // Trust: "ownerUUID:claimNameLowerCase" -> Set of trusted player UUIDs
-    private final Map<String, Set<UUID>> trustedPlayers = new HashMap<>();
+    private final Map<String, Set<UUID>> trustedPlayers = new ConcurrentHashMap<>();
     // Claim flags: "ownerUUID:claimNameLowerCase" -> { flagName -> enabled }
-    private final Map<String, Map<String, Boolean>> claimFlags = new HashMap<>();
+    private final Map<String, Map<String, Boolean>> claimFlags = new ConcurrentHashMap<>();
     // Player individual limits: UUID -> limit
-    private final Map<UUID, Integer> playerLimits = new HashMap<>();
+    private final Map<UUID, Integer> playerLimits = new ConcurrentHashMap<>();
     // Claim marketplace prices: "ownerUUID:claimNameLowerCase" -> price
-    private final Map<String, Double> claimPrices = new HashMap<>();
+    private final Map<String, Double> claimPrices = new ConcurrentHashMap<>();
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
@@ -459,6 +460,13 @@ public class ChunkManager {
         return new HashMap<>(chunkOwners);
     }
 
+    /**
+     * Thread-safe total count of claimed chunks without copying the map.
+     */
+    public int getTotalClaimedChunkCount() {
+        return chunkOwners.size();
+    }
+
     // ── Trust operations ──
 
     private String trustKey(UUID owner, String claimName) {
@@ -478,7 +486,7 @@ public class ChunkManager {
      */
     public void setTrusted(UUID owner, String claimName, UUID playerId, boolean trust) {
         String key = trustKey(owner, claimName);
-        Set<UUID> set = trustedPlayers.computeIfAbsent(key, k -> new HashSet<>());
+        Set<UUID> set = trustedPlayers.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet());
         if (trust) set.add(playerId);
         else set.remove(playerId);
         if (set.isEmpty()) trustedPlayers.remove(key);
@@ -567,7 +575,7 @@ public class ChunkManager {
             allKeys.add(trustKey(entry.getValue(), claimName));
         }
         for (String key : allKeys) {
-            Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new HashMap<>());
+            Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
             flags.put(flag, value);
             count++;
         }
@@ -602,7 +610,7 @@ public class ChunkManager {
      */
     public void setClaimFlag(UUID owner, String claimName, String flag, boolean value) {
         String key = trustKey(owner, claimName);
-        Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new HashMap<>());
+        Map<String, Boolean> flags = claimFlags.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         flags.put(flag, value);
     }
 
@@ -710,7 +718,7 @@ public class ChunkManager {
             if (trustSection != null) {
                 for (String trustKey : trustSection.getKeys(false)) {
                     List<String> uuids = trustSection.getStringList(trustKey);
-                    Set<UUID> set = new HashSet<>();
+                    Set<UUID> set = ConcurrentHashMap.newKeySet();
                     for (String u : uuids) {
                         try { set.add(UUID.fromString(u)); }
                         catch (IllegalArgumentException e) {
@@ -730,7 +738,7 @@ public class ChunkManager {
                 for (String claimKey : flagSection.getKeys(false)) {
                     ConfigurationSection inner = flagSection.getConfigurationSection(claimKey);
                     if (inner != null) {
-                        Map<String, Boolean> flags = new HashMap<>();
+                        Map<String, Boolean> flags = new ConcurrentHashMap<>();
                         for (String flag : inner.getKeys(false)) {
                             flags.put(flag, inner.getBoolean(flag));
                         }
