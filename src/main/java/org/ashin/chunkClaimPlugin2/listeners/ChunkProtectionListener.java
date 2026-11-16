@@ -557,6 +557,21 @@ public class ChunkProtectionListener implements Listener {
     // ── Mob griefing protection (flag-gated) ──
 
     /**
+     * Prevents non-player entities (mobs, horses, ravagers, etc.) from trampling
+     * farmland crops and turtle/sniffer eggs inside claimed chunks.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityInteract(org.bukkit.event.entity.EntityInteractEvent event) {
+        String typeName = event.getBlock().getType().name();
+        if (!typeName.equals("FARMLAND") && !typeName.equals("TURTLE_EGG") && !typeName.equals("SNIFFER_EGG")) {
+            return;
+        }
+        if (chunkManager.isChunkClaimed(event.getBlock().getChunk())) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
      * Prevents mobs from forming blocks when mob-griefing is enabled, and blocks untrusted
      * players from forming blocks (e.g. Frost Walker frosted ice) inside claims.
      */

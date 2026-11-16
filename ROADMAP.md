@@ -252,6 +252,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `EntityInteractEvent` is missing. Mobs, horses, ravagers, and wandering traders can trample farmland and turtle eggs inside claims.
 - **Task:** Register `EntityInteractEvent` and cancel `Action.PHYSICAL` on `FARMLAND` and `TURTLE_EGG` in claimed chunks.
+- **Status:** ✅ **FIXED** — Registered `onEntityInteract(EntityInteractEvent)` cancelling entity physical interaction with `FARMLAND`, `TURTLE_EGG`, and `SNIFFER_EGG` blocks inside claimed chunks.
 
 ---
 
