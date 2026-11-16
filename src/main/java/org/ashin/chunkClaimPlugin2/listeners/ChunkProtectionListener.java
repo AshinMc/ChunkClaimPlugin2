@@ -144,6 +144,22 @@ public class ChunkProtectionListener implements Listener {
             return;
         }
 
+        // Check boat/minecart placement before block interaction flags
+        if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK && event.getItem() != null) {
+            String itemName = event.getItem().getType().name();
+            if (isVehicleItem(itemName)) {
+                Chunk clickedChunk = event.getClickedBlock().getChunk();
+                Chunk placeChunk = event.getClickedBlock().getRelative(event.getBlockFace()).getChunk();
+                if (!canModifyChunk(event.getPlayer(), clickedChunk) || !canModifyChunk(event.getPlayer(), placeChunk)) {
+                    event.setCancelled(true);
+                    if (messages.isMessageEnabled("deny-place")) {
+                        event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
+                    }
+                    return;
+                }
+            }
+        }
+
         if (canModifyChunk(event.getPlayer(), event.getClickedBlock().getChunk())) {
             return;
         }
@@ -172,6 +188,10 @@ public class ChunkProtectionListener implements Listener {
                 event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
             }
         }
+    }
+
+    private boolean isVehicleItem(String itemName) {
+        return itemName.endsWith("_BOAT") || itemName.endsWith("_RAFT") || itemName.endsWith("MINECART");
     }
 
     private String resolveInteractionFlag(String typeName) {
@@ -325,12 +345,19 @@ public class ChunkProtectionListener implements Listener {
         if (!(event.getAttacker() instanceof Player player)) return;
 
         Chunk chunk = event.getVehicle().getLocation().getChunk();
-        if (canModifyChunk(player, chunk)) return;
+        checkModifyOrCancel(player, chunk, event, "deny-entity");
+    }
 
-        event.setCancelled(true);
-        if (messages.isMessageEnabled("deny-entity")) {
-            player.sendMessage(messages.getFor(player.getUniqueId(), "deny-entity"));
-        }
+    /**
+     * Prevents untrusted visitors from mounting claimed animals or vehicles.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityMount(org.spigotmc.event.entity.EntityMountEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.getMount() instanceof Player) return;
+
+        Chunk chunk = event.getMount().getLocation().getChunk();
+        checkModifyOrCancel(player, chunk, event, "deny-interact");
     }
 
     /**

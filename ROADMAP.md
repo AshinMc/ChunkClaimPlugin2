@@ -91,6 +91,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** Visitors can place boats or minecarts in claims via item interaction and use them to move or trap claimed villagers/mobs. Visitors can also mount claimed animals.
 - **Task:** Block vehicle placement in `onPlayerInteract` and cancel `EntityMountEvent` for untrusted visitors on claimed entities.
+- **Status:** ✅ **FIXED** — Blocked boat, raft, and minecart placement in `onPlayerInteract` across claimed chunks/adjacent placement faces, and added `onEntityMount(EntityMountEvent)` cancelling unauthorized mounting of claimed animals and vehicles.
 
 ### Nether Portal Block Replacement
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
