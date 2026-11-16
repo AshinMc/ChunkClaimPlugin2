@@ -283,9 +283,21 @@ public class AdminSettingsGUI {
     }
 
     public static Particle resolveParticle(String name) {
-        if (name == null || name.isEmpty()) return Particle.FLAME;
+        if (name == null || name.isBlank()) return Particle.FLAME;
+        String normalized = name.trim().toUpperCase();
+        if (normalized.equals("REDSTONE") || normalized.equals("DUST")) {
+            try {
+                return Particle.valueOf("DUST");
+            } catch (IllegalArgumentException ignored) {
+                try {
+                    return Particle.valueOf("REDSTONE");
+                } catch (IllegalArgumentException ignored2) {
+                    return Particle.FLAME;
+                }
+            }
+        }
         try {
-            return Particle.valueOf(name);
+            return Particle.valueOf(normalized);
         } catch (IllegalArgumentException e) {
             return Particle.FLAME;
         }

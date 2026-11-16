@@ -216,12 +216,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
             particleName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
                     .getNonBlankString(plugin.getConfig(), "visualization.particle-type", "FLAME");
         }
-        Particle particle;
-        try {
-            particle = Particle.valueOf(particleName);
-        } catch (IllegalArgumentException e) {
-            particle = Particle.FLAME;
-        }
+        Particle particle = org.ashin.chunkClaimPlugin2.gui.AdminSettingsGUI.resolveParticle(particleName);
         String name = particle.name();
         if (name.equals("DUST") || name.equals("REDSTONE")) {
             player.spawnParticle(particle, location, 1, 0, 0, 0, 0,

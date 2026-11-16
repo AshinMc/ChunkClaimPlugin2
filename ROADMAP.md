@@ -351,6 +351,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/gui/AdminSettingsGUI.java` (line 275)
 - **Issue:** `config.yml` lists `REDSTONE` in its comment recommendation. In modern Spigot/Paper 1.20+, `Particle.REDSTONE` was renamed to `Particle.DUST`. Setting `particle-type: REDSTONE` throws `IllegalArgumentException` on `Particle.valueOf()` and silently reverts to `FLAME`.
 - **Task:** Update `config.yml` comments to recommend `DUST` and add an alias resolver mapping `REDSTONE` $\rightarrow$ `DUST`.
+- **Status:** ✅ **FIXED** — Updated `config.yml` comment recommendation from `REDSTONE` to `DUST`, updated `AdminSettingsGUI.resolveParticle()` with cross-version `REDSTONE`/`DUST` aliasing, and delegated `VisualizeChunkCommand.spawnParticle()` to `resolveParticle(...)`.
 
 ### Economy Currency Crash on `Material.AIR` and Non-Item Materials
 - **Files:**
