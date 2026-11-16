@@ -420,6 +420,23 @@ public class ChunkProtectionListener implements Listener {
     }
 
     /**
+     * Prevents untrusted visitors with Bad Omen from triggering village raids inside claimed chunks.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onRaidTrigger(org.bukkit.event.raid.RaidTriggerEvent event) {
+        Player player = event.getPlayer();
+        Chunk raidChunk = event.getRaid().getLocation().getChunk();
+        Chunk playerChunk = player.getLocation().getChunk();
+        if ((chunkManager.isChunkClaimed(raidChunk) && !canModifyChunk(player, raidChunk))
+                || (chunkManager.isChunkClaimed(playerChunk) && !canModifyChunk(player, playerChunk))) {
+            event.setCancelled(true);
+            if (messages.isMessageEnabled("deny-interact")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "deny-interact"));
+            }
+        }
+    }
+
+    /**
      * Prevents untrusted visitors from warping inside claims using Chorus Fruit or Ender Pearls.
      * Teleporting out into wilderness remains permitted.
      */

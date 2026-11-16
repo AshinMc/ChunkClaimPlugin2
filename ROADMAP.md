@@ -246,6 +246,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `RaidTriggerEvent` is not handled. Visitors with Bad Omen can trigger raids in claimed villages.
 - **Task:** Register `RaidTriggerEvent` and cancel if the triggering player is not trusted on the claim.
+- **Status:** ✅ **FIXED** — Registered `onRaidTrigger(RaidTriggerEvent)` checking `canModifyChunk()` for both the raid village center chunk and the triggering player's chunk, cancelling unauthorized raids.
 
 ### Entity Crop & Egg Trampling
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
