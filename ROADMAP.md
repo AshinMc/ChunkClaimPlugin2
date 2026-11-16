@@ -79,6 +79,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `onPlayerInteract` does not cover pressure plates (`Action.PHYSICAL` on `_PRESSURE_PLATE`), cauldrons, respawn anchors, composters, cakes, sweet berry bushes, dragon eggs, bells, and lecterns.
 - **Task:** Add these materials to the interaction check under appropriate claim flags.
+- **Status:** ✅ **FIXED** — Refactored `onPlayerInteract` using `resolveInteractionFlag(...)` to protect physical `_PRESSURE_PLATE` / `TRIPWIRE`, dyed `_SHULKER_BOX`es, cauldrons, respawn anchors, composters, cakes (`_CAKE`), sweet berry bushes, dragon eggs, bells, lecterns, jukeboxes, flower pots, chiseled bookshelves, and decorated pots under their respective flags.
 
 ### Tree & Structure Growth
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

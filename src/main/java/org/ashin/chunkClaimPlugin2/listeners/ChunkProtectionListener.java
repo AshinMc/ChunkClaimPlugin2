@@ -148,55 +148,60 @@ public class ChunkProtectionListener implements Listener {
         }
 
         Chunk chunk = event.getClickedBlock().getChunk();
-        boolean blockIt = false;
-
-        // Block crop trampling (Action.PHYSICAL on FARMLAND) and turtle eggs
-        if (event.getAction() == org.bukkit.event.block.Action.PHYSICAL) {
-            String typeName = event.getClickedBlock().getType().name();
-            if (typeName.equals("FARMLAND") || typeName.equals("TURTLE_EGG") || typeName.equals("SNIFFER_EGG")) {
-                blockIt = true;
-            }
-        }
-
-        // Check against specific flags
-        switch (event.getClickedBlock().getType().name()) {
-            case "CHEST", "TRAPPED_CHEST", "BARREL", "ENDER_CHEST", "SHULKER_BOX" -> {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_CHEST)) blockIt = true;
-            }
-            case "FURNACE", "BLAST_FURNACE", "SMOKER" -> {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_FURNACE)) blockIt = true;
-            }
-            case "STONECUTTER", "CRAFTING_TABLE", "CARTOGRAPHY_TABLE", "SMITHING_TABLE", "GRINDSTONE", "LOOM" -> {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_STONECUTTER)) blockIt = true;
-            }
-            case "DOOR", "TRAPDOOR", "FENCE_GATE", "ACACIA_DOOR", "BIRCH_DOOR", "CRIMSON_DOOR", "DARK_OAK_DOOR", "JUNGLE_DOOR", "OAK_DOOR", "SPRUCE_DOOR", "WARPED_DOOR", "CHERRY_DOOR", "MANGROVE_DOOR", "BAMBOO_DOOR", "IRON_DOOR" -> {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_DOOR)) blockIt = true;
-            }
-            case "LEVER", "BUTTON", "OAK_BUTTON", "STONE_BUTTON", "REPEATER", "COMPARATOR", "DAYLIGHT_DETECTOR" -> {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_REDSTONE)) blockIt = true;
-            }
-            case "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "ANVIL", "CHIPPED_ANVIL", "DAMAGED_ANVIL" -> {
-                // Default block these other containers
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_CHEST)) blockIt = true;
-            }
-        }
-        
-        // Also catch anything ending in _DOOR, _TRAPDOOR, etc if the name match didn't catch it
         String name = event.getClickedBlock().getType().name();
-        if (!blockIt) {
-            if (name.endsWith("_DOOR") || name.endsWith("_TRAPDOOR") || name.endsWith("_FENCE_GATE")) {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_DOOR)) blockIt = true;
-            } else if (name.endsWith("_BUTTON")) {
-                if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_REDSTONE)) blockIt = true;
+        boolean isPhysical = event.getAction() == org.bukkit.event.block.Action.PHYSICAL;
+
+        boolean blockIt = false;
+        if (isPhysical) {
+            if (name.equals("FARMLAND") || name.equals("TURTLE_EGG") || name.equals("SNIFFER_EGG")) {
+                blockIt = true;
+            } else if (name.endsWith("_PRESSURE_PLATE") || name.equals("TRIPWIRE")) {
+                blockIt = chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_INTERACT_REDSTONE);
+            }
+        } else {
+            String requiredFlag = resolveInteractionFlag(name);
+            if (requiredFlag != null) {
+                blockIt = chunkManager.isChunkFlagEnabled(chunk, requiredFlag);
             }
         }
 
         if (blockIt) {
             event.setCancelled(true);
-            if (messages.isMessageEnabled("deny-interact")) {
+            if (!isPhysical && messages.isMessageEnabled("deny-interact")) {
                 event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-interact"));
             }
         }
+    }
+
+    private String resolveInteractionFlag(String typeName) {
+        return switch (typeName) {
+            case "CHEST", "TRAPPED_CHEST", "BARREL", "ENDER_CHEST", "SHULKER_BOX",
+                 "HOPPER", "DROPPER", "DISPENSER", "BREWING_STAND", "ANVIL", "CHIPPED_ANVIL", "DAMAGED_ANVIL",
+                 "CAULDRON", "WATER_CAULDRON", "LAVA_CAULDRON", "POWDER_SNOW_CAULDRON",
+                 "COMPOSTER", "CAKE", "SWEET_BERRY_BUSH", "DRAGON_EGG",
+                 "CHISELED_BOOKSHELF", "DECORATED_POT", "JUKEBOX", "FLOWER_POT", "BEACON" ->
+                ChunkManager.FLAG_INTERACT_CHEST;
+            case "FURNACE", "BLAST_FURNACE", "SMOKER", "CAMPFIRE", "SOUL_CAMPFIRE" ->
+                ChunkManager.FLAG_INTERACT_FURNACE;
+            case "STONECUTTER", "CRAFTING_TABLE", "CARTOGRAPHY_TABLE", "SMITHING_TABLE",
+                 "GRINDSTONE", "LOOM", "LECTERN", "ENCHANTING_TABLE", "CRAFTER" ->
+                ChunkManager.FLAG_INTERACT_STONECUTTER;
+            case "LEVER", "REPEATER", "COMPARATOR", "DAYLIGHT_DETECTOR",
+                 "BELL", "RESPAWN_ANCHOR", "NOTE_BLOCK", "TARGET" ->
+                ChunkManager.FLAG_INTERACT_REDSTONE;
+            default -> {
+                if (typeName.endsWith("_SHULKER_BOX") || typeName.endsWith("_CAKE") || typeName.startsWith("POTTED_")) {
+                    yield ChunkManager.FLAG_INTERACT_CHEST;
+                }
+                if (typeName.endsWith("_DOOR") || typeName.endsWith("_TRAPDOOR") || typeName.endsWith("_FENCE_GATE")) {
+                    yield ChunkManager.FLAG_INTERACT_DOOR;
+                }
+                if (typeName.endsWith("_BUTTON")) {
+                    yield ChunkManager.FLAG_INTERACT_REDSTONE;
+                }
+                yield null;
+            }
+        };
     }
 
     // ── Entity protection ──
