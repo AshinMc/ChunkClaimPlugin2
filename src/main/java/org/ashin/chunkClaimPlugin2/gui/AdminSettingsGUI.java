@@ -55,13 +55,15 @@ public class AdminSettingsGUI {
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + (currentMax == 0 ? "Unlimited" : currentMax)));
 
         // Default Language item
-        String currentLocale = plugin.getConfig().getString("locale", "en_US");
+        String currentLocale = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(plugin.getConfig(), "locale", "en_US");
         inv.setItem(11, namedWithLore(Material.BOOK,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-language")),
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + currentLocale));
 
         // Default Particle item
-        String currentParticle = plugin.getConfig().getString("visualization.particle-type", "FLAME");
+        String currentParticle = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(plugin.getConfig(), "visualization.particle-type", "FLAME");
         inv.setItem(12, namedWithLore(Material.BLAZE_POWDER,
                 ChatColor.stripColor(messages.getFor(player.getUniqueId(), "admin-gui-item-particle")),
                 ChatColor.GRAY + "Current: " + ChatColor.YELLOW + currentParticle));
@@ -73,7 +75,8 @@ public class AdminSettingsGUI {
                 ChatColor.DARK_GRAY + "Click to manage server-wide flags"));
 
         // Greeting Display Mode item (NEW)
-        String currentGreeting = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+        String currentGreeting = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
         inv.setItem(14, namedWithLore(Material.OAK_SIGN,
                 ChatColor.GOLD + "Greeting Display",
                 ChatColor.GRAY + "Mode: " + ChatColor.YELLOW + currentGreeting,

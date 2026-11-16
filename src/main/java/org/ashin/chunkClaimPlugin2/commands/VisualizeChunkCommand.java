@@ -213,7 +213,8 @@ public class VisualizeChunkCommand implements CommandExecutor {
         // Use per-player particle, falling back to server config, then FLAME
         String particleName = messages.getPlayerParticle(player.getUniqueId());
         if (particleName == null || particleName.isEmpty()) {
-            particleName = plugin.getConfig().getString("visualization.particle-type", "FLAME");
+            particleName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                    .getNonBlankString(plugin.getConfig(), "visualization.particle-type", "FLAME");
         }
         Particle particle;
         try {

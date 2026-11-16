@@ -141,6 +141,15 @@ public final class ConfigMigrator {
     }
 
     /**
+     * Safely reads a string from config, falling back when the key is missing, null, or blank.
+     */
+    public static String getNonBlankString(FileConfiguration config, String path, String fallback) {
+        if (config == null) return fallback;
+        String val = config.getString(path);
+        return (val != null && !val.isBlank()) ? val.trim() : fallback;
+    }
+
+    /**
      * Updates a configuration key in memory and writes it to config.yml without stripping comments or section banners.
      */
     public static void setConfigValuePreservingComments(org.bukkit.plugin.java.JavaPlugin plugin, String path, Object value) {

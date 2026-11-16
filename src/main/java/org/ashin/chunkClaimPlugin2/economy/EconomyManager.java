@@ -49,7 +49,8 @@ public class EconomyManager {
             return;
         }
 
-        String mode = config.getString("economy.mode", "AUTO").toUpperCase();
+        String mode = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(config, "economy.mode", "AUTO").toUpperCase();
 
         if ("VAULT".equals(mode) || "AUTO".equals(mode)) {
             if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
@@ -68,7 +69,8 @@ public class EconomyManager {
         }
 
         // ITEM mode (or AUTO fallback when Vault isn't present)
-        String matName = config.getString("economy.item.material", "GOLD_INGOT");
+        String matName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(config, "economy.item.material", "GOLD_INGOT");
         Material mat = Material.matchMaterial(matName);
         if (mat == null) mat = Material.GOLD_INGOT;
 

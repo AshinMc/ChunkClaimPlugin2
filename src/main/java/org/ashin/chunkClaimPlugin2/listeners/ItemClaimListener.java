@@ -39,7 +39,8 @@ public class ItemClaimListener implements Listener {
             return;
         }
 
-        String materialName = plugin.getConfig().getString("claim-item", "WOODEN_SHOVEL");
+        String materialName = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(plugin.getConfig(), "claim-item", "WOODEN_SHOVEL");
         if (materialName.equalsIgnoreCase("NONE")) {
             return; // Item claiming is disabled
         }

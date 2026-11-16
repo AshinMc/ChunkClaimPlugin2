@@ -62,7 +62,8 @@ public class PlayerMoveListener implements Listener {
                 if (wildernessMsg == null || wildernessMsg.equals("wilderness-actionbar")) {
                     wildernessMsg = "§2~ Wilderness ~";
                 }
-                String greetingDisplay = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+                String greetingDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                        .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
                 sendGreeting(player, greetingDisplay, wildernessMsg, "", wildernessMsg);
             }
             return;
@@ -111,7 +112,8 @@ public class PlayerMoveListener implements Listener {
                 }
             }
 
-            String greetingDisplay = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+            String greetingDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                    .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
             sendGreeting(player, greetingDisplay, title, subtitle, actionBar);
         }
     }

@@ -325,6 +325,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (line 43)
 - **Issue:** If an administrator leaves a scalar configuration key blank in YAML (e.g. `greeting-display:`, `claim-item:`, or `locale:`), Bukkit's `getString(path, def)` returns `null`. Directly invoking `.toUpperCase()` or `.equalsIgnoreCase()` triggers an uncaught `NullPointerException` on every player movement packet across chunk boundaries.
 - **Task:** Null-check string returns before transforming cases, or fall back explicitly: `String raw = plugin.getConfig().getString("greeting-display"); String mode = (raw != null && !raw.isEmpty()) ? raw.toUpperCase() : "ACTION_BAR";`.
+- **Status:** ✅ **FIXED** — Added `ConfigMigrator.getNonBlankString(config, path, fallback)` and applied it across `PlayerMoveListener`, `AdminSettingsGUIListener`, `AdminSettingsGUI`, `ItemClaimListener`, `EconomyManager`, and `VisualizeChunkCommand` so blank/null YAML values fall back cleanly without throwing `NullPointerException`.
 
 ### Event Command Bypass on Right-Click Shovel Claiming
 - **Files:**

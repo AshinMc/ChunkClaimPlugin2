@@ -86,7 +86,8 @@ public class AdminSettingsGUIListener implements Listener {
             gui.openFlagManager(player);
         } else if (name.contains("Greeting Display")) {
             // Cycle greeting display mode: ACTION_BAR -> TITLE -> SUBTITLE -> CHAT -> NONE -> ACTION_BAR
-            String current = plugin.getConfig().getString("greeting-display", "ACTION_BAR").toUpperCase();
+            String current = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                    .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
             String next = switch (current) {
                 case "ACTION_BAR" -> "TITLE";
                 case "TITLE" -> "SUBTITLE";
