@@ -126,6 +126,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`
 - **Issue:** `player.getWorld().spawnParticle(...)` broadcasts all border particles to all nearby players in the world, generating unnecessary network traffic and client rendering lag.
 - **Task:** Change to `player.spawnParticle(...)` to send packets only to the player running the visualization.
+- **Status:** ✅ **FIXED** — Updated `VisualizeChunkCommand.spawnParticle(...)` to invoke `player.spawnParticle(...)` instead of `player.getWorld().spawnParticle(...)`, restricting border particles strictly to the requesting player.
 
 ### Concurrency & Thread-Safety in PlaceholderAPI Expansion
 - **Files:**

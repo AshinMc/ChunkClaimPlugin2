@@ -261,10 +261,10 @@ public class VisualizeChunkCommand implements CommandExecutor {
         }
         String name = particle.name();
         if (name.equals("DUST") || name.equals("REDSTONE")) {
-            player.getWorld().spawnParticle(particle, location, 1, 0, 0, 0, 0,
+            player.spawnParticle(particle, location, 1, 0, 0, 0, 0,
                     new Particle.DustOptions(org.bukkit.Color.RED, 1.0f));
         } else {
-            player.getWorld().spawnParticle(particle, location, 1, 0, 0, 0, 0);
+            player.spawnParticle(particle, location, 1, 0, 0, 0, 0);
         }
     }
 }
