@@ -87,7 +87,19 @@ public class ChunkManager {
 
     // ── Basic chunk operations ──
 
+    public boolean isWorldDisabled(org.bukkit.World world) {
+        if (world == null || plugin == null) return false;
+        String worldName = world.getName();
+        for (String disabled : plugin.getConfig().getStringList("disabled-worlds")) {
+            if (disabled != null && disabled.equalsIgnoreCase(worldName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean canClaimChunk(Chunk chunk, Player player) {
+        if (isWorldDisabled(chunk.getWorld())) return false;
         String chunkKey = getChunkKey(chunk);
         if (chunkOwners.containsKey(chunkKey)) return false;
         return worldGuardHandler.canClaimChunk(chunk, player);

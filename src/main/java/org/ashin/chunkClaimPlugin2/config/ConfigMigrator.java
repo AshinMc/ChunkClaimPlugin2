@@ -68,6 +68,7 @@ public final class ConfigMigrator {
         copyIfPresent(existing, preservedValues, "locale");
         copyIfPresent(existing, preservedValues, "max-claims-per-player");
         copyIfPresent(existing, preservedValues, "claim-item");
+        copyIfPresent(existing, preservedValues, "disabled-worlds");
         copyIfPresent(existing, preservedValues, "greeting-display");
         copyIfPresent(existing, preservedValues, "show-wilderness-greeting");
 

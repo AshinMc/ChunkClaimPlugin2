@@ -18,6 +18,12 @@ max-claims-per-player: 10
 # Item used to claim chunks on right-click ("NONE" to disable)
 claim-item: "WOODEN_SHOVEL"
 
+# Worlds where claiming and expanding chunks is disabled
+disabled-worlds: []
+# Example:
+# - "world_the_end"
+# - "minigames"
+
 
 # ==============================================================================
 #  2. TERRITORY GREETINGS & NOTIFICATIONS

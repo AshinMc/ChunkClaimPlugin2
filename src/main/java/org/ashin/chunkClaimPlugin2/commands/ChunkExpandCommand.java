@@ -65,6 +65,12 @@ public class ChunkExpandCommand implements CommandExecutor {
             return true;
         }
 
+        // Check disabled worlds blacklist
+        if (chunkManager.isWorldDisabled(chunk.getWorld())) {
+            player.sendMessage(org.bukkit.ChatColor.RED + "Chunk claiming is disabled in this world.");
+            return true;
+        }
+
         // Check WorldGuard
         if (!chunkManager.worldGuardHandler.canClaimChunk(chunk, player)) {
             player.sendMessage(messages.getFor(player.getUniqueId(), "worldguard-deny"));

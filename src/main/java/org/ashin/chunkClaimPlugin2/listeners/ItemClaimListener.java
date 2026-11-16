@@ -84,6 +84,12 @@ public class ItemClaimListener implements Listener {
             return;
         }
 
+        // Check disabled worlds blacklist
+        if (chunkManager.isWorldDisabled(chunk.getWorld())) {
+            player.sendMessage(org.bukkit.ChatColor.RED + "Chunk claiming is disabled in this world.");
+            return;
+        }
+
         // Check WorldGuard compatibility separately
         if (!chunkManager.worldGuardHandler.canClaimChunk(chunk, player)) {
             player.sendMessage(messages.getFor(player.getUniqueId(), "worldguard-deny"));

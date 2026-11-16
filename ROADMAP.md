@@ -194,6 +194,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
 - **Issue:** Claiming cannot be disabled in specific worlds, allowing players to claim around End portals, End gateways, or minigame arenas.
 - **Task:** Add `disabled-worlds: []` list in `config.yml` and check `disabledWorlds.contains(chunk.getWorld().getName())` in `canClaimChunk()`.
+- **Status:** ✅ **FIXED** — Added `disabled-worlds: []` to `config.yml` and `ConfigMigrator`, implemented case-insensitive `ChunkManager.isWorldDisabled(World)` checked inside `canClaimChunk()`, and added early feedback in `ClaimChunkCommand`, `ChunkExpandCommand`, and `ItemClaimListener`.
 
 ### Pagination for `/infochunk`
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/InfoChunkCommand.java`
