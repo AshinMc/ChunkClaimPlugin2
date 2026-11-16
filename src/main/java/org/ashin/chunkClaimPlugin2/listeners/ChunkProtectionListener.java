@@ -532,14 +532,19 @@ public class ChunkProtectionListener implements Listener {
     // ── Mob griefing protection (flag-gated) ──
 
     /**
-     * Prevents mobs from forming blocks in claimed chunks when mob-griefing flag is enabled.
-     * Covers: snow golem snow trails, frost walker ice, etc.
+     * Prevents mobs from forming blocks when mob-griefing is enabled, and blocks untrusted
+     * players from forming blocks (e.g. Frost Walker frosted ice) inside claims.
      */
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityBlockForm(EntityBlockFormEvent event) {
-        if (event.getEntity() instanceof Player) return;
         Chunk chunk = event.getBlock().getChunk();
-        // Only block if chunk is claimed AND flag is enabled
+        if (event.getEntity() instanceof Player player) {
+            if (!canModifyChunk(player, chunk)) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+        // Only block non-player entities if chunk is claimed AND flag is enabled
         if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
             event.setCancelled(true);
         }

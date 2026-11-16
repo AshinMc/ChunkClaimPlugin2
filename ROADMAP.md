@@ -234,6 +234,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `EntityBlockFormEvent` explicitly ignores players (`if (event.getEntity() instanceof Player) return;`), allowing visitors with Frost Walker boots to freeze water systems into frosted ice.
 - **Task:** Check player modify permissions on the chunk before allowing Frost Walker ice formation.
+- **Status:** ✅ **FIXED** — Updated `onEntityBlockForm(EntityBlockFormEvent)` to check `canModifyChunk(player, chunk)` when the entity is a `Player`, cancelling Frost Walker ice formation for untrusted visitors while preserving `FLAG_MOB_GRIEFING` checks for mobs.
 
 ### Decouple Armor Stand Damage from Mob Protection
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
