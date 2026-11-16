@@ -180,6 +180,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`
 - **Issue:** Calculates a single minimum and maximum bounding box across all chunks in a group. For L-shaped or disconnected chunks, it draws a rectangular perimeter enclosing unclaimed wilderness.
 - **Task:** Iterate each chunk individually and render outer perimeter borders per-chunk.
+- **Status:** ✅ **FIXED** — Replaced merged bounding-box rendering with `visualizeChunkGroupPerimeter(...)`, checking 4-way chunk adjacency per claimed chunk to render exact outer edges and outer corners for L-shaped and disconnected claims without enclosing wilderness. Also unified task scheduling into `startVisualization(...)`.
 
 ### WorldGuard `__global__` Bypass
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/handlers/WG7WorldGuardBridge.java`

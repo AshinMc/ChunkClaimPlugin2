@@ -66,50 +66,15 @@ public class VisualizeChunkCommand implements CommandExecutor {
                 return true;
             }
 
-            player.sendMessage(messages.getFor(playerId, "visualize-start",
-                    "count", String.valueOf(chunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
-
-            // Calculate merged bounding box in block coordinates
-            int minBlockX = Integer.MAX_VALUE, minBlockZ = Integer.MAX_VALUE;
-            int maxBlockX = Integer.MIN_VALUE, maxBlockZ = Integer.MIN_VALUE;
-            String worldName = chunks.get(0).getWorld();
-            for (ChunkData cd : chunks) {
-                int bx = cd.getX() << 4;
-                int bz = cd.getZ() << 4;
-                minBlockX = Math.min(minBlockX, bx);
-                minBlockZ = Math.min(minBlockZ, bz);
-                maxBlockX = Math.max(maxBlockX, bx + 16);
-                maxBlockZ = Math.max(maxBlockZ, bz + 16);
-            }
-
-            World world = Bukkit.getWorld(worldName);
+            World world = Bukkit.getWorld(chunks.get(0).getWorld());
             if (world == null) {
                 player.sendMessage(messages.getFor(playerId, "chunk-claim-fail"));
                 return true;
             }
 
-            final int fMinX = minBlockX, fMinZ = minBlockZ, fMaxX = maxBlockX, fMaxZ = maxBlockZ;
-
-            BukkitTask task = new BukkitRunnable() {
-                int secondsLeft = durationSeconds;
-                @Override
-                public void run() {
-                    if (durationSeconds > 0 && secondsLeft <= 0) { 
-                        activeVisualizations.remove(playerId);
-                        cancel(); 
-                        return; 
-                    }
-                    if (!player.isOnline()) {
-                        activeVisualizations.remove(playerId);
-                        cancel();
-                        return;
-                    }
-                    visualizeBoundingBox(player, fMinX, fMinZ, fMaxX, fMaxZ);
-                    if (durationSeconds > 0) secondsLeft--;
-                }
-            }.runTaskTimer(plugin, 0L, 20L);
-            activeVisualizations.put(playerId, task);
-
+            player.sendMessage(messages.getFor(playerId, "visualize-start",
+                    "count", String.valueOf(chunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
+            startVisualization(player, durationSeconds, () -> visualizeChunkGroupPerimeter(player, chunks));
             return true;
         }
 
@@ -121,48 +86,18 @@ public class VisualizeChunkCommand implements CommandExecutor {
             if (standingName != null) {
                 List<ChunkData> standingChunks = chunkManager.getChunksByName(playerId, standingName);
                 if (!standingChunks.isEmpty()) {
-                    player.sendMessage(messages.getFor(playerId, "visualize-start",
-                            "count", String.valueOf(standingChunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
-                    int sMinX = Integer.MAX_VALUE, sMinZ = Integer.MAX_VALUE;
-                    int sMaxX = Integer.MIN_VALUE, sMaxZ = Integer.MIN_VALUE;
-                    String sWorldName = standingChunks.get(0).getWorld();
-                    for (ChunkData cd : standingChunks) {
-                        int bx = cd.getX() << 4;
-                        int bz = cd.getZ() << 4;
-                        sMinX = Math.min(sMinX, bx);
-                        sMinZ = Math.min(sMinZ, bz);
-                        sMaxX = Math.max(sMaxX, bx + 16);
-                        sMaxZ = Math.max(sMaxZ, bz + 16);
-                    }
-                    World sWorld = Bukkit.getWorld(sWorldName);
+                    World sWorld = Bukkit.getWorld(standingChunks.get(0).getWorld());
                     if (sWorld != null) {
-                        final int fsMinX = sMinX, fsMinZ = sMinZ, fsMaxX = sMaxX, fsMaxZ = sMaxZ;
-                        BukkitTask task = new BukkitRunnable() {
-                            int secondsLeft = durationSeconds;
-                            @Override
-                            public void run() {
-                                if (durationSeconds > 0 && secondsLeft <= 0) { 
-                                    activeVisualizations.remove(playerId);
-                                    cancel(); 
-                                    return; 
-                                }
-                                if (!player.isOnline()) {
-                                    activeVisualizations.remove(playerId);
-                                    cancel();
-                                    return;
-                                }
-                                visualizeBoundingBox(player, fsMinX, fsMinZ, fsMaxX, fsMaxZ);
-                                if (durationSeconds > 0) secondsLeft--;
-                            }
-                        }.runTaskTimer(plugin, 0L, 20L);
-                        activeVisualizations.put(playerId, task);
+                        player.sendMessage(messages.getFor(playerId, "visualize-start",
+                                "count", String.valueOf(standingChunks.size()), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
+                        startVisualization(player, durationSeconds, () -> visualizeChunkGroupPerimeter(player, standingChunks));
                     }
                     return true;
                 }
             }
         }
 
-        // Fallback: visualize all player claims (each group as a merged box)
+        // Fallback: visualize all player claims accurately per group
         List<String> claimNames = chunkManager.getPlayerClaimNames(playerId);
         if (claimNames.isEmpty()) {
             player.sendMessage(messages.getFor(playerId, "no-claims"));
@@ -173,76 +108,101 @@ public class VisualizeChunkCommand implements CommandExecutor {
         player.sendMessage(messages.getFor(playerId, "visualize-start",
                 "count", String.valueOf(totalChunks), "seconds", durationSeconds <= 0 ? "indefinite" : String.valueOf(durationSeconds)));
 
+        startVisualization(player, durationSeconds, () -> {
+            for (String name : claimNames) {
+                List<ChunkData> chunks = chunkManager.getChunksByName(playerId, name);
+                if (!chunks.isEmpty()) {
+                    visualizeChunkGroupPerimeter(player, chunks);
+                }
+            }
+        });
+
+        return true;
+    }
+
+    private void startVisualization(Player player, int durationSeconds, Runnable drawAction) {
+        UUID playerId = player.getUniqueId();
         BukkitTask task = new BukkitRunnable() {
             int secondsLeft = durationSeconds;
 
             @Override
             public void run() {
-                if (durationSeconds > 0 && secondsLeft <= 0) { 
+                if (durationSeconds > 0 && secondsLeft <= 0) {
                     activeVisualizations.remove(playerId);
-                    cancel(); 
-                    return; 
+                    cancel();
+                    return;
                 }
                 if (!player.isOnline()) {
                     activeVisualizations.remove(playerId);
                     cancel();
                     return;
                 }
-
-                for (String name : claimNames) {
-                    List<ChunkData> chunks = chunkManager.getChunksByName(playerId, name);
-                    if (chunks.isEmpty()) continue;
-                    // Only visualize chunks in the player's current world
-                    String worldName = chunks.get(0).getWorld();
-                    if (!player.getWorld().getName().equals(worldName)) continue;
-
-                    int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
-                    int maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
-                    for (ChunkData cd : chunks) {
-                        int bx = cd.getX() << 4;
-                        int bz = cd.getZ() << 4;
-                        minX = Math.min(minX, bx);
-                        minZ = Math.min(minZ, bz);
-                        maxX = Math.max(maxX, bx + 16);
-                        maxZ = Math.max(maxZ, bz + 16);
-                    }
-                    visualizeBoundingBox(player, minX, minZ, maxX, maxZ);
-                }
+                drawAction.run();
                 if (durationSeconds > 0) secondsLeft--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
         activeVisualizations.put(playerId, task);
-
-        return true;
     }
 
     /**
-     * Draws particle borders for a merged bounding box (block coordinates).
+     * Renders exact outer perimeter particle borders per-chunk in the player's current world,
+     * skipping shared interior edges so L-shaped and disconnected claims render accurately.
      */
-    private void visualizeBoundingBox(Player player, int minX, int minZ, int maxX, int maxZ) {
+    private void visualizeChunkGroupPerimeter(Player player, List<ChunkData> chunks) {
+        String currentWorld = player.getWorld().getName();
+        java.util.Set<String> groupCoords = new java.util.HashSet<>();
+        for (ChunkData cd : chunks) {
+            if (currentWorld.equals(cd.getWorld())) {
+                groupCoords.add(cd.getX() + ":" + cd.getZ());
+            }
+        }
+        if (groupCoords.isEmpty()) return;
+
         int playerY = player.getLocation().getBlockY();
         int worldMinY = player.getWorld().getMinHeight();
         int worldMaxY = player.getWorld().getMaxHeight();
         int minY = Math.max(worldMinY, playerY - 5);
         int maxY = Math.min(minY + PARTICLE_HEIGHT, worldMaxY);
-
-        // Vertical corner pillars
-        for (double y = minY; y <= maxY; y += PARTICLE_SPACING) {
-            spawnParticle(player, minX, y, minZ);
-            spawnParticle(player, maxX, y, minZ);
-            spawnParticle(player, minX, y, maxZ);
-            spawnParticle(player, maxX, y, maxZ);
-        }
-
-        // Horizontal edges at eye level
         double eyeY = playerY + 1.5;
-        for (double x = minX; x <= maxX; x += PARTICLE_SPACING) {
-            spawnParticle(player, x, eyeY, minZ);
-            spawnParticle(player, x, eyeY, maxZ);
+
+        for (ChunkData cd : chunks) {
+            if (!currentWorld.equals(cd.getWorld())) continue;
+            int cx = cd.getX();
+            int cz = cd.getZ();
+            int minX = cx << 4;
+            int minZ = cz << 4;
+            int maxX = minX + 16;
+            int maxZ = minZ + 16;
+
+            boolean hasNorth = groupCoords.contains(cx + ":" + (cz - 1));
+            boolean hasSouth = groupCoords.contains(cx + ":" + (cz + 1));
+            boolean hasWest = groupCoords.contains((cx - 1) + ":" + cz);
+            boolean hasEast = groupCoords.contains((cx + 1) + ":" + cz);
+
+            if (!hasNorth) {
+                for (double x = minX; x <= maxX; x += PARTICLE_SPACING) spawnParticle(player, x, eyeY, minZ);
+            }
+            if (!hasSouth) {
+                for (double x = minX; x <= maxX; x += PARTICLE_SPACING) spawnParticle(player, x, eyeY, maxZ);
+            }
+            if (!hasWest) {
+                for (double z = minZ; z <= maxZ; z += PARTICLE_SPACING) spawnParticle(player, minX, eyeY, z);
+            }
+            if (!hasEast) {
+                for (double z = minZ; z <= maxZ; z += PARTICLE_SPACING) spawnParticle(player, maxX, eyeY, z);
+            }
+
+            // Vertical corner pillars only at outer corners
+            if (!hasNorth || !hasWest) drawVerticalPillar(player, minX, minZ, minY, maxY);
+            if (!hasNorth || !hasEast) drawVerticalPillar(player, maxX, minZ, minY, maxY);
+            if (!hasSouth || !hasWest) drawVerticalPillar(player, minX, maxZ, minY, maxY);
+            if (!hasSouth || !hasEast) drawVerticalPillar(player, maxX, maxZ, minY, maxY);
         }
-        for (double z = minZ; z <= maxZ; z += PARTICLE_SPACING) {
-            spawnParticle(player, minX, eyeY, z);
-            spawnParticle(player, maxX, eyeY, z);
+    }
+
+    private void drawVerticalPillar(Player player, double x, double z, int minY, int maxY) {
+        for (double y = minY; y <= maxY; y += PARTICLE_SPACING) {
+            spawnParticle(player, x, y, z);
         }
     }
 
