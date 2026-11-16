@@ -21,11 +21,31 @@ public class PlayerMoveListener implements Listener {
     private final MessageManager messages;
     private final EconomyManager economyManager;
 
+    private volatile boolean cachedShowWilderness;
+    private volatile String cachedGreetingDisplay;
+    private volatile int cachedFadeIn;
+    private volatile int cachedStay;
+    private volatile int cachedFadeOut;
+
     public PlayerMoveListener(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages, EconomyManager economyManager) {
         this.plugin = plugin;
         this.chunkManager = chunkManager;
         this.messages = messages;
         this.economyManager = economyManager;
+        reloadConfigCache();
+    }
+
+    /**
+     * Refreshes cached greeting and title duration settings from config.yml.
+     */
+    public void reloadConfigCache() {
+        var cfg = plugin.getConfig();
+        this.cachedShowWilderness = cfg.getBoolean("show-wilderness-greeting", true);
+        this.cachedGreetingDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
+                .getNonBlankString(cfg, "greeting-display", "ACTION_BAR").toUpperCase();
+        this.cachedFadeIn = Math.max(0, cfg.getInt("title-duration.fade-in", 10));
+        this.cachedStay = Math.max(0, cfg.getInt("title-duration.stay", 60));
+        this.cachedFadeOut = Math.max(0, cfg.getInt("title-duration.fade-out", 15));
     }
 
     @EventHandler
@@ -56,15 +76,12 @@ public class PlayerMoveListener implements Listener {
 
         // ── Leaving a claim into the wilderness ──
         if (fromOwner != null && toOwner == null) {
-            boolean showWilderness = plugin.getConfig().getBoolean("show-wilderness-greeting", true);
-            if (showWilderness) {
+            if (cachedShowWilderness) {
                 String wildernessMsg = messages.getFor(player.getUniqueId(), "wilderness-actionbar");
                 if (wildernessMsg == null || wildernessMsg.equals("wilderness-actionbar")) {
                     wildernessMsg = "§2~ Wilderness ~";
                 }
-                String greetingDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
-                        .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
-                sendGreeting(player, greetingDisplay, wildernessMsg, "", wildernessMsg);
+                sendGreeting(player, cachedGreetingDisplay, wildernessMsg, "", wildernessMsg);
             }
             return;
         }
@@ -112,27 +129,17 @@ public class PlayerMoveListener implements Listener {
                 }
             }
 
-            String greetingDisplay = org.ashin.chunkClaimPlugin2.config.ConfigMigrator
-                    .getNonBlankString(plugin.getConfig(), "greeting-display", "ACTION_BAR").toUpperCase();
-            sendGreeting(player, greetingDisplay, title, subtitle, actionBar);
+            sendGreeting(player, cachedGreetingDisplay, title, subtitle, actionBar);
         }
     }
 
     private void sendGreeting(Player player, String greetingDisplay, String title, String subtitle, String message) {
         switch (greetingDisplay) {
             case "ACTION_BAR" -> sendActionBar(player, message);
-            case "TITLE" -> {
-                int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
-                int stay = plugin.getConfig().getInt("title-duration.stay", 60);
-                int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 15);
-                player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
-            }
+            case "TITLE" -> player.sendTitle(title, subtitle, cachedFadeIn, cachedStay, cachedFadeOut);
             case "SUBTITLE" -> {
-                int fadeIn = plugin.getConfig().getInt("title-duration.fade-in", 10);
-                int stay = plugin.getConfig().getInt("title-duration.stay", 60);
-                int fadeOut = plugin.getConfig().getInt("title-duration.fade-out", 15);
                 String sub = subtitle.isEmpty() ? title : subtitle;
-                player.sendTitle("", sub, fadeIn, stay, fadeOut);
+                player.sendTitle("", sub, cachedFadeIn, cachedStay, cachedFadeOut);
             }
             case "CHAT" -> player.sendMessage(message);
             case "NONE" -> {}

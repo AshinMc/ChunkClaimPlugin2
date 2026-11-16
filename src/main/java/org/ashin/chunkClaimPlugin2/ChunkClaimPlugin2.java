@@ -17,6 +17,7 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     private ChunkManager chunkManager;
     private MessageManager messageManager;
     private EconomyManager economyManager;
+    private org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener playerMoveListener;
 
     public static ChunkClaimPlugin2 getInstance() {
         return instance;
@@ -35,15 +36,27 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
     }
 
     /**
-     * Reloads config.yml, localization bundles, and the economy engine cleanly.
+     * Reloads config.yml, localization bundles, cached manager/listener configs, and the economy engine cleanly.
      */
     public void reloadPluginConfig() {
         reloadConfig();
+        if (chunkManager != null) {
+            chunkManager.reloadConfigCache();
+        }
         if (messageManager != null) {
             messageManager.reloadLocales();
         }
         if (economyManager != null) {
             economyManager.reload();
+        }
+        if (playerMoveListener != null) {
+            playerMoveListener.reloadConfigCache();
+        }
+    }
+
+    public void refreshGreetingCache() {
+        if (playerMoveListener != null) {
+            playerMoveListener.reloadConfigCache();
         }
     }
 
@@ -78,7 +91,8 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SettingsGUIListener(this, chunkManager, messageManager, economyManager), this);
         getServer().getPluginManager().registerEvents(new AdminSettingsGUIListener(this, chunkManager, messageManager), this);
         getServer().getPluginManager().registerEvents(new ItemClaimListener(this, chunkManager, messageManager, economyManager), this);
-        getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener(this, chunkManager, messageManager, economyManager), this);
+        this.playerMoveListener = new org.ashin.chunkClaimPlugin2.listeners.PlayerMoveListener(this, chunkManager, messageManager, economyManager);
+        getServer().getPluginManager().registerEvents(this.playerMoveListener, this);
         getServer().getPluginManager().registerEvents(new org.ashin.chunkClaimPlugin2.listeners.ChatRenameListener(this, chunkManager, messageManager, economyManager), this);
     }
 

@@ -15,7 +15,9 @@ public class MessageManager {
     private final JavaPlugin plugin;
     private volatile String serverDefaultLocale;
     private final YamlConfiguration defaultLangConfig; // en_US from jar
-    private final Map<String, YamlConfiguration> localeCache = new HashMap<>();
+    private final Map<String, YamlConfiguration> localeCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, Boolean> messageTogglesCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, String> messageOverridesCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     // Player locales persistence
     private final File playerDataFile;
@@ -46,8 +48,9 @@ public class MessageManager {
         // Load default English from jar (for fallback)
         this.defaultLangConfig = loadResourceYaml("lang/messages_en_US.yml");
 
-        // Preload server default into cache if present
+        // Preload server default and config caches
         getLocaleYaml(this.serverDefaultLocale);
+        refreshConfigMessageCaches();
 
         // Prepare player data storage
         this.playerDataFile = new File(plugin.getDataFolder(), "playerdata.yml");
@@ -179,6 +182,35 @@ public class MessageManager {
         this.serverDefaultLocale = (configuredLocale != null && !configuredLocale.isBlank()) ? configuredLocale : "en_US";
         localeCache.clear();
         getLocaleYaml(serverDefaultLocale);
+        refreshConfigMessageCaches();
+    }
+
+    private void refreshConfigMessageCaches() {
+        messageTogglesCache.clear();
+        messageOverridesCache.clear();
+        FileConfiguration cfg = plugin.getConfig();
+        if (cfg == null) return;
+
+        org.bukkit.configuration.ConfigurationSection toggles = cfg.getConfigurationSection("message-toggles");
+        if (toggles != null) {
+            for (String k : toggles.getKeys(false)) {
+                messageTogglesCache.put(k, toggles.getBoolean(k, true));
+            }
+        }
+
+        org.bukkit.configuration.ConfigurationSection overrides = cfg.getConfigurationSection("messages");
+        if (overrides != null) {
+            for (String k : overrides.getKeys(false)) {
+                if (overrides.isList(k)) {
+                    messageOverridesCache.put(k, String.join("\n", overrides.getStringList(k)));
+                } else {
+                    String val = overrides.getString(k);
+                    if (val != null) {
+                        messageOverridesCache.put(k, val);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -187,7 +219,7 @@ public class MessageManager {
      * @return true if the message should be shown, false if suppressed
      */
     public boolean isMessageEnabled(String key) {
-        return plugin.getConfig().getBoolean("message-toggles." + key, true);
+        return messageTogglesCache.getOrDefault(key, true);
     }
 
     // Server-default message (no player context)
@@ -229,8 +261,8 @@ public class MessageManager {
     }
 
     private String getInternal(UUID uuid, String key, Map<String, String> placeholders) {
-        // 1) Config override takes precedence (server-wide)
-        String cfg = plugin.getConfig().getString("messages." + key);
+        // 1) Cached config override takes precedence (server-wide)
+        String cfg = messageOverridesCache.get(key);
         String raw = null;
         if (cfg != null) {
             raw = cfg;

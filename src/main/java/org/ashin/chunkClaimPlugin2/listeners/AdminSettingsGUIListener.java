@@ -96,6 +96,9 @@ public class AdminSettingsGUIListener implements Listener {
                 default -> "ACTION_BAR";
             };
             org.ashin.chunkClaimPlugin2.config.ConfigMigrator.setConfigValuePreservingComments(plugin, "greeting-display", next);
+            if (plugin instanceof org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2 ccp) {
+                ccp.refreshGreetingCache();
+            }
             player.sendMessage(ChatColor.GREEN + "Greeting display mode set to: " + ChatColor.YELLOW + next);
             gui.openHome(player);
         } else if (name.contains("Chunk Inspector")) {

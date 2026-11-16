@@ -54,13 +54,53 @@ public class ChunkManager {
         return t;
     });
 
+    // Cached config settings for zero-overhead hot-path lookups
+    private final Map<String, Boolean> defaultFlagCache = new ConcurrentHashMap<>();
+    private final Set<String> disabledWorldsCache = ConcurrentHashMap.newKeySet();
+
     public ChunkManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.dataFile = new File(plugin.getDataFolder(), "chunkclaims.yml");
         this.dataConfig = YamlConfiguration.loadConfiguration(dataFile);
         boolean hasWG = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
         this.worldGuardHandler = hasWG ? new WG7WorldGuardBridge() : new NoopWorldGuardBridge();
+        reloadConfigCache();
         loadData();
+    }
+
+    /**
+     * Refreshes cached claim flag defaults and disabled worlds from config.yml.
+     */
+    public void reloadConfigCache() {
+        defaultFlagCache.clear();
+        disabledWorldsCache.clear();
+        if (plugin == null || plugin.getConfig() == null) {
+            defaultFlagCache.putAll(DEFAULT_FLAGS);
+            return;
+        }
+        FileConfiguration cfg = plugin.getConfig();
+        for (String flag : ALL_FLAGS) {
+            boolean val;
+            if (FLAG_PVP.equals(flag)) {
+                if (cfg.contains("claim-flags.block-pvp")) {
+                    val = cfg.getBoolean("claim-flags.block-pvp");
+                } else if (cfg.contains("claim-flags.pvp")) {
+                    val = cfg.getBoolean("claim-flags.pvp");
+                } else {
+                    val = DEFAULT_FLAGS.getOrDefault(flag, true);
+                }
+            } else if (cfg.contains("claim-flags." + flag)) {
+                val = cfg.getBoolean("claim-flags." + flag);
+            } else {
+                val = DEFAULT_FLAGS.getOrDefault(flag, false);
+            }
+            defaultFlagCache.put(flag, val);
+        }
+        for (String worldName : cfg.getStringList("disabled-worlds")) {
+            if (worldName != null && !worldName.isBlank()) {
+                disabledWorldsCache.add(worldName.trim().toLowerCase());
+            }
+        }
     }
 
     public static final int MAX_CLAIM_NAME_LENGTH = 24;
@@ -88,14 +128,8 @@ public class ChunkManager {
     // ── Basic chunk operations ──
 
     public boolean isWorldDisabled(org.bukkit.World world) {
-        if (world == null || plugin == null) return false;
-        String worldName = world.getName();
-        for (String disabled : plugin.getConfig().getStringList("disabled-worlds")) {
-            if (disabled != null && disabled.equalsIgnoreCase(worldName)) {
-                return true;
-            }
-        }
-        return false;
+        if (world == null) return false;
+        return disabledWorldsCache.contains(world.getName().toLowerCase());
     }
 
     public boolean canClaimChunk(Chunk chunk, Player player) {
@@ -688,19 +722,8 @@ public class ChunkManager {
      * Checks server config.yml under claim-flags.<flag>, falling back to hardcoded DEFAULT_FLAGS.
      */
     public boolean getDefaultFlag(String flag) {
-        if (plugin != null && plugin.getConfig() != null) {
-            if (FLAG_PVP.equals(flag)) {
-                if (plugin.getConfig().contains("claim-flags.block-pvp")) {
-                    return plugin.getConfig().getBoolean("claim-flags.block-pvp");
-                }
-                if (plugin.getConfig().contains("claim-flags.pvp")) {
-                    return plugin.getConfig().getBoolean("claim-flags.pvp");
-                }
-            }
-            if (plugin.getConfig().contains("claim-flags." + flag)) {
-                return plugin.getConfig().getBoolean("claim-flags." + flag);
-            }
-        }
+        Boolean cached = defaultFlagCache.get(flag);
+        if (cached != null) return cached;
         return DEFAULT_FLAGS.getOrDefault(flag, false);
     }
 
