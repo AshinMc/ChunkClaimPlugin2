@@ -200,6 +200,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/InfoChunkCommand.java`
 - **Issue:** Dumps all owned chunks in chat sequentially without paging, flooding chat for players with large claims.
 - **Task:** Implement `/infochunk [page]` with 6–8 claims per page.
+- **Status:** ✅ **FIXED** — Added page argument parsing to `InfoChunkCommand`, slicing claim groups into pages of 6 groups per page with `(page/totalPages)` indicator and next-page usage hint.
 
 ---
 

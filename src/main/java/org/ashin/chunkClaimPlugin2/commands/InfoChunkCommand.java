@@ -36,9 +36,27 @@ public class InfoChunkCommand implements CommandExecutor {
             return true;
         }
 
-        player.sendMessage(messages.getFor(playerId, "claims-header"));
-        int index = 1;
-        for (String name : claimNames) {
+        final int groupsPerPage = 6;
+        int totalPages = Math.max(1, (int) Math.ceil((double) claimNames.size() / groupsPerPage));
+        int page = 1;
+        if (args.length > 0) {
+            try {
+                page = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                player.sendMessage(org.bukkit.ChatColor.RED + "Invalid page number: " + args[0]);
+                return true;
+            }
+        }
+        page = Math.max(1, Math.min(page, totalPages));
+
+        int start = (page - 1) * groupsPerPage;
+        int end = Math.min(start + groupsPerPage, claimNames.size());
+
+        player.sendMessage(messages.getFor(playerId, "claims-header")
+                + org.bukkit.ChatColor.GRAY + " (" + page + "/" + totalPages + ")");
+        int index = start + 1;
+        for (int i = start; i < end; i++) {
+            String name = claimNames.get(i);
             List<ChunkData> chunks = chunkManager.getChunksByName(playerId, name);
             // Show group header
             player.sendMessage(messages.getFor(playerId, "claim-group-entry",
@@ -55,6 +73,10 @@ public class InfoChunkCommand implements CommandExecutor {
                         "z", String.valueOf(blockZ)));
             }
             index++;
+        }
+
+        if (page < totalPages) {
+            player.sendMessage(org.bukkit.ChatColor.GRAY + "Use /" + label + " " + (page + 1) + " for the next page.");
         }
 
         return true;
