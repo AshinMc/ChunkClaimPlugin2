@@ -186,6 +186,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/handlers/WG7WorldGuardBridge.java`
 - **Issue:** `set.isOwnerOfAll(localPlayer)` returns `false` if `__global__` has any flags set, preventing all claiming server-wide because no player owns `__global__`.
 - **Task:** Exclude regions with `getId().equalsIgnoreCase("__global__")` or test build flags directly via `set.testState(localPlayer, Flags.BUILD)`.
+- **Status:** ✅ **FIXED** — Updated `WG7WorldGuardBridge.canClaimChunk()` to verify `set.testState(localPlayer, Flags.BUILD)` and iterate applicable regions while excluding `__global__` from ownership checks.
 
 ### World Blacklist Option
 - **Files:**

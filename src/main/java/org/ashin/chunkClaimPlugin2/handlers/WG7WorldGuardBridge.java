@@ -34,6 +34,17 @@ public class WG7WorldGuardBridge implements WorldGuardBridge {
         if (set.size() == 0) return true;
 
         com.sk89q.worldguard.LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-        return set.isOwnerOfAll(localPlayer);
+        if (!set.testState(localPlayer, com.sk89q.worldguard.protection.flags.Flags.BUILD)) {
+            return false;
+        }
+        for (com.sk89q.worldguard.protection.regions.ProtectedRegion region : set) {
+            if (region.getId().equalsIgnoreCase("__global__")) {
+                continue;
+            }
+            if (!region.isOwner(localPlayer)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
