@@ -73,6 +73,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `onPvP` resolves attackers via `resolveAttacker()`, which returns `null` for `EnderCrystal`, `RespawnAnchor`, and lingering potion clouds (`AreaEffectCloud`). End crystal detonation bypasses `pvp: false` inside claims.
 - **Task:** Intercept damage events caused by crystals/anchors and cancel damage to players/animals inside claims where PvP or mob protection is enabled.
+- **Status:** ✅ **FIXED** — Extended `resolveAttacker()` to handle `AreaEffectCloud` and `TNTPrimed` sources, and added `onIndirectExplosionDamage(EntityDamageEvent)` to cancel `BLOCK_EXPLOSION` (respawn anchors/beds) and `EnderCrystal`/`TNTPrimed` explosion damage to players (when PvP protection is active) and non-hostile entities (when `mob-protection` or `explosions` is enabled).
 
 ### Interactive Block Whitelist Coverage
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

@@ -6,6 +6,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -23,6 +24,7 @@ import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
@@ -589,15 +591,48 @@ public class ChunkProtectionListener implements Listener {
         }
     }
 
+    /**
+     * Blocks indirect explosion damage from End Crystals, Respawn Anchors, Beds, and player-less TNT
+     * to players (when PvP protection is active) and non-hostile entities (when mob-protection is active).
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onIndirectExplosionDamage(EntityDamageEvent event) {
+        boolean isBlockExplosion = event.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
+        boolean isCrystalOrTnt = event instanceof EntityDamageByEntityEvent ebe
+                && (ebe.getDamager() instanceof EnderCrystal || ebe.getDamager() instanceof org.bukkit.entity.TNTPrimed);
+        if (!isBlockExplosion && !isCrystalOrTnt) {
+            return;
+        }
+
+        Entity victim = event.getEntity();
+        Chunk chunk = victim.getLocation().getChunk();
+        if (!chunkManager.isChunkClaimed(chunk)) {
+            return;
+        }
+
+        if (victim instanceof Player) {
+            if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_PVP)) {
+                event.setCancelled(true);
+            }
+        } else if (!isHostileMob(victim)) {
+            if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_PROTECTION)
+                    || chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_EXPLOSIONS)) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
     // ── Utility ──
 
     /**
      * Resolves the actual player attacker from a damage source.
-     * Handles direct player hits and projectiles shot by players.
+     * Handles direct player hits, projectiles, lingering potion clouds, and player-primed TNT.
      */
     private Player resolveAttacker(Entity damager) {
         if (damager instanceof Player p) return p;
         if (damager instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof Player p) return p;
+        if (damager instanceof org.bukkit.entity.AreaEffectCloud cloud && cloud.getSource() instanceof Player p) return p;
+        if (damager instanceof org.bukkit.entity.TNTPrimed tnt && tnt.getSource() instanceof Player p) return p;
         return null;
     }
 
