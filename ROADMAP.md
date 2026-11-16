@@ -61,6 +61,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `BlockPistonExtendEvent` and `BlockPistonRetractEvent` are not handled. Pistons placed outside claims can push blocks in or pull blocks/containers out.
 - **Task:** Implement both piston events. Inspect all blocks in `event.getBlocks()` and cancel if any block transitions into or out of a claimed chunk without matching ownership.
+- **Status:** ✅ **FIXED** — Implemented `onPistonExtend` and `onPistonRetract` backed by shared helper `shouldCancelPiston(...)` inspecting piston head targets, all moved blocks, and destination blocks so pistons cannot extend, push blocks into, or pull blocks out of claims without matching chunk ownership.
 
 ### Direct Fire Ignition
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

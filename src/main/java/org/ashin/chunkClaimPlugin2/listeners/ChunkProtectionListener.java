@@ -16,6 +16,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -88,6 +90,49 @@ public class ChunkProtectionListener implements Listener {
         if (!toOwner.equals(fromOwner)) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        if (shouldCancelPiston(event.getBlock(), event.getBlocks(), event.getDirection(), true)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        if (shouldCancelPiston(event.getBlock(), event.getBlocks(), event.getDirection(), false)) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean shouldCancelPiston(org.bukkit.block.Block pistonBlock, java.util.List<org.bukkit.block.Block> movedBlocks,
+                                       org.bukkit.block.BlockFace direction, boolean isExtend) {
+        UUID pistonOwner = chunkManager.getChunkOwner(pistonBlock.getChunk());
+
+        // Check piston head reach into adjacent block when extending
+        if (isExtend) {
+            org.bukkit.block.Block headTarget = pistonBlock.getRelative(direction);
+            UUID headOwner = chunkManager.getChunkOwner(headTarget.getChunk());
+            if (headOwner != null && !headOwner.equals(pistonOwner)) {
+                return true;
+            }
+        }
+
+        for (org.bukkit.block.Block b : movedBlocks) {
+            UUID blockOwner = chunkManager.getChunkOwner(b.getChunk());
+            if (blockOwner != null && !blockOwner.equals(pistonOwner)) {
+                return true;
+            }
+            if (isExtend) {
+                org.bukkit.block.Block dest = b.getRelative(direction);
+                UUID destOwner = chunkManager.getChunkOwner(dest.getChunk());
+                if (destOwner != null && !destOwner.equals(pistonOwner)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
