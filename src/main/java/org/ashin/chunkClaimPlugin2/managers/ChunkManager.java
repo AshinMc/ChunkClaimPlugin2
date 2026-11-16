@@ -582,7 +582,7 @@ public class ChunkManager {
         Map.entry(FLAG_MOB_ENTRY,    false),  // allow all mob entry by default
         Map.entry(FLAG_MOB_PROTECTION, true), // protect non-hostile mobs by default
         Map.entry(FLAG_EXPLOSIONS,   true),   // block explosions by default
-        Map.entry(FLAG_PVP,          false),  // allow PvP by default
+        Map.entry(FLAG_PVP,          true),   // block PvP combat by default (safe-zone default)
         Map.entry(FLAG_FIRE_SPREAD,  true),   // block fire spread by default
         Map.entry(FLAG_GREETING_TITLE, true), // show welcome title by default
         Map.entry(FLAG_INTERACT_CHEST, true),      // protect chests by default
@@ -688,8 +688,18 @@ public class ChunkManager {
      * Checks server config.yml under claim-flags.<flag>, falling back to hardcoded DEFAULT_FLAGS.
      */
     public boolean getDefaultFlag(String flag) {
-        if (plugin != null && plugin.getConfig() != null && plugin.getConfig().contains("claim-flags." + flag)) {
-            return plugin.getConfig().getBoolean("claim-flags." + flag);
+        if (plugin != null && plugin.getConfig() != null) {
+            if (FLAG_PVP.equals(flag)) {
+                if (plugin.getConfig().contains("claim-flags.block-pvp")) {
+                    return plugin.getConfig().getBoolean("claim-flags.block-pvp");
+                }
+                if (plugin.getConfig().contains("claim-flags.pvp")) {
+                    return plugin.getConfig().getBoolean("claim-flags.pvp");
+                }
+            }
+            if (plugin.getConfig().contains("claim-flags." + flag)) {
+                return plugin.getConfig().getBoolean("claim-flags." + flag);
+            }
         }
         return DEFAULT_FLAGS.getOrDefault(flag, false);
     }

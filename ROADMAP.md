@@ -264,6 +264,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `pvp: false` in `config.yml` is documented as `# Disable PvP combat inside the claim`, but in `onPvP`, `isChunkFlagEnabled(FLAG_PVP)` checks for `true` to cancel damage. By default, PvP is active in claims while the comment states it is disabled.
 - **Task:** Invert check or rename to `block-pvp: true`.
+- **Status:** ✅ **FIXED** — Renamed the config default key in `config.yml` to `block-pvp: true` (matching `# Block PvP combat inside the claim`), updated `DEFAULT_FLAGS` to `true`, clarified `mob-spawning`/`mob-entry` boolean comments, added fallback/migration from legacy `claim-flags.pvp` in `ChunkManager.getDefaultFlag()` and `ConfigMigrator`, while keeping `FLAG_PVP` and `gui-flag-pvp` ("Block PvP") 100% consistent.
 
 ### Comment Wiping in `saveConfig()` and `ConfigMigrator`
 - **Files:**

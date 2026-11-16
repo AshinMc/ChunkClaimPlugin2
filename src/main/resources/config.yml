@@ -64,12 +64,12 @@ visualization:
 claim-flags:
   # --- Mob & Creature Protections ---
   mob-griefing: true        # Prevent Creeper explosions, Enderman block moving, etc.
-  mob-spawning: false       # Prevent natural hostile monster spawning
-  mob-entry: false          # Push hostile mobs out at border (invisible barrier)
+  mob-spawning: false       # Block natural hostile monster spawning (true = block spawns, false = allow spawns)
+  mob-entry: false          # Block mobs from entering claim borders (true = repel mobs, false = allow entry)
   mob-protection: true      # Protect farm animals (cows, sheep, bees) from visitors
 
   # --- Combat & Environmental Hazard ---
-  pvp: false                # Disable PvP combat inside the claim
+  block-pvp: true           # Block PvP combat inside the claim (true = PvP disabled, false = PvP allowed)
   explosions: true          # Block TNT and Wither explosion damage
   fire-spread: true         # Prevent fire from burning or spreading
 

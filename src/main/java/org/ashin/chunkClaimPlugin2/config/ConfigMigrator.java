@@ -81,7 +81,12 @@ public final class ConfigMigrator {
         copySectionIfPresent(existing, preservedValues, "event-commands");
         copySectionIfPresent(existing, preservedValues, "messages");
 
-        // 3. Intelligent migration for deprecated 'protection:' block (v0.1 - v0.5 leftover)
+        // 3. Intelligent migration for deprecated keys
+        if (preservedValues.containsKey("claim-flags.pvp") && !preservedValues.containsKey("claim-flags.block-pvp")) {
+            preservedValues.put("claim-flags.block-pvp", preservedValues.remove("claim-flags.pvp"));
+        } else {
+            preservedValues.remove("claim-flags.pvp");
+        }
         if (existing.contains("protection.prevent-interactions")) {
             boolean preventInteractions = existing.getBoolean("protection.prevent-interactions", true);
             // If the user explicitly disabled interactions in the legacy block,
