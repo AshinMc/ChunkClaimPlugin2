@@ -573,35 +573,67 @@ public class ChunkProtectionListener implements Listener {
     // ── Mob entry prevention (periodic task, flag-gated) ──
 
     /**
-     * Starts a periodic task that pushes all non-player mobs out of claimed chunks
-     * that have the mob-entry flag enabled. Mobs are teleported to the nearest chunk
-     * edge, creating an invisible barrier. Runs every 0.5 seconds for smooth behaviour.
+     * Starts a periodic task that pushes non-protected mobs out of loaded claimed chunks
+     * that have the mob-entry flag enabled, avoiding global world.getLivingEntities() scans.
      */
     private void startMobEntryTask() {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (World world : plugin.getServer().getWorlds()) {
-                    for (LivingEntity entity : world.getLivingEntities()) {
-                        if (entity instanceof Player) continue;
-                        if (entity instanceof ArmorStand) continue;
-                        Chunk chunk = entity.getLocation().getChunk();
-                        // Only push mobs if chunk is claimed AND flag is enabled
-                        if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_ENTRY)) {
-                            pushOutOfChunk(entity, chunk);
-                        }
+                for (java.util.Map.Entry<String, UUID> entry : chunkManager.getClaimedChunks().entrySet()) {
+                    String key = entry.getKey();
+                    UUID owner = entry.getValue();
+                    String claimName = chunkManager.getChunkClaimName(key);
+                    if (!chunkManager.getClaimFlag(owner, claimName != null ? claimName : "world", ChunkManager.FLAG_MOB_ENTRY)) {
+                        continue;
+                    }
+
+                    int lastColon = key.lastIndexOf(':');
+                    int secondLastColon = lastColon > 0 ? key.lastIndexOf(':', lastColon - 1) : -1;
+                    if (secondLastColon <= 0) continue;
+
+                    String worldName = key.substring(0, secondLastColon);
+                    World world = plugin.getServer().getWorld(worldName);
+                    if (world == null) continue;
+
+                    int cx, cz;
+                    try {
+                        cx = Integer.parseInt(key.substring(secondLastColon + 1, lastColon));
+                        cz = Integer.parseInt(key.substring(lastColon + 1));
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+
+                    if (!world.isChunkLoaded(cx, cz)) continue;
+
+                    Chunk chunk = world.getChunkAt(cx, cz);
+                    for (Entity entity : chunk.getEntities()) {
+                        if (!(entity instanceof LivingEntity living)) continue;
+                        if (living instanceof Player || living instanceof ArmorStand) continue;
+                        if (isProtectedFromMobEntry(living)) continue;
+                        pushOutOfChunk(living, chunk);
                     }
                 }
             }
         }.runTaskTimer(plugin, 10L, 10L); // every 0.5 seconds
     }
 
+    private boolean isProtectedFromMobEntry(LivingEntity entity) {
+        if (entity instanceof org.bukkit.entity.Tameable tame && tame.isTamed()) return true;
+        if (entity.getCustomName() != null) return true;
+        return entity instanceof org.bukkit.entity.IronGolem
+                || entity instanceof org.bukkit.entity.AbstractVillager;
+    }
+
     /**
      * Teleports an entity to just outside the nearest edge of the given chunk.
-     * If the destination chunk also has mob-entry protection, the entity is removed
-     * (it is trapped between protected chunks with nowhere safe to go).
+     * If the destination chunk also has mob-entry protection, removes non-protected mobs
+     * while preserving tamed pets, custom-named entities, iron golems, and villagers.
      */
     private void pushOutOfChunk(LivingEntity entity, Chunk chunk) {
+        if (isProtectedFromMobEntry(entity)) {
+            return;
+        }
         Location loc = entity.getLocation();
         double x = loc.getX();
         double z = loc.getZ();
@@ -635,9 +667,11 @@ public class ChunkProtectionListener implements Listener {
 
         Location dest = new Location(loc.getWorld(), newX, loc.getY(), newZ, loc.getYaw(), loc.getPitch());
 
-        // If the destination chunk is also protected, the mob has nowhere to go
+        // If the destination chunk is also protected, only remove non-protected mobs
         if (chunkManager.isChunkFlagEnabled(dest.getChunk(), ChunkManager.FLAG_MOB_ENTRY)) {
-            entity.remove();
+            if (!isProtectedFromMobEntry(entity)) {
+                entity.remove();
+            }
             return;
         }
 

@@ -107,6 +107,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `startMobEntryTask` queries `world.getLivingEntities()` across all worlds every 10 ticks, allocating new lists and iterating thousands of entities on the main thread. If a mob is between protected chunks, `entity.remove()` is called, permanently deleting player pets, horses, and named villagers.
 - **Task:** Remove the global polling task. Switch to event-driven checks (e.g. tracking chunk crossings) or only scan entities within loaded chunks that have `mob-entry: true`. Add an explicit exclusion preventing `entity.remove()` on `Tameable`, named entities (`getCustomName() != null`), and iron golems.
+- **Status:** ✅ **FIXED** — Replaced the global `world.getLivingEntities()` scan with a targeted loop that only checks loaded claimed chunks where `mob-entry` is enabled, and added `isProtectedFromMobEntry(...)` to prevent pushing or calling `entity.remove()` on tamed `Tameable` pets, custom-named entities, iron golems, and villagers.
 
 ### Optimize `PlayerMoveListener`
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerMoveListener.java`
