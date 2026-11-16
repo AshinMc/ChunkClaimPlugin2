@@ -71,9 +71,9 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Save claimed chunks data
+        // Save claimed chunks data cleanly and flush async writes
         if (chunkManager != null) {
-            chunkManager.saveData();
+            chunkManager.shutdown();
         }
 
         getLogger().info("ChunkClaimPlugin2 has been disabled!");

@@ -13,7 +13,15 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages chunk claims with named claim groups.
@@ -37,6 +45,11 @@ public class ChunkManager {
     private final File dataFile;
     private FileConfiguration dataConfig;
     public final WorldGuardBridge worldGuardHandler;
+    private final ExecutorService saveExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "CCP-Async-Persistence");
+        t.setDaemon(true);
+        return t;
+    });
 
     public ChunkManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -739,47 +752,102 @@ public class ChunkManager {
     }
 
     public void saveData() {
-        // Clear both old and new sections
-        dataConfig.set("claims", null);
-        dataConfig.set("claims-v2", null);
-        dataConfig.set("trusts", null);
-
-        for (Map.Entry<String, UUID> entry : chunkOwners.entrySet()) {
-            String key = entry.getKey();
-            dataConfig.set("claims-v2." + key + ".owner", entry.getValue().toString());
-            dataConfig.set("claims-v2." + key + ".name", chunkNames.getOrDefault(key, "world"));
+        DataSnapshot snapshot = captureSnapshot();
+        if (plugin != null && !plugin.isEnabled()) {
+            writeSnapshotAtomically(snapshot);
+            return;
         }
+        saveExecutor.submit(() -> writeSnapshotAtomically(snapshot));
+    }
 
-        // Save trust data
+    /**
+     * Synchronously captures and atomically persists claim data to disk.
+     */
+    public void saveDataSync() {
+        writeSnapshotAtomically(captureSnapshot());
+    }
+
+    /**
+     * Flushes pending asynchronous saves and performs a final synchronous atomic save on disable.
+     */
+    public void shutdown() {
+        saveExecutor.shutdown();
+        try {
+            saveExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        saveDataSync();
+    }
+
+    private DataSnapshot captureSnapshot() {
+        Map<String, UUID> ownersCopy = new HashMap<>(chunkOwners);
+        Map<String, String> namesCopy = new HashMap<>(chunkNames);
+        Map<String, List<String>> trustsCopy = new HashMap<>();
         for (Map.Entry<String, Set<UUID>> entry : trustedPlayers.entrySet()) {
-            List<String> uuids = new ArrayList<>();
-            for (UUID u : entry.getValue()) uuids.add(u.toString());
-            dataConfig.set("trusts." + entry.getKey(), uuids);
+            List<String> uuids = new ArrayList<>(entry.getValue().size());
+            for (UUID u : entry.getValue()) {
+                uuids.add(u.toString());
+            }
+            trustsCopy.put(entry.getKey(), uuids);
         }
-
-        // Save claim flags
+        Map<String, Map<String, Boolean>> flagsCopy = new HashMap<>();
         for (Map.Entry<String, Map<String, Boolean>> entry : claimFlags.entrySet()) {
+            flagsCopy.put(entry.getKey(), new HashMap<>(entry.getValue()));
+        }
+        Map<UUID, Integer> limitsCopy = new HashMap<>(playerLimits);
+        Map<String, Double> pricesCopy = new HashMap<>(claimPrices);
+        return new DataSnapshot(ownersCopy, namesCopy, trustsCopy, flagsCopy, limitsCopy, pricesCopy);
+    }
+
+    private void writeSnapshotAtomically(DataSnapshot snapshot) {
+        YamlConfiguration yaml = new YamlConfiguration();
+        for (Map.Entry<String, UUID> entry : snapshot.owners.entrySet()) {
+            String key = entry.getKey();
+            yaml.set("claims-v2." + key + ".owner", entry.getValue().toString());
+            yaml.set("claims-v2." + key + ".name", snapshot.names.getOrDefault(key, "world"));
+        }
+        for (Map.Entry<String, List<String>> entry : snapshot.trusts.entrySet()) {
+            yaml.set("trusts." + entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<String, Map<String, Boolean>> entry : snapshot.flags.entrySet()) {
             for (Map.Entry<String, Boolean> flag : entry.getValue().entrySet()) {
-                dataConfig.set("claim-flags." + entry.getKey() + "." + flag.getKey(), flag.getValue());
+                yaml.set("claim-flags." + entry.getKey() + "." + flag.getKey(), flag.getValue());
             }
         }
-
-        // Save player limits
-        dataConfig.set("player-limits", null);
-        for (Map.Entry<UUID, Integer> entry : playerLimits.entrySet()) {
-            dataConfig.set("player-limits." + entry.getKey().toString(), entry.getValue());
+        for (Map.Entry<UUID, Integer> entry : snapshot.limits.entrySet()) {
+            yaml.set("player-limits." + entry.getKey().toString(), entry.getValue());
         }
-
-        // Save claim marketplace prices
-        dataConfig.set("claim-prices", null);
-        for (Map.Entry<String, Double> entry : claimPrices.entrySet()) {
-            dataConfig.set("claim-prices." + entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Double> entry : snapshot.prices.entrySet()) {
+            yaml.set("claim-prices." + entry.getKey(), entry.getValue());
         }
 
         try {
-            dataConfig.save(dataFile);
+            File parent = dataFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            Path targetPath = dataFile.toPath();
+            Path tempPath = targetPath.resolveSibling(dataFile.getName() + ".tmp");
+            Files.writeString(tempPath, yaml.saveToString(), StandardCharsets.UTF_8);
+            try {
+                Files.move(tempPath, targetPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
-            plugin.getLogger().severe("Could not save chunk claim data: " + e.getMessage());
+            if (plugin != null) {
+                plugin.getLogger().severe("Could not save chunk claim data: " + e.getMessage());
+            }
         }
     }
+
+    private record DataSnapshot(
+            Map<String, UUID> owners,
+            Map<String, String> names,
+            Map<String, List<String>> trusts,
+            Map<String, Map<String, Boolean>> flags,
+            Map<UUID, Integer> limits,
+            Map<String, Double> prices
+    ) {}
 }

@@ -16,6 +16,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
 - **Issue:** `saveData()` serializes the entire YAML map and executes blocking disk I/O on the main server thread on every claim, expand, rename, and GUI flag toggle. Direct file write risks file truncation to 0 bytes on server crash.
 - **Task:** Offload serialization to an asynchronous worker. Write to `chunkclaims.yml.tmp` and replace atomically via `Files.move(..., StandardCopyOption.ATOMIC_MOVE)` or migrate data storage to SQLite.
+- **Status:** ✅ **FIXED** — `ChunkManager.saveData()` now captures an immutable in-memory snapshot synchronously on the main thread and offloads YAML serialization and disk writes to a dedicated single-thread `ExecutorService` (`CCP-Async-Persistence`), writing to `chunkclaims.yml.tmp` and moving atomically via `Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` (with standard replace fallback). Also added `shutdown()` called by `ChunkClaimPlugin2.onDisable()` to flush pending writes synchronously on server shutdown.
 
 ### Clear Trust on Claim Transfer
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
