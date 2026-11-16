@@ -106,8 +106,8 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
                 }
 
                 String targetName = args[1];
-                OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+                OfflinePlayer target = resolveCachedOfflinePlayer(targetName);
+                if (target == null) {
                     sender.sendMessage(ChatColor.RED + "Player not found: " + targetName);
                     return true;
                 }
@@ -148,8 +148,8 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 String targetName = args[1];
-                OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+                OfflinePlayer target = resolveCachedOfflinePlayer(targetName);
+                if (target == null) {
                     sender.sendMessage(ChatColor.RED + "Player not found: " + targetName);
                     return true;
                 }
@@ -171,8 +171,8 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 String targetName = args[1];
-                OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-                if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+                OfflinePlayer target = resolveCachedOfflinePlayer(targetName);
+                if (target == null) {
                     sender.sendMessage(ChatColor.RED + "Player not found: " + targetName);
                     return true;
                 }
@@ -268,7 +268,7 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3) {
             String sub = args[0].toLowerCase();
             if (sub.equals("unclaimplayer")) {
-                OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+                OfflinePlayer target = resolveCachedOfflinePlayer(args[1]);
                 if (target != null) {
                     List<String> claims = chunkManager.getPlayerClaimNames(target.getUniqueId());
                     List<String> result = new ArrayList<>();
@@ -291,5 +291,24 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Resolves an online or previously played player from local server caches only,
+     * avoiding synchronous Mojang API HTTP requests on the main thread.
+     */
+    private OfflinePlayer resolveCachedOfflinePlayer(String name) {
+        Player online = Bukkit.getPlayerExact(name);
+        if (online != null) {
+            return online;
+        }
+        for (OfflinePlayer offline : Bukkit.getOfflinePlayers()) {
+            String offlineName = offline.getName();
+            if (offlineName != null && offlineName.equalsIgnoreCase(name)
+                    && (offline.hasPlayedBefore() || offline.isOnline())) {
+                return offline;
+            }
+        }
+        return null;
     }
 }

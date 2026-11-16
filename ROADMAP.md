@@ -302,6 +302,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkAdminCommand.java`
 - **Issue:** Calling `Bukkit.getOfflinePlayer(targetName)` with a username initiates a blocking synchronous HTTP request to Mojang API if the player profile is not cached, causing 2–5 second server freezes.
 - **Task:** Resolve profiles asynchronously or verify from cached server offline player lists before falling back to network queries.
+- **Status:** ✅ **FIXED** — Replaced all `Bukkit.getOfflinePlayer(String)` calls in `ChunkAdminCommand` (`unclaimplayer`, `setlimit`, `removelimit`, and `onTabComplete`) with `resolveCachedOfflinePlayer(name)` scanning `Bukkit.getPlayerExact` and `Bukkit.getOfflinePlayers()` locally with zero synchronous HTTP requests.
 
 ### Phantom Config Keys: `particle-height` & `particle-spacing`
 - **Files:**
