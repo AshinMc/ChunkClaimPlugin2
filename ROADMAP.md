@@ -150,6 +150,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`
 - **Issue:** `countItems()` and `withdraw()` only check `item.getType() == baseMaterial`. Custom RPG items, named items, enchanted tools, and items with PersistentDataContainer tags are consumed and destroyed as raw currency.
 - **Task:** Verify that `item.hasItemMeta()` is false or that display name, lore, enchantments, and custom tags are empty before counting or withdrawing the item.
+- **Status:** ✅ **FIXED** — Added `isPlainCurrencyItem(...)` in `ItemEconomyProvider` checking `!meta.hasDisplayName()`, `!meta.hasLore()`, `!meta.hasEnchants()`, `!meta.hasCustomModelData()`, and `meta.getPersistentDataContainer().isEmpty()` in both `countItems()` and `withdraw()`.
 
 ### Inventory Overflow Fallback
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`

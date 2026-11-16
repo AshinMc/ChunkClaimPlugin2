@@ -71,13 +71,25 @@ public class ItemEconomyProvider implements EconomyProvider {
         return count + " " + displayName + (count == 1 ? "" : "s");
     }
 
+    private boolean isPlainCurrencyItem(ItemStack item, Material expectedType) {
+        if (item == null || item.getType() != expectedType) return false;
+        if (!item.hasItemMeta()) return true;
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        if (meta == null) return true;
+        return !meta.hasDisplayName()
+                && !meta.hasLore()
+                && !meta.hasEnchants()
+                && !meta.hasCustomModelData()
+                && meta.getPersistentDataContainer().isEmpty();
+    }
+
     public int countItems(Player player) {
         int total = 0;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item == null) continue;
-            if (item.getType() == baseMaterial) {
+            if (isPlainCurrencyItem(item, baseMaterial)) {
                 total += item.getAmount();
-            } else if (convertBlocks && blockMaterial != null && item.getType() == blockMaterial) {
+            } else if (convertBlocks && blockMaterial != null && isPlainCurrencyItem(item, blockMaterial)) {
                 total += item.getAmount() * 9;
             }
         }
@@ -100,7 +112,7 @@ public class ItemEconomyProvider implements EconomyProvider {
         // First deduct base items
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
-            if (item == null || item.getType() != baseMaterial) continue;
+            if (!isPlainCurrencyItem(item, baseMaterial)) continue;
 
             int take = Math.min(item.getAmount(), needed);
             item.setAmount(item.getAmount() - take);
@@ -115,7 +127,7 @@ public class ItemEconomyProvider implements EconomyProvider {
         if (needed > 0 && convertBlocks && blockMaterial != null) {
             for (int i = 0; i < player.getInventory().getSize(); i++) {
                 ItemStack item = player.getInventory().getItem(i);
-                if (item == null || item.getType() != blockMaterial) continue;
+                if (!isPlainCurrencyItem(item, blockMaterial)) continue;
 
                 while (item.getAmount() > 0 && needed > 0) {
                     item.setAmount(item.getAmount() - 1);
