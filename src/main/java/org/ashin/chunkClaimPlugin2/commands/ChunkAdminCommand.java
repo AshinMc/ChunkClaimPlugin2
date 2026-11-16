@@ -19,11 +19,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
+    private final JavaPlugin plugin;
     private final AdminSettingsGUI gui;
     private final MessageManager messages;
     private final ChunkManager chunkManager;
 
     public ChunkAdminCommand(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
+        this.plugin = plugin;
         this.gui = new AdminSettingsGUI(plugin, chunkManager, messages);
         this.messages = messages;
         this.chunkManager = chunkManager;
@@ -42,6 +44,22 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
 
         if (args.length > 0) {
             String sub = args[0].toLowerCase();
+
+            // ── /chunkadmin reload ──
+            if (sub.equals("reload")) {
+                if (plugin instanceof org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2 ccp) {
+                    ccp.reloadPluginConfig();
+                } else {
+                    plugin.reloadConfig();
+                    messages.reloadLocales();
+                }
+                if (sender instanceof Player p) {
+                    p.sendMessage(messages.getFor(p.getUniqueId(), "admin-config-reloaded"));
+                } else {
+                    sender.sendMessage(ChatColor.GREEN + "Reloaded config.yml, locales, and economy settings.");
+                }
+                return true;
+            }
 
             // ── /chunkadmin unclaim (current chunk) ──
             if (sub.equals("unclaim") || sub.equals("removechunk")) {
@@ -203,7 +221,7 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("You must be a player to open the GUI. Available console commands: unclaimplayer, setlimit, removelimit, resetflag.");
+            sender.sendMessage("You must be a player to open the GUI. Available console commands: reload, unclaimplayer, setlimit, removelimit, resetflag.");
             return true;
         }
 
@@ -218,7 +236,7 @@ public class ChunkAdminCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> subs = List.of("unclaim", "unclaimplayer", "setlimit", "removelimit", "resetflag", "removeflag", "setflag");
+            List<String> subs = List.of("reload", "unclaim", "unclaimplayer", "setlimit", "removelimit", "resetflag", "removeflag", "setflag");
             List<String> result = new ArrayList<>();
             for (String s : subs) {
                 if (s.startsWith(args[0].toLowerCase())) result.add(s);

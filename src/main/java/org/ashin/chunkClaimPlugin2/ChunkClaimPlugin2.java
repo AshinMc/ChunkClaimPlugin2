@@ -34,6 +34,19 @@ public final class ChunkClaimPlugin2 extends JavaPlugin {
         return economyManager;
     }
 
+    /**
+     * Reloads config.yml, localization bundles, and the economy engine cleanly.
+     */
+    public void reloadPluginConfig() {
+        reloadConfig();
+        if (messageManager != null) {
+            messageManager.reloadLocales();
+        }
+        if (economyManager != null) {
+            economyManager.reload();
+        }
+    }
+
     @Override
     public void onEnable() {
         instance = this;

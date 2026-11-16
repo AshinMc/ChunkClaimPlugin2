@@ -281,6 +281,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/economy/EconomyManager.java`
 - **Issue:** There is no console/CLI command for `/chunkadmin reload`. The GUI reload button reloads messages and config, but never invokes `economyManager.reload()`, leaving economy settings desynchronized until a server restart.
 - **Task:** Add `/chunkadmin reload` CLI command and call `economyManager.reload()`.
+- **Status:** ✅ **FIXED** — Added centralized `ChunkClaimPlugin2.reloadPluginConfig()` reloading `config.yml`, `MessageManager`, and `EconomyManager.reload()`; wired it to both the new `/chunkadmin reload` CLI/console subcommand (with tab-completion) and the `/chunkadmin` GUI Reload button.
 
 ### Cached `final serverDefaultLocale` Desynchronization
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java`

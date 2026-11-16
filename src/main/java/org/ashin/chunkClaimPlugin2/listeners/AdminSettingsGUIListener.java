@@ -100,8 +100,12 @@ public class AdminSettingsGUIListener implements Listener {
         } else if (name.contains("Chunk Inspector")) {
             gui.openChunkInspector(player);
         } else if (name.equals(nReload)) {
-            plugin.reloadConfig();
-            messages.reloadLocales();
+            if (plugin instanceof org.ashin.chunkClaimPlugin2.ChunkClaimPlugin2 ccp) {
+                ccp.reloadPluginConfig();
+            } else {
+                plugin.reloadConfig();
+                messages.reloadLocales();
+            }
             player.sendMessage(messages.getFor(player.getUniqueId(), "admin-config-reloaded"));
             gui.openHome(player);
         }
