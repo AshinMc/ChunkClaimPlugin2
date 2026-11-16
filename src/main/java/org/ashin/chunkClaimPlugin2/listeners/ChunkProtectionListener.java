@@ -34,6 +34,7 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -498,6 +499,25 @@ public class ChunkProtectionListener implements Listener {
             }
             return !targetOwner.equals(originOwner);
         });
+    }
+
+    /**
+     * Prevents cross-dimension Nether portal creation from replacing blocks inside claims
+     * unless created by an owner or trusted player.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPortalCreate(PortalCreateEvent event) {
+        Player player = event.getEntity() instanceof Player p ? p : null;
+        for (org.bukkit.block.BlockState state : event.getBlocks()) {
+            Chunk targetChunk = state.getLocation().getChunk();
+            if (!chunkManager.isChunkClaimed(targetChunk)) {
+                continue;
+            }
+            if (player == null || !canModifyChunk(player, targetChunk)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
     }
 
     /**

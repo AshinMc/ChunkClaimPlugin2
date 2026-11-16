@@ -97,6 +97,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `PortalCreateEvent` is not handled. Linking a nether portal from the Nether can generate an obsidian portal structure inside an Overworld claim without the owner present.
 - **Task:** Implement `PortalCreateEvent` and cancel portal generation if it intersects chunks not owned by the creating player.
+- **Status:** ✅ **FIXED** — Implemented `onPortalCreate(PortalCreateEvent)` inspecting every generated `BlockState` chunk and cancelling portal creation if any block falls in a claimed chunk where the creating entity is not a trusted player or owner.
 
 ---
 
