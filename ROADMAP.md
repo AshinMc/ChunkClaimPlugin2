@@ -1,377 +1,225 @@
-# Pending Technical Tasks & Engineering Roadmap
+# Current Issues & Engineering Roadmap (Target: v0.9.0)
 
-This document lists architectural bugs, security vulnerabilities, performance bottlenecks, and technical tasks identified during the codebase audit.
-
----
-
-## 1. Data Integrity & Core Logic
-
-### Fix Single-Chunk Unclaiming
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/UnclaimChunkCommand.java`
-- **Issue:** Running `/unclaimchunk` without arguments calls `chunkManager.unclaimByName(...)`, unclaiming all chunks in the named claim group instead of just the chunk the player is standing in.
-- **Task:** Update no-args logic to invoke `chunkManager.unclaimChunk(player, chunk)`.
-- **Status:** ✅ **FIXED** — Split `onCommand` into two distinct paths. The no-args path now calls `chunkManager.unclaimChunk(player, chunk)` to remove exactly one chunk and issues a 1-chunk refund. The with-args path retains `unclaimByName` to unclaim entire named groups. Also pre-emptively stripped leading `/` from event-commands in both paths (see Console Event Command fix).
-
-### Atomic & Asynchronous Data Persistence
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
-- **Issue:** `saveData()` serializes the entire YAML map and executes blocking disk I/O on the main server thread on every claim, expand, rename, and GUI flag toggle. Direct file write risks file truncation to 0 bytes on server crash.
-- **Task:** Offload serialization to an asynchronous worker. Write to `chunkclaims.yml.tmp` and replace atomically via `Files.move(..., StandardCopyOption.ATOMIC_MOVE)` or migrate data storage to SQLite.
-- **Status:** ✅ **FIXED** — `ChunkManager.saveData()` now captures an immutable in-memory snapshot synchronously on the main thread and offloads YAML serialization and disk writes to a dedicated single-thread `ExecutorService` (`CCP-Async-Persistence`), writing to `chunkclaims.yml.tmp` and moving atomically via `Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` (with standard replace fallback). Also added `shutdown()` called by `ChunkClaimPlugin2.onDisable()` to flush pending writes synchronously on server shutdown.
-
-### Clear Trust on Claim Transfer
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
-- **Issue:** `transferClaim()` copies the previous owner's trusted player set to the new owner, granting the seller's friends access to the buyer's chests and blocks.
-- **Task:** Clear `trustedPlayers` associated with the claim group upon ownership transfer.
-- **Status:** ✅ **FIXED** — Updated `ChunkManager.transferClaim()` to remove `trustedPlayers` under `oldKey` instead of transferring it to `newKey`, ensuring the seller's trusted friends no longer retain access after purchase/transfer.
-
-### Chat Input Metadata Expiration
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java`
-- **Issue:** The player metadata flags `ccp_renaming_claim` and `ccp_selling_claim` have no expiration. Unrelated chat messages sent hours later are intercepted as claim names or prices.
-- **Task:** Store a millisecond timestamp in the metadata and ignore/remove it if older than 60 seconds.
-- **Status:** ✅ **FIXED** — Stored `ccp_renaming_claim_time` and `ccp_selling_claim_time` millisecond timestamps alongside the prompt metadata in `SettingsGUIListener`, and updated `ChatRenameListener` with `consumeIfExpired(...)` (60s TTL) so expired prompts are cleared without cancelling normal chat.
-
-### Claim Name Validation
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimChunkCommand.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkSettingsCommand.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java`
-- **Issue:** Claim names accept arbitrary characters and unbounded lengths, which can cause YAML serialization anomalies and command argument parsing breaks.
-- **Task:** Enforce length limit (maximum 24 characters) and regex pattern (`^[a-zA-Z0-9_-]+$`).
-- **Status:** ✅ **FIXED** — Added `ChunkManager.isValidClaimName()` (`1–24` chars matching `^[a-zA-Z0-9_-]+$`) and `ChunkManager.generateDefaultClaimName()` (`Claim_N`), and enforced validation in `ClaimChunkCommand`, `ChunkSettingsCommand`, `ChatRenameListener`, and `ItemClaimListener`.
+This document lists the **32 open bugs, security/grief bypasses, economy loopholes, Spigot/Paper compatibility issues, and code quality issues** identified in the v0.8.5 codebase audit, scheduled to be fixed for **v0.9.0**.
 
 ---
 
-## 2. Grief Protection Engine
+## 1. Critical Economy, Limit & Data Integrity Bugs
 
-### Bucket Placement & Fluid Pickup
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `PlayerBucketEmptyEvent` and `PlayerBucketFillEvent` are not implemented. Visitors can empty lava/water buckets or pick up liquids inside claims.
-- **Task:** Implement both events and cancel them if `!canModifyChunk(player, chunk)`.
-- **Status:** ✅ **FIXED** — Implemented `onBucketEmpty(PlayerBucketEmptyEvent)` and `onBucketFill(PlayerBucketFillEvent)` checking `event.getBlock().getChunk()` via shared `checkModifyOrCancel(...)` helper so cross-border bucket placement and fluid pickup are blocked with appropriate `deny-place`/`deny-break` feedback.
+### 1. GUI Claim Deletion Skips Economy Refunds & Event Commands
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (lines 362–378)
+- **Issue:** Deleting a claim group through the `/chunksettings` GUI (`DELETE_CONFIRM`) calls `chunkManager.unclaimByName(...)` and saves data, but never calculates or deposits the unclaim refund (`economyManager.getUnclaimRefundForTracked(...)`), never checks `messages.isMessageEnabled("unclaim-success")`, and never dispatches `event-commands.unclaim-success`.
+- **Task:** Mirror `UnclaimChunkCommand`'s tracked-cost refund calculation, message toggle check, and console `event-commands.unclaim-success` execution inside `SettingsGUIListener`.
 
-### Cross-Border Fluid Inflow
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `BlockFromToEvent` is not implemented. Liquids poured outside a claim can flow across chunk boundaries, washing away redstone, crops, and burning wooden blocks.
-- **Task:** Implement `BlockFromToEvent`. If destination block belongs to a claimed chunk and source chunk does not share the same owner, cancel the event.
-- **Status:** ✅ **FIXED** — Implemented `onBlockFromTo(BlockFromToEvent)` with a chunk-coordinate fast-exit and ownership comparison, cancelling any fluid flow (or dragon egg teleport) into a claimed chunk unless the source chunk shares the same owner.
+### 2. GUI Ownership Transfer Bypasses Target Player's Max Claim Limit
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (lines 389–410)
+- **Issue:** Unlike `/chunksettings transfer <claim> <player>`, the GUI `TRANSFER_CONFIRM` handler calls `chunkManager.transferClaim(...)` directly without checking whether the recipient would exceed `max-claims-per-player` (and without notifying the recipient).
+- **Task:** Enforce target player claim-limit validation in `SettingsGUIListener` before transferring ownership and send the recipient notification message.
 
-### Piston Push & Pull Protection
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `BlockPistonExtendEvent` and `BlockPistonRetractEvent` are not handled. Pistons placed outside claims can push blocks in or pull blocks/containers out.
-- **Task:** Implement both piston events. Inspect all blocks in `event.getBlocks()` and cancel if any block transitions into or out of a claimed chunk without matching ownership.
-- **Status:** ✅ **FIXED** — Implemented `onPistonExtend` and `onPistonRetract` backed by shared helper `shouldCancelPiston(...)` inspecting piston head targets, all moved blocks, and destination blocks so pistons cannot extend, push blocks into, or pull blocks out of claims without matching chunk ownership.
+### 3. Payment Executed Before `ChunkTransferEvent` & Name Collision Merging on Transfer/Purchase
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java` (lines 252–265)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java` (lines 260–292)
+- **Issue:**
+  1. `ClaimTradeCommand.handleBuy()` withdraws from the buyer and deposits to the seller **before** calling `chunkManager.transferClaim(...)`. If `ChunkTransferEvent` is cancelled by an external plugin (or `transferred == 0`), the buyer loses money and receives 0 chunks.
+  2. If the buyer/recipient already owns a claim group with the same `claimName`, `transferClaim()` merges the transferred chunks into the buyer's existing group, overwrites the buyer's existing `claimFlags` with the seller's flags, removes the buyer's sale listing (`claimPrices.remove(newKey)`), and exposes the new chunks to the buyer's existing trusted players.
+- **Task:** Transfer ownership (or verify non-cancelled `ChunkTransferEvent`) before finalizing/depositing payment (refunding buyer on cancellation), and prevent or disambiguate claim name collisions on transfer/purchase.
 
-### Direct Fire Ignition
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `BlockIgniteEvent` only cancels `SPREAD`, `LAVA`, and `LIGHTNING`. Ignition from Flint & Steel (`IgniteCause.FLINT_AND_STEEL`) and Fire Charges (`IgniteCause.FIREBALL`) is not blocked.
-- **Task:** Check `canModifyChunk(player, chunk)` for player-driven ignition causes.
-- **Status:** ✅ **FIXED** — Updated `onBlockIgnite` to require `canModifyChunk` for `event.getPlayer()` and projectile-resolved attackers (`FLINT_AND_STEEL`, `FIREBALL`, flaming arrows), and blocked dispenser-fired `FIREBALL`/`FLINT_AND_STEEL` ignition crossing from non-matching chunks.
+### 4. `NaN` and `Infinity` Price Exploit in `/claimtrade sell` & Chat Sell Prompt
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java` (lines 113–119)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java` (lines 100–112)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java` (lines 443–450)
+- **Issue:** `Double.parseDouble("NaN")` returns `Double.NaN` (where `price <= 0.0` evaluates to `false`), and `"Infinity"` returns `Double.POSITIVE_INFINITY`. Neither validator checks `Double.isFinite(price)`, allowing players to list claims for `NaN` or `Infinity` and corrupt `chunkclaims.yml`.
+- **Task:** Validate `Double.isFinite(price) && price > 0.0` in `ClaimTradeCommand`, `ChatRenameListener`, and `ChunkManager.setClaimPrice()`.
 
-### Indirect Damage & End Crystal Explosions
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `onPvP` resolves attackers via `resolveAttacker()`, which returns `null` for `EnderCrystal`, `RespawnAnchor`, and lingering potion clouds (`AreaEffectCloud`). End crystal detonation bypasses `pvp: false` inside claims.
-- **Task:** Intercept damage events caused by crystals/anchors and cancel damage to players/animals inside claims where PvP or mob protection is enabled.
-- **Status:** ✅ **FIXED** — Extended `resolveAttacker()` to handle `AreaEffectCloud` and `TNTPrimed` sources, and added `onIndirectExplosionDamage(EntityDamageEvent)` to cancel `BLOCK_EXPLOSION` (respawn anchors/beds) and `EnderCrystal`/`TNTPrimed` explosion damage to players (when PvP protection is active) and non-hostile entities (when `mob-protection` or `explosions` is enabled).
+### 5. Single-Chunk `/unclaimchunk` Leaves Orphaned Ghost Listings on `/claimtrade list`
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java` (lines 189–215)
+- **Issue:** Unlike `adminUnclaimChunk()`, `unclaimChunk(...)` does not check whether the removed chunk was the last remaining chunk in its claim group. Unclaiming the final chunk of a listed claim via `/unclaimchunk` (no args) leaves `claimPrices`, `trustedPlayers`, and `claimFlags` orphaned—allowing players to buy a 0-chunk ghost listing on `/claimtrade`.
+- **Task:** Clean up `trustedPlayers`, `claimFlags`, and `claimPrices` in `unclaimChunk(...)` when `remaining == 0` for that `(owner, claimName)` group.
 
-### Interactive Block Whitelist Coverage
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `onPlayerInteract` does not cover pressure plates (`Action.PHYSICAL` on `_PRESSURE_PLATE`), cauldrons, respawn anchors, composters, cakes, sweet berry bushes, dragon eggs, bells, and lecterns.
-- **Task:** Add these materials to the interaction check under appropriate claim flags.
-- **Status:** ✅ **FIXED** — Refactored `onPlayerInteract` using `resolveInteractionFlag(...)` to protect physical `_PRESSURE_PLATE` / `TRIPWIRE`, dyed `_SHULKER_BOX`es, cauldrons, respawn anchors, composters, cakes (`_CAKE`), sweet berry bushes, dragon eggs, bells, lecterns, jukeboxes, flower pots, chiseled bookshelves, and decorated pots under their respective flags.
-
-### Tree & Structure Growth
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `StructureGrowEvent` is not handled. Large trees (Dark Oak, Jungle) grown on borders replace blocks inside neighboring claims.
-- **Task:** Implement `StructureGrowEvent` and strip out block changes falling inside chunks owned by other players.
-- **Status:** ✅ **FIXED** — Implemented `onStructureGrow(StructureGrowEvent)` which strips generated blocks falling inside claimed chunks unless the player has modify access (bonemeal) or the sapling's origin chunk shares the same owner (natural growth).
-
-### Vehicle & Mount Controls
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** Visitors can place boats or minecarts in claims via item interaction and use them to move or trap claimed villagers/mobs. Visitors can also mount claimed animals.
-- **Task:** Block vehicle placement in `onPlayerInteract` and cancel `EntityMountEvent` for untrusted visitors on claimed entities.
-- **Status:** ✅ **FIXED** — Blocked boat, raft, and minecart placement in `onPlayerInteract` across claimed chunks/adjacent placement faces, and added `onEntityMount(EntityMountEvent)` cancelling unauthorized mounting of claimed animals and vehicles.
-
-### Nether Portal Block Replacement
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `PortalCreateEvent` is not handled. Linking a nether portal from the Nether can generate an obsidian portal structure inside an Overworld claim without the owner present.
-- **Task:** Implement `PortalCreateEvent` and cancel portal generation if it intersects chunks not owned by the creating player.
-- **Status:** ✅ **FIXED** — Implemented `onPortalCreate(PortalCreateEvent)` inspecting every generated `BlockState` chunk and cancelling portal creation if any block falls in a claimed chunk where the creating entity is not a trusted player or owner.
+### 6. Free-Claim Tier Reset Exploit via Selective Single-Chunk Unclaiming
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/UnclaimChunkCommand.java` (lines 43–60)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/economy/EconomyManager.java` (lines 106–112)
+- **Issue:** With `free-claims: 3`, a player can claim 3 free chunks (`paid-cost: 0.0`), claim a 4th paid chunk (`paid-cost: 10.0`), then unclaim the 3 free chunks (`$0` refund). Because their owned count drops back to `1 < 3`, they can claim 2 new free chunks while retaining `paid-cost: 10.0` on chunk #4, repeating to shift paid costs onto starter chunks.
+- **Task:** Track/adjust free-chunk allocation or deduct unearned free-tier resets when calculating refunds/costs so selective unclaiming of free chunks cannot be abused for infinite cost-shifting.
 
 ---
 
-## 3. Performance & Resource Optimization
+## 2. Grief Protection & Exploit Bypasses
 
-### Remove Global Entity Task in `mob-entry`
+### 7. Cross-Border Dispenser Griefing (`BlockDispenseEvent` Missing)
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `startMobEntryTask` queries `world.getLivingEntities()` across all worlds every 10 ticks, allocating new lists and iterating thousands of entities on the main thread. If a mob is between protected chunks, `entity.remove()` is called, permanently deleting player pets, horses, and named villagers.
-- **Task:** Remove the global polling task. Switch to event-driven checks (e.g. tracking chunk crossings) or only scan entities within loaded chunks that have `mob-entry: true`. Add an explicit exclusion preventing `entity.remove()` on `Tameable`, named entities (`getCustomName() != null`), and iron golems.
-- **Status:** ✅ **FIXED** — Replaced the global `world.getLivingEntities()` scan with a targeted loop that only checks loaded claimed chunks where `mob-entry` is enabled, and added `isProtectedFromMobEntry(...)` to prevent pushing or calling `entity.remove()` on tamed `Tameable` pets, custom-named entities, iron golems, and villagers.
+- **Issue:** `BlockDispenseEvent` is not handled. Dispensers placed in the wilderness facing into a claim can dispense water/lava/powder snow buckets directly inside the claim, fire primed TNT, or place boats/minecarts/shulker boxes across the border.
+- **Task:** Register `BlockDispenseEvent`, compute the target block `block.getRelative(facing)`, and cancel if the target chunk is claimed and does not share the dispenser chunk's owner.
 
-### Optimize `PlayerMoveListener`
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerMoveListener.java`
-- **Issue:** `event.getFrom().getChunk()` and `event.getTo().getChunk()` are called on every micro-movement before checking if the chunk coordinates changed, creating continuous chunk cache lookups.
-- **Task:** Add coordinate bitshift pre-check:
-  ```java
-  if ((from.getBlockX() >> 4) == (to.getBlockX() >> 4)
-      && (from.getBlockZ() >> 4) == (to.getBlockZ() >> 4)
-      && from.getWorld() == to.getWorld()) {
-      return;
-  }
-  ```
-- **Status:** ✅ **FIXED** — Added the bitshift chunk-coordinate and world equality pre-check at the start of `onPlayerMove` before invoking `getChunk()`, eliminating chunk lookups on intra-chunk movements and also fixing cross-world teleports at matching coordinates.
+### 8. Creeper/Wither Explosion Flag Mismatch & Hanging Entity Explosion Destruction
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 527–539, 652–670)
+- **Issue:**
+  1. `config.yml` documents `mob-griefing` as preventing Creeper explosions, yet `onEntityExplode` only checks `FLAG_EXPLOSIONS` and ignores `FLAG_MOB_GRIEFING` for living/monster explosions (`Creeper`, `Wither`, `WitherSkull`, `Fireball`).
+  2. `onHangingBreak` only listens to `HangingBreakByEntityEvent` for `Player` removers. Explosions (`RemoveCause.EXPLOSION`) and mob projectiles still pop Item Frames, Glow Item Frames, Paintings, and Leash Hitches off walls inside claims.
+- **Task:** Check `FLAG_MOB_GRIEFING` for mob-caused explosions in `onEntityExplode`, and register `HangingBreakEvent` to protect hanging entities from explosions and non-trusted entity breaks.
 
-### Per-Player Visualization Packets
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`
-- **Issue:** `player.getWorld().spawnParticle(...)` broadcasts all border particles to all nearby players in the world, generating unnecessary network traffic and client rendering lag.
-- **Task:** Change to `player.spawnParticle(...)` to send packets only to the player running the visualization.
-- **Status:** ✅ **FIXED** — Updated `VisualizeChunkCommand.spawnParticle(...)` to invoke `player.spawnParticle(...)` instead of `player.getWorld().spawnParticle(...)`, restricting border particles strictly to the requesting player.
+### 9. Mob & TNT-Minecart Explosions Killing Claimed Animals, Villagers & Armor Stands
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 246–270, 833–857)
+- **Issue:** `onEntityDamageByEntity` exits early when `resolveAttacker()` is `null`, and `onIndirectExplosionDamage` only checks `BLOCK_EXPLOSION`, `EnderCrystal`, and `TNTPrimed`. Lured **Creepers** or **ExplosiveMinecarts (TNT Minecarts)** pushed into claims kill claimed animals, villagers, and `ArmorStand`s.
+- **Task:** Extend `onIndirectExplosionDamage` (or `onEntityDamageByEntity`) to cover `ExplosiveMinecart` and `Creeper`/mob explosion damage to non-hostile entities and `ArmorStand`s when `mob-protection` or `explosions`/`mob-griefing` is active.
 
-### Concurrency & Thread-Safety in PlaceholderAPI Expansion
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/placeholders/ChunkClaimExpansion.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
-- **Issue:** Placeholder expansions are evaluated asynchronously by scoreboard and tablist plugins. `ChunkManager` uses raw `HashMap` collections, causing `ConcurrentModificationException` and server deadlocks on concurrent read/write operations.
-- **Task:** Convert `chunkOwners`, `chunkNames`, `trustedPlayers`, `claimFlags`, `playerLimits`, and `claimPrices` to `ConcurrentHashMap`. Use bitshifts for player location chunks instead of async `.getChunk()` calls.
-- **Status:** ✅ **FIXED** — Converted all shared maps and nested trust/flag collections in `ChunkManager` to `ConcurrentHashMap` / `ConcurrentHashMap.newKeySet()`, added lock-free `getTotalClaimedChunkCount()`, and updated `ChunkClaimExpansion` to resolve chunk keys via bitshifts (`>> 4`) instead of async `getChunk()` calls.
+### 10. Projectile Griefing on Blocks (`EntityChangeBlockEvent` & `ProjectileHitEvent` / `TNTPrimeEvent`)
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 597–605)
+- **Issue:**
+  1. `onEntityChangeBlock` returns immediately for `Player` (allowing burning players to melt `POWDER_SNOW`), and treats player-shot `Projectile`s under `FLAG_MOB_GRIEFING` instead of `canModifyChunk(shooter, chunk)` — allowing arrows/tridents/wind charges to break Chorus Flowers, Pointed Dripstone, and Decorated Pots when `mob-griefing` is disabled.
+  2. `ProjectileHitEvent` and `TNTPrimeEvent` are not registered, allowing untrusted visitors to shoot Bells, Target blocks, Buttons, or ignite TNT/Campfires with Flame bows.
+- **Task:** Resolve projectile shooters in `onEntityChangeBlock` via `canModifyChunk`, protect `POWDER_SNOW` from untrusted burning players, and register `ProjectileHitEvent` / `TNTPrimeEvent`.
+
+### 11. Lectern Book Theft (`PlayerTakeLecternBookEvent` Missing)
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 216–218)
+- **Issue:** `PlayerTakeLecternBookEvent` is not registered. Any visitor who can open a lectern (e.g., if `interact-stonecutter` is disabled) can click **"Take Book"** to steal the book.
+- **Task:** Register `PlayerTakeLecternBookEvent` and cancel if `!canModifyChunk(event.getPlayer(), event.getLectern().getChunk())`.
+
+### 12. Right-Click Tool & Block Modification Gaps in `onPlayerInteract`
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 176–235)
+- **Issue:** Untrusted visitors can right-click inside claims to strip logs/copper/bamboo with axes, wax copper with honeycomb, till farmland/create dirt paths with hoes/shovels, harvest `BEEHIVE`/`BEE_NEST` with shears/bottles, toggle `REDSTONE_WIRE` dot/cross state, extinguish candles/campfires, set respawn in `_BED`s, or left-click `DRAGON_EGG`s when `interact-chest` is off.
+- **Task:** Block untrusted block-modifying tool interactions, bed respawn/detonation, beehive harvesting, redstone wire toggling, and `DRAGON_EGG` punching inside claimed chunks.
+
+### 13. Missing `PlayerBucketEntityEvent`, `PlayerShearEntityEvent` & `PlayerInteractAtEntityEvent`
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
+- **Issue:** Visitors can scoop claimed Axolotls, Tadpoles, and Fish into buckets (`PlayerBucketEntityEvent`), shear claimed Sheep/Mooshrooms (`PlayerShearEntityEvent`), or interact with Armor Stands/entities via `PlayerInteractAtEntityEvent` (which has a separate Bukkit `HandlerList` from `PlayerInteractEntityEvent`).
+- **Task:** Register all three events and enforce `canModifyChunk(...)`.
+
+### 14. Cross-Border Sponge Water Absorption (`SpongeAbsorbEvent` Missing)
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
+- **Issue:** Placing a dry sponge in the wilderness adjacent to a claim drains water blocks up to 7 blocks inside the protected claim.
+- **Task:** Register `SpongeAbsorbEvent` and filter `event.getBlocks()` to remove blocks inside claimed chunks that do not share the sponge block's owner.
+
+### 15. Sticky Piston + Slime Block Retraction Into Claims (`shouldCancelPiston`)
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 121–148)
+- **Issue:** `shouldCancelPiston()` only checks destination blocks (`b.getRelative(direction)`) when `isExtend == true`. During `BlockPistonRetractEvent`, sticky pistons pulling slime/honey structures can pull blocks from the wilderness across the border **into** a claimed chunk.
+- **Task:** Also check `b.getRelative(direction)` (the retraction destination) when `isExtend == false`.
 
 ---
 
-## 4. Economy & Marketplace Engine
+## 3. Performance, Concurrency & Resource Issues
 
-### Marketplace Listing Disambiguation
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java`
-- **Issue:** `/claimtrade buy <claimName>` iterates `allClaimsForSale.entrySet()`. If two players sell claims with the same name (e.g. `"Base"`), it purchases whichever listing appears first in the map regardless of seller or price.
-- **Task:** Enforce buying syntax by listing ID or `seller:claimName` (e.g. `/claimtrade buy <seller> <claim>`).
-- **Status:** ✅ **FIXED** — Updated `ClaimTradeCommand` to support `/claimtrade buy <seller> <claim>` and `<seller>:<claim>`, block ambiguous single-name purchases when multiple listings share a claim name (prompting the exact `<seller> <claim>` options with prices), and updated `/claimtrade list` + tab-completion.
+### 16. `mob-entry` Task Copies `chunkOwners` Every 0.5s, Loads Neighbor Chunks & Suffocates Mobs
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 704–804)
+- **Issue:**
+  1. `startMobEntryTask()` calls `chunkManager.getClaimedChunks()` (cloning `chunkOwners`) every 10 ticks even when zero claims have `mob-entry: true`.
+  2. `pushOutOfChunk()` calls `dest.getChunk()` without checking `isChunkLoaded`, forcing synchronous chunk loads along borders.
+  3. `dest` reuses the mob's current `Y` coordinate without checking for solid blocks, teleporting mobs into walls/cliffs.
+- **Task:** Iterate `chunkOwners` directly (or maintain a set of `mob-entry`-enabled chunk keys), guard `dest` chunk loading, and find a safe non-solid `Y` at `(newX, newZ)`.
 
-### Item Economy Meta Protection
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`
-- **Issue:** `countItems()` and `withdraw()` only check `item.getType() == baseMaterial`. Custom RPG items, named items, enchanted tools, and items with PersistentDataContainer tags are consumed and destroyed as raw currency.
-- **Task:** Verify that `item.hasItemMeta()` is false or that display name, lore, enchantments, and custom tags are empty before counting or withdrawing the item.
-- **Status:** ✅ **FIXED** — Added `isPlainCurrencyItem(...)` in `ItemEconomyProvider` checking `!meta.hasDisplayName()`, `!meta.hasLore()`, `!meta.hasEnchants()`, `!meta.hasCustomModelData()`, and `meta.getPersistentDataContainer().isEmpty()` in both `countItems()` and `withdraw()`.
-
-### Inventory Overflow Fallback
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java`
-- **Issue:** When giving change or refunding unclaims with a full inventory, items are dropped on the ground via `dropItemNaturally()`, risking loss in lava or theft.
-- **Task:** Store overflow currency into `pending_economy.yml` for claim via login or command when inventory space is available.
-- **Status:** ✅ **FIXED** — Updated `ItemEconomyProvider` (`withdraw` change and `giveItems`) to divert full-inventory overflow into `pending_economy.yml` via `offlineDepositHandler` instead of dropping items on the ground, cleared `pending` records prior to delivery in `EconomyManager.deliverPendingPayments()` so partial deliveries re-queue safely, and added `/claimtrade claim` to collect pending payouts on demand.
-
-### Unclaim Refund Exploitation (Infinite Money Exploit)
+### 17. `O(N)` Full-Map Scans on Every `%ccp_claimed_chunks%` Placeholder Request
 - **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/economy/EconomyManager.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java`
-- **Issue:** `getUnclaimRefund()` calculates refunds based on theoretical server progressive price formulas rather than historical cost. Players can buy multi-chunk bases cheaply on `/claimtrade` and immediately unclaim them to generate free money from the server treasury.
-- **Task:** Do not refund claims obtained via marketplace trading, or track actual paid cost per chunk.
-- **Status:** ✅ **FIXED** — Added persistent per-chunk `paid-cost` tracking in `ChunkManager` (`chunkPaidCosts`, serialized under `claims-v2.<key>.paid-cost`), recorded actual paid amounts at claim/expand time, zeroed `paid-cost` on every transferred/traded chunk in `transferClaim()`, and updated `UnclaimChunkCommand` + `EconomyManager.getUnclaimRefundForTracked()` to compute refunds from recorded historical purchase costs.
+  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java` (lines 520–526)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/placeholders/ChunkClaimExpansion.java` (lines 52–54)
+- **Issue:** `getPlayerChunkCount(UUID)` iterates all `chunkOwners.values()` (`O(N)` across all server claims) on every placeholder evaluation, causing unnecessary CPU load on scoreboards/tablists.
+- **Task:** Maintain an atomic/concurrent `Map<UUID, Integer>` (or `AtomicInteger`) counter updated on claim, unclaim, transfer, and load for `O(1)` lookups.
+
+### 18. First-Join Locale Write Causes Main-Thread Disk I/O & Locks Players to Old Default Locale
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerJoinLocaleListener.java` (lines 20–26)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java` (lines 135–147)
+- **Issue:** Writing `serverDefaultLocale` into `playerdata.yml` on first join triggers synchronous disk I/O on join and permanently pins players to the old default locale even if the server admin later changes `locale:` in `config.yml`.
+- **Task:** Stop writing `serverDefaultLocale` to `playerdata.yml` on join; only persist when a player explicitly selects a language via `/chunklang` or the GUI (`getPlayerLocale()` already falls back to `serverDefaultLocale`).
+
+### 19. Per-Particle Config & Enum Resolution Inside `VisualizeChunkCommand` Loop
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java` (lines 29, 184–227)
+- **Issue:** `spawnParticle()` resolves `messages.getPlayerParticle()`, `ConfigMigrator.getNonBlankString()`, and `AdminSettingsGUI.resolveParticle()` on every single particle step (hundreds of times per tick), and `activeVisualizations` uses a plain `HashMap` without cleanup on disable.
+- **Task:** Resolve the player's `Particle` once per visualization tick before iterating coordinates, and switch `activeVisualizations` to `ConcurrentHashMap`.
+
+### 20. Blocking `Bukkit.getOfflinePlayer(String)` Still Present in `ChunkSettingsCommand.handleTrust`
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkSettingsCommand.java` (line 212)
+- **Issue:** `handleTrust()` still calls `Bukkit.getOfflinePlayer(targetPlayerName)` directly, allowing players to trigger blocking 2–5s Mojang API HTTP requests on the main thread with `/chunksettings trust <claim> <unknownName>`.
+- **Task:** Replace with a local cached offline player lookup (`resolveCachedOfflinePlayer`) matching `ChunkAdminCommand`.
 
 ---
 
-## 5. Navigation & World Handling
+## 4. GUI, Command & Cross-Version Quality Issues
 
-### Safe `/chunktp` Positioning
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkTeleportCommand.java`
-- **Issue:** Uses `world.getHighestBlockYAt(centerX, centerZ) + 1`. In the Nether, this targets Y=128 (above bedrock ceiling). In caves or underground bases, it teleports to the surface.
-- **Task:** In Nether or below-ground environments, scan vertically for 2 contiguous air blocks above a solid, non-hazardous block (no lava or fire).
-- **Status:** ✅ **FIXED** — Replaced blind `getHighestBlockYAt + 1` with `findSafeLocationInChunk(...)` which caps Nether scanning below bedrock (`y <= 122`), scans vertically for 2 passable non-hazardous blocks above a solid non-hazardous floor (`!LAVA`, `!FIRE`, `!MAGMA_BLOCK`, etc.), probes across the chunk if the center column is blocked, and supports multi-word claim names.
+### 21. GUI Teleport Uses Wrong Permission (`chunkclaim.teleport` vs `ccp.teleport`) & Unsafe `findSafeY`
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (lines 328–353, 413–425)
+- **Issue:** Clicking Teleport in `/chunksettings` checks `chunkclaim.teleport` (`default: op`) instead of `ccp.teleport` (`default: true`), and uses a private `findSafeY()` (`getHighestBlockYAt`) that teleports players onto the Nether bedrock ceiling (`Y=128`) or into lava instead of using `ChunkTeleportCommand`'s safe scanner.
+- **Task:** Check `ccp.teleport` (or `chunkclaim.teleport`) and delegate to `ChunkTeleportCommand` / `player.performCommand("chunktp " + claimName)`, removing duplicate `findSafeY()`.
 
-### Accurate Border Visualization
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java`
-- **Issue:** Calculates a single minimum and maximum bounding box across all chunks in a group. For L-shaped or disconnected chunks, it draws a rectangular perimeter enclosing unclaimed wilderness.
-- **Task:** Iterate each chunk individually and render outer perimeter borders per-chunk.
-- **Status:** ✅ **FIXED** — Replaced merged bounding-box rendering with `visualizeChunkGroupPerimeter(...)`, checking 4-way chunk adjacency per claimed chunk to render exact outer edges and outer corners for L-shaped and disconnected claims without enclosing wilderness. Also unified task scheduling into `startVisualization(...)`.
+### 22. `ArrayIndexOutOfBoundsException` in `SettingsGUI` When Player Has $\ge 54$ Claims or $\ge 54$ Online Players
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/gui/SettingsGUI.java` (lines 62–131, 244–306)
+- **Issue:** `invSizeFor(...)` caps inventory size at `54`, but loops in `openClaims`, `openVisualize`, `openDelete`, `openTrust`, and `openTransfer` do not stop at `size - 2` (`52`), causing `inv.setItem(54, ...)` to throw `ArrayIndexOutOfBoundsException` at $\ge 55$ entries.
+- **Task:** Cap loop index at `size - 1` (reserving slot `size - 1` for the Back button) or add GUI pagination.
 
-### WorldGuard `__global__` Bypass
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/handlers/WG7WorldGuardBridge.java`
-- **Issue:** `set.isOwnerOfAll(localPlayer)` returns `false` if `__global__` has any flags set, preventing all claiming server-wide because no player owns `__global__`.
-- **Task:** Exclude regions with `getId().equalsIgnoreCase("__global__")` or test build flags directly via `set.testState(localPlayer, Flags.BUILD)`.
-- **Status:** ✅ **FIXED** — Updated `WG7WorldGuardBridge.canClaimChunk()` to verify `set.testState(localPlayer, Flags.BUILD)` and iterate applicable regions while excluding `__global__` from ownership checks.
-
-### World Blacklist Option
+### 23. Particle GUI Click Failure on `DUST` / `CHERRY_LEAVES` Across 1.19.4–1.20.4
 - **Files:**
-  - `src/main/resources/config.yml`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java`
-- **Issue:** Claiming cannot be disabled in specific worlds, allowing players to claim around End portals, End gateways, or minigame arenas.
-- **Task:** Add `disabled-worlds: []` list in `config.yml` and check `disabledWorlds.contains(chunk.getWorld().getName())` in `canClaimChunk()`.
-- **Status:** ✅ **FIXED** — Added `disabled-worlds: []` to `config.yml` and `ConfigMigrator`, implemented case-insensitive `ChunkManager.isWorldDisabled(World)` checked inside `canClaimChunk()`, and added early feedback in `ClaimChunkCommand`, `ChunkExpandCommand`, and `ItemClaimListener`.
+  - `src/main/java/org/ashin/chunkClaimPlugin2/gui/SettingsGUI.java` (line 164)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (line 143)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/AdminSettingsGUIListener.java` (line 223)
+- **Issue:** `SettingsGUI.openParticle()` uses `Material.valueOf(entry[1])` (crashing on 1.19.4 where `CHERRY_LEAVES` does not exist), and both `SettingsGUIListener` and `AdminSettingsGUIListener` validate particle clicks with raw `Particle.valueOf(name)` instead of `AdminSettingsGUI.resolveParticle(name)`, breaking `DUST` on 1.19.4–1.20.4.
+- **Task:** Use `Material.matchMaterial(entry[1])` with `OAK_LEAVES` fallback in `SettingsGUI.openParticle()`, and validate particle clicks via `AdminSettingsGUI.resolveParticle(name)`.
 
-### Pagination for `/infochunk`
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/InfoChunkCommand.java`
-- **Issue:** Dumps all owned chunks in chat sequentially without paging, flooding chat for players with large claims.
-- **Task:** Implement `/infochunk [page]` with 6–8 claims per page.
-- **Status:** ✅ **FIXED** — Added page argument parsing to `InfoChunkCommand`, slicing claim groups into pages of 6 groups per page with `(page/totalPages)` indicator and next-page usage hint.
+### 24. Fragile Display-Name Slot Scraping in `SettingsGUIListener` (`CLAIM_DETAILS` & `DELETE_CONFIRM`)
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/gui/SettingsGUI.java` (lines 187, 382)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (lines 269–368)
+- **Issue:** `openClaimDetails()` and `openDeleteConfirm()` pass `claimName == null` to `SettingsHolder`, forcing `SettingsGUIListener` to scrape `claimName` out of slot 11/13 display names.
+- **Task:** Pass `claimName` directly into `new SettingsHolder(View.CLAIM_DETAILS, claimName)` and `new SettingsHolder(View.DELETE_CONFIRM, claimName)` and read `sh.claimName`.
+
+### 25. Incomplete Fallback Array in `MessageManager.getAvailableLocales()` & Dead `WorldGuardHandler.java` Class
+- **Files:**
+  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java` (line 126)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/handlers/WorldGuardHandler.java`
+- **Issue:**
+  1. `MessageManager.getAvailableLocales()` omits `de_DE`, `pt_BR`, and `ru_RU` from its bundled JAR fallback array.
+  2. `WorldGuardHandler.java` is dead unused code containing the legacy `__global__` bug and `e.printStackTrace()`.
+- **Task:** Include all 7 bundled locales in `MessageManager.getAvailableLocales()`, and delete the unused `WorldGuardHandler.java` class.
 
 ---
 
-## 6. Advanced Exploits & Interaction Defenses
+## 5. Spigot & Paper Compatibility (1.19.4–1.21.x / 26.x)
 
-### Sign Editing (1.20+) Defacement
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `SignChangeEvent` is not registered. Visitors can right-click any sign or hanging sign in a claim to edit the text on both sides.
-- **Task:** Register `SignChangeEvent` and cancel if `!canModifyChunk(player, event.getBlock().getChunk())`.
-- **Status:** ✅ **FIXED** — Registered `onSignChange(SignChangeEvent)` calling `checkModifyOrCancel(..., "deny-interact")` so untrusted visitors cannot edit either side of signs or hanging signs inside claimed chunks.
+### 26. `org.spigotmc.event.entity.EntityMountEvent` Removed in Paper/Spigot 1.21+
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 461–467)
+- **Issue:** `onEntityMount` imports `org.spigotmc.event.entity.EntityMountEvent`, which moved to `org.bukkit.event.entity.EntityMountEvent` in 1.20.4 and was removed from `org.spigotmc` in newer Paper/Spigot builds. Because it sits inside `ChunkProtectionListener`, a missing class aborts `PluginManager.registerEvents(...)` with `NoClassDefFoundError` and disables **all** chunk protection listeners on startup.
+- **Task:** Isolate mount handling into a dedicated dynamic listener that binds whichever `EntityMountEvent` class exists (`org.bukkit.event.entity.EntityMountEvent` or `org.spigotmc.event.entity.EntityMountEvent`) via `PluginManager.registerEvent(...)`, alongside standard Bukkit `VehicleEnterEvent`.
 
-### Fishing Rod Pulling / Entity Theft
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `PlayerFishEvent` is missing. Visitors can cast fishing rods onto claimed horses, farm animals, or armor stands from the wilderness and pull them out across boundaries.
-- **Task:** Register `PlayerFishEvent` and cancel if `event.getCaught()` is in a protected chunk without modify permissions.
-- **Status:** ✅ **FIXED** — Registered `onPlayerFish(PlayerFishEvent)` cancelling catches on claimed non-hostile entities, armor stands, and vehicles when `!canModifyChunk(...)` (removing the hook as well), and blocking fishing-rod pulls against players in PvP-protected claims.
+### 27. Async Thread-Safety Violations in `ChatRenameListener` (`AsyncPlayerChatEvent`)
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java` (lines 29–89)
+- **Issue:** `AsyncPlayerChatEvent` runs off the main thread on Paper and Spigot, yet `onPlayerChat()` mutates Bukkit's unsynchronized `EntityMetadataStore` (`hasMetadata`/`getMetadata`/`removeMetadata`) and calls `messages.getFor(...)` (which accesses `MessageManager.playerData` and `PlaceholderAPI.setPlaceholders(...)` asynchronously).
+- **Task:** Replace Bukkit entity metadata for rename/sell prompts with a thread-safe `ConcurrentHashMap<UUID, PendingPrompt>`, and dispatch all `messages.getFor(...)` / `player.sendMessage(...)` calls synchronously via `getScheduler().runTask(...)`.
 
-### Leash / Lead Breaking
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `PlayerLeashEntityEvent` and `PlayerUnleashEntityEvent` are missing. Visitors can attach leads to private animals or punch leads off fence posts.
-- **Task:** Intercept both events and verify `canModifyChunk()`.
-- **Status:** ✅ **FIXED** — Registered `onPlayerLeashEntity(PlayerLeashEntityEvent)` (checking both entity and leash-holder chunks) and `onPlayerUnleashEntity(PlayerUnleashEntityEvent)` verifying `canModifyChunk()`, while `onHangingBreak` covers `LeashHitch` fence punching.
-
-### Chorus Fruit & Pearl Vault Infiltration
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `PlayerTeleportEvent` is not handled. Eating Chorus Fruit outside enclosed claims teleports players randomly through walls into locked vaults.
-- **Task:** Register `PlayerTeleportEvent` and block `TeleportCause.CHORUS_FRUIT` and `TeleportCause.ENDER_PEARL` into claims without modify access.
-- **Status:** ✅ **FIXED** — Registered `onPlayerTeleport(PlayerTeleportEvent)` blocking `CHORUS_FRUIT` and `ENDER_PEARL` teleports into claimed chunks when `!canModifyChunk(...)`, while still allowing visitors to teleport out into wilderness.
-
-### Frost Walker Water Griefing
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `EntityBlockFormEvent` explicitly ignores players (`if (event.getEntity() instanceof Player) return;`), allowing visitors with Frost Walker boots to freeze water systems into frosted ice.
-- **Task:** Check player modify permissions on the chunk before allowing Frost Walker ice formation.
-- **Status:** ✅ **FIXED** — Updated `onEntityBlockForm(EntityBlockFormEvent)` to check `canModifyChunk(player, chunk)` when the entity is a `Player`, cancelling Frost Walker ice formation for untrusted visitors while preserving `FLAG_MOB_GRIEFING` checks for mobs.
-
-### Decouple Armor Stand Damage from Mob Protection
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** Armor stands are guarded strictly by the `mob-protection` (animal protection) flag. If mob-protection is disabled for combat, visitors can punch and break armor stands, looting equipped gear.
-- **Task:** Check container/block modification rules (`canModifyChunk`) for `ArmorStand` damage rather than mob protection flags.
-- **Status:** ✅ **FIXED** — Updated `onEntityDamageByEntity` to check `canModifyChunk()` directly for `ArmorStand` entities (sending `deny-break`) unconditionally, independent of the `mob-protection` flag.
-
-### Bad Omen Village Raid Invasions
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `RaidTriggerEvent` is not handled. Visitors with Bad Omen can trigger raids in claimed villages.
-- **Task:** Register `RaidTriggerEvent` and cancel if the triggering player is not trusted on the claim.
-- **Status:** ✅ **FIXED** — Registered `onRaidTrigger(RaidTriggerEvent)` checking `canModifyChunk()` for both the raid village center chunk and the triggering player's chunk, cancelling unauthorized raids.
-
-### Entity Crop & Egg Trampling
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `EntityInteractEvent` is missing. Mobs, horses, ravagers, and wandering traders can trample farmland and turtle eggs inside claims.
-- **Task:** Register `EntityInteractEvent` and cancel `Action.PHYSICAL` on `FARMLAND` and `TURTLE_EGG` in claimed chunks.
-- **Status:** ✅ **FIXED** — Registered `onEntityInteract(EntityInteractEvent)` cancelling entity physical interaction with `FARMLAND`, `TURTLE_EGG`, and `SNIFFER_EGG` blocks inside claimed chunks.
-
----
-
-## 7. Configuration, Reloading & Synchronization Deficiencies
-
-### PvP Flag Semantic Inversion
+### 28. `api-version: '1.13'` Forces Legacy Commodore Bytecode Rewriting on Paper/Spigot
 - **Files:**
-  - `src/main/resources/config.yml`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
-- **Issue:** `pvp: false` in `config.yml` is documented as `# Disable PvP combat inside the claim`, but in `onPvP`, `isChunkFlagEnabled(FLAG_PVP)` checks for `true` to cancel damage. By default, PvP is active in claims while the comment states it is disabled.
-- **Task:** Invert check or rename to `block-pvp: true`.
-- **Status:** ✅ **FIXED** — Renamed the config default key in `config.yml` to `block-pvp: true` (matching `# Block PvP combat inside the claim`), updated `DEFAULT_FLAGS` to `true`, clarified `mob-spawning`/`mob-entry` boolean comments, added fallback/migration from legacy `claim-flags.pvp` in `ChunkManager.getDefaultFlag()` and `ConfigMigrator`, while keeping `FLAG_PVP` and `gui-flag-pvp` ("Block PvP") 100% consistent.
+  - `build.gradle` (lines 60–61)
+  - `src/main/resources/plugin.yml` (line 4)
+- **Issue:** `build.gradle` expands `apiVersion: '1.13'` into `plugin.yml` despite targeting `1.19.4+`, forcing Paper and Spigot's legacy Commodore bytecode rewriter over every plugin class at startup.
+- **Task:** Update `apiVersion` in `build.gradle` from `'1.13'` to `'1.19'` to match the `1.19.4+` baseline.
 
-### Comment Wiping in `saveConfig()` and `ConfigMigrator`
+### 29. `ItemClaimListener` Missing `ignoreCancelled = true` & Doesn't Cancel Right-Click Tool Action
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (lines 30–150)
+- **Issue:** `onPlayerInteract` lacks `ignoreCancelled = true` (causing duplicate messages after `ChunkProtectionListener` cancels an interact) and never calls `event.setCancelled(true)` when claiming with the tool (allowing vanilla shovel path-flattening or container opening on the same click).
+- **Task:** Add `ignoreCancelled = true` and call `event.setCancelled(true)` when the claim item handles a click.
+
+### 30. Missing `ignoreCancelled = true` Across `ChunkProtectionListener` Event Handlers
+- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 56–696)
+- **Issue:** Core protection handlers (`onBlockBreak`, `onBlockPlace`, `onBucketEmpty`, `onBucketFill`, `onPlayerInteract`, `onEntityDamageByEntity`, `onBlockBurn`, `onBlockIgnite`, `onBlockSpread`, `onVehicleDestroy`, `onPlayerInteractEntity`, `onArmorStandManipulate`, `onHangingBreak`, `onHangingPlace`, `onEntityChangeBlock`, `onEntityExplode`, `onBlockExplode`, `onCreatureSpawn`, and `onPvP`) omit `ignoreCancelled = true`, causing duplicate deny messages and redundant work when WorldGuard or another plugin already cancelled the event.
+- **Task:** Add `ignoreCancelled = true` to all appropriate protection event handlers.
+
+### 31. Paper Separate Entity-Chunk Loading & Async `OfflinePlayer` / `Location` Access
 - **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/config/ConfigMigrator.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/AdminSettingsGUIListener.java`
-- **Issue:** Using `plugin.saveConfig()` invokes standard SnakeYAML, which strips all YAML comments and section headers when saving or migrating.
-- **Task:** Use Bukkit's comment-preserving YAML API (`parseComments` / `copyDefaults`) or modify keys directly without dumping SnakeYAML output over formatted files.
-- **Status:** ✅ **FIXED** — Implemented `ConfigMigrator.setConfigValuePreservingComments(...)` and in-place scalar line patching (`updateScalarInFilePreservingComments(...)`) with `YamlConfigurationOptions#parseComments(true)` fallback, replacing `plugin.saveConfig()` across both `AdminSettingsGUIListener` and `ConfigMigrator.migrate()`.
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java` (lines 732–735)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/placeholders/ChunkClaimExpansion.java` (lines 65–78)
+- **Issue:**
+  1. On Paper 1.17+, `world.isChunkLoaded(cx, cz)` can return `true` even when entity slices are not loaded/ticking, causing `startMobEntryTask()` to query `chunk.getEntities()` needlessly on non-ticking border chunks.
+  2. `ChunkClaimExpansion.onRequest(...)` runs on async scoreboard/tablist threads while accessing `player.getLocation()` and `Bukkit.getOfflinePlayer(owner).getName()` directly.
+- **Task:** Guard `mob-entry` entity scans with `chunk.isEntitiesLoaded()` (via reflection/compatibility check) and cache known owner `UUID -> name` mappings in `ChunkManager` for lock-free async placeholder lookups.
 
-### Reload Desynchronization (`/chunkadmin reload`)
+### 32. `Sound` Enum-to-Interface Change (1.21.3+) & Pure CraftBukkit ActionBar Fallback
 - **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkAdminCommand.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/AdminSettingsGUIListener.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/economy/EconomyManager.java`
-- **Issue:** There is no console/CLI command for `/chunkadmin reload`. The GUI reload button reloads messages and config, but never invokes `economyManager.reload()`, leaving economy settings desynchronized until a server restart.
-- **Task:** Add `/chunkadmin reload` CLI command and call `economyManager.reload()`.
-- **Status:** ✅ **FIXED** — Added centralized `ChunkClaimPlugin2.reloadPluginConfig()` reloading `config.yml`, `MessageManager`, and `EconomyManager.reload()`; wired it to both the new `/chunkadmin reload` CLI/console subcommand (with tab-completion) and the `/chunkadmin` GUI Reload button.
-
-### Cached `final serverDefaultLocale` Desynchronization
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java`
-- **Issue:** `serverDefaultLocale` is declared `private final String` initialized on startup. Changing default language in `/chunkadmin` updates `config.yml`, but `serverDefaultLocale` remains unchanged in memory.
-- **Task:** Make `serverDefaultLocale` non-final and update it during config reload.
-- **Status:** ✅ **FIXED** — Changed `serverDefaultLocale` to `private volatile String` with blank-value safety, updated `MessageManager.reloadLocales()` to re-read `locale` from `config.yml`, and invoked `messages.reloadLocales()` immediately when the Admin GUI switches default language.
-
-### Console Event Command Leading Slash Failure
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimChunkCommand.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkExpandCommand.java`
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/UnclaimChunkCommand.java`
-- **Issue:** `Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd)` fails if an admin writes `/give %player% diamond 1` in `config.yml` because the console command dispatcher does not accept leading slashes.
-- **Task:** Strip leading `/` before dispatching console event commands.
-- **Status:** ✅ **FIXED** — Added `String stripped = cmd.startsWith("/") ? cmd.substring(1) : cmd;` before every `Bukkit.dispatchCommand` call in `ClaimChunkCommand`, `ChunkExpandCommand`, `UnclaimChunkCommand`, and `ItemClaimListener`.
-
-### Synchronous Mojang API Lookups in Admin Commands
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkAdminCommand.java`
-- **Issue:** Calling `Bukkit.getOfflinePlayer(targetName)` with a username initiates a blocking synchronous HTTP request to Mojang API if the player profile is not cached, causing 2–5 second server freezes.
-- **Task:** Resolve profiles asynchronously or verify from cached server offline player lists before falling back to network queries.
-- **Status:** ✅ **FIXED** — Replaced all `Bukkit.getOfflinePlayer(String)` calls in `ChunkAdminCommand` (`unclaimplayer`, `setlimit`, `removelimit`, and `onTabComplete`) with `resolveCachedOfflinePlayer(name)` scanning `Bukkit.getPlayerExact` and `Bukkit.getOfflinePlayers()` locally with zero synchronous HTTP requests.
-
-### Phantom Config Keys: `particle-height` & `particle-spacing`
-- **Files:**
-  - `src/main/resources/config.yml` (lines 46–48)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java` (lines 28–29, 227–246)
-- **Issue:** `config.yml` provides `particle-height: 100` and `particle-spacing: 0.5`. However, `VisualizeChunkCommand` uses `private static final int PARTICLE_HEIGHT = 100` and `private static final double PARTICLE_SPACING = 0.5` without ever reading the configuration keys. Changes made by administrators are silently ignored.
-- **Task:** Read `visualization.particle-height` and `visualization.particle-spacing` from `config.yml` with sensible bounds validation.
-- **Status:** ✅ **FIXED** — Removed hardcoded `PARTICLE_HEIGHT` and `PARTICLE_SPACING` constants from `VisualizeChunkCommand` and wired both `visualization.particle-height` (clamped `[1, 384]`) and `visualization.particle-spacing` (clamped `[0.1, 8.0]`) dynamically from `config.yml`.
-
-### Unconditional Startup Comment Wiping in `ConfigMigrator`
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/config/ConfigMigrator.java` (lines 48–50)
-- **Issue:** When `detectedVersion >= CURRENT_CONFIG_VERSION`, `ConfigMigrator` executes `plugin.getConfig().options().copyDefaults(true)` and `plugin.saveConfig()`. In Bukkit, calling `saveConfig()` without comment preservation erases all 7 section headers and inline comments from `config.yml` on every single server boot.
-- **Task:** Remove unconditional `saveConfig()` on startup when no schema migration is required.
-- **Status:** ✅ **FIXED** — Removed `copyDefaults(true)` and unconditional `plugin.saveConfig()` on up-to-date configs (`detectedVersion >= CURRENT_CONFIG_VERSION`), eliminating startup disk rewrites and comment stripping.
-
-### NullPointerException Crashes on Blank Config Keys
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerMoveListener.java` (lines 61, 110)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/AdminSettingsGUIListener.java` (lines 89–90)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (line 43)
-- **Issue:** If an administrator leaves a scalar configuration key blank in YAML (e.g. `greeting-display:`, `claim-item:`, or `locale:`), Bukkit's `getString(path, def)` returns `null`. Directly invoking `.toUpperCase()` or `.equalsIgnoreCase()` triggers an uncaught `NullPointerException` on every player movement packet across chunk boundaries.
-- **Task:** Null-check string returns before transforming cases, or fall back explicitly: `String raw = plugin.getConfig().getString("greeting-display"); String mode = (raw != null && !raw.isEmpty()) ? raw.toUpperCase() : "ACTION_BAR";`.
-- **Status:** ✅ **FIXED** — Added `ConfigMigrator.getNonBlankString(config, path, fallback)` and applied it across `PlayerMoveListener`, `AdminSettingsGUIListener`, `AdminSettingsGUI`, `ItemClaimListener`, `EconomyManager`, and `VisualizeChunkCommand` so blank/null YAML values fall back cleanly without throwing `NullPointerException`.
-
-### Event Command Bypass on Right-Click Shovel Claiming
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (lines 114–128)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimChunkCommand.java` (lines 109–126)
-- **Issue:** Claiming via `/claimchunk` dispatches `event-commands.claim-success` and `claim-fail`. Right-clicking with the claim tool (`claim-item: "WOODEN_SHOVEL"`) completely bypasses console event command dispatching, breaking third-party server integrations (e.g. permission upgrades, Discord webhooks).
-- **Task:** Dispatch `event-commands.claim-success` and `claim-fail` inside `ItemClaimListener.java` matching command execution behavior.
-- **Status:** ✅ **FIXED** — `ItemClaimListener` now dispatches `event-commands.claim-success` on successful item-claim and `event-commands.claim-fail` on failure, with leading-slash stripping applied.
-
-### Message Toggle Inconsistency in `/chunkexpand`
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ChunkExpandCommand.java` (line 97)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimChunkCommand.java` (line 101)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ItemClaimListener.java` (line 116)
-- **Issue:** `/claimchunk` and shovel claiming respect `message-toggles.claim-success: false`. `/chunkexpand` sends the success message unconditionally, ignoring the administrator's configured message toggle.
-- **Task:** Wrap expand success message delivery with `if (messages.isMessageEnabled("claim-success"))`.
-- **Status:** ✅ **FIXED** — Wrapped `expand-success` delivery in `ChunkExpandCommand` with `if (messages.isMessageEnabled("claim-success"))`, matching `/claimchunk` and shovel claiming.
-
-### Deprecated Particle Enum in Config Comments (`REDSTONE` vs `DUST`)
-- **Files:**
-  - `src/main/resources/config.yml` (line 49)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java` (lines 258–265)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/gui/AdminSettingsGUI.java` (line 275)
-- **Issue:** `config.yml` lists `REDSTONE` in its comment recommendation. In modern Spigot/Paper 1.20+, `Particle.REDSTONE` was renamed to `Particle.DUST`. Setting `particle-type: REDSTONE` throws `IllegalArgumentException` on `Particle.valueOf()` and silently reverts to `FLAME`.
-- **Task:** Update `config.yml` comments to recommend `DUST` and add an alias resolver mapping `REDSTONE` $\rightarrow$ `DUST`.
-- **Status:** ✅ **FIXED** — Updated `config.yml` comment recommendation from `REDSTONE` to `DUST`, updated `AdminSettingsGUI.resolveParticle()` with cross-version `REDSTONE`/`DUST` aliasing, and delegated `VisualizeChunkCommand.spawnParticle()` to `resolveParticle(...)`.
-
-### Economy Currency Crash on `Material.AIR` and Non-Item Materials
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/economy/EconomyManager.java` (lines 71–73)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java` (lines 24–25, 127)
-- **Issue:** Setting `economy.item.material: "AIR"` or specifying a technical non-item block (`WATER`, `PISTON_HEAD`) resolves to a non-null `Material`. Calling `new ItemStack(mat)` subsequently throws `IllegalArgumentException` during economy transactions.
-- **Task:** Validate `mat != null && mat.isItem() && !mat.isAir()`, logging a severe error and falling back to `GOLD_INGOT` if invalid.
-- **Status:** ✅ **FIXED** — Added `mat == null || !mat.isItem() || mat.isAir()` validation with severe logger warning and `GOLD_INGOT` fallback in `EconomyManager.reload()`, plus constructor guard in `ItemEconomyProvider`.
-
-### Naive Pluralization in Item Currency Display
-- **File:** `src/main/java/org/ashin/chunkClaimPlugin2/economy/ItemEconomyProvider.java` (line 71)
-- **Issue:** Currency formatting blindly appends `"s"` to `display-name` (e.g. `count + " " + displayName + (count == 1 ? "" : "s")`), generating grammatically invalid labels such as `"10 Golds"`.
-- **Task:** Add `singular-name` and `plural-name` configuration fields in `config.yml` under `economy.item`.
-- **Status:** ✅ **FIXED** — Added `singular-name` and `plural-name` under `economy.item` in `config.yml`, updated `EconomyManager.reload()` with legacy `display-name` fallback, and updated `ItemEconomyProvider.format()` + smart `inferPlural()` (preventing `"10 Golds"`).
-
-### High-Frequency Dynamic Config Lookups on Hot Paths
-- **Files:**
-  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerMoveListener.java` (lines 61, 110, 119–127)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/MessageManager.java` (line 230)
-  - `src/main/java/org/ashin/chunkClaimPlugin2/managers/ChunkManager.java` (line 598)
-- **Issue:** Dynamic string-path YAML lookups are executed on every chunk boundary crossing (`greeting-display`, `title-duration.*`), every chat message (`messages.*`), and every block/entity interaction (`claim-flags.*`) on the main server thread instead of being cached in memory fields.
-- **Task:** Cache parsed configuration models (GreetingSettings, TitleDurationSettings, FlagDefaults) during startup and refresh them only on `/chunkadmin reload`.
-- **Status:** ✅ **FIXED** — Cached `defaultFlagCache` and `disabledWorldsCache` in `ChunkManager`, `messageTogglesCache` and `messageOverridesCache` in `MessageManager`, and `greeting-display` / `show-wilderness-greeting` / `title-duration.*` in `PlayerMoveListener`. All caches are refreshed automatically via `ChunkClaimPlugin2.reloadPluginConfig()` and GUI updates.
+  - `src/main/java/org/ashin/chunkClaimPlugin2/gui/SettingsGUI.java` (lines 405–409)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/gui/AdminSettingsGUI.java` (lines 306–310)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/SettingsGUIListener.java` (line 349)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/commands/ClaimTradeCommand.java` (lines 273–275)
+  - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/PlayerMoveListener.java` (lines 150–156)
+- **Issue:**
+  1. `org.bukkit.Sound` became an `interface` in Spigot/Paper 1.21.3+; direct enum constant access relies on runtime bytecode rewriting and silently drops sounds via `catch (Throwable)` if compatibility fails.
+  2. `PlayerMoveListener.sendActionBar()` relies on `player.spigot()` / Bungee `ChatMessageType`, which is unavailable on pure CraftBukkit (spamming chat instead).
+- **Task:** Route GUI/teleport/trade sounds through a shared string/registry-safe helper (`playSound(loc, "minecraft:...", ...)`), and ensure action-bar delivery works cleanly across Spigot and Paper.
