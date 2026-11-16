@@ -210,6 +210,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `SignChangeEvent` is not registered. Visitors can right-click any sign or hanging sign in a claim to edit the text on both sides.
 - **Task:** Register `SignChangeEvent` and cancel if `!canModifyChunk(player, event.getBlock().getChunk())`.
+- **Status:** ✅ **FIXED** — Registered `onSignChange(SignChangeEvent)` calling `checkModifyOrCancel(..., "deny-interact")` so untrusted visitors cannot edit either side of signs or hanging signs inside claimed chunks.
 
 ### Fishing Rod Pulling / Entity Theft
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

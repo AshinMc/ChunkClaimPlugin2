@@ -69,6 +69,14 @@ public class ChunkProtectionListener implements Listener {
         checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-place");
     }
 
+    /**
+     * Prevents untrusted visitors from editing text on existing or newly placed signs and hanging signs (1.20+).
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onSignChange(org.bukkit.event.block.SignChangeEvent event) {
+        checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-interact");
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onBucketEmpty(PlayerBucketEmptyEvent event) {
         checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-place");
