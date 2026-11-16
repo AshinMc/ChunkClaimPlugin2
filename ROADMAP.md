@@ -39,6 +39,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChatRenameListener.java`
 - **Issue:** Claim names accept arbitrary characters and unbounded lengths, which can cause YAML serialization anomalies and command argument parsing breaks.
 - **Task:** Enforce length limit (maximum 24 characters) and regex pattern (`^[a-zA-Z0-9_-]+$`).
+- **Status:** ✅ **FIXED** — Added `ChunkManager.isValidClaimName()` (`1–24` chars matching `^[a-zA-Z0-9_-]+$`) and `ChunkManager.generateDefaultClaimName()` (`Claim_N`), and enforced validation in `ClaimChunkCommand`, `ChunkSettingsCommand`, `ChatRenameListener`, and `ItemClaimListener`.
 
 ---
 

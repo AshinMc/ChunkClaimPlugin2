@@ -37,16 +37,18 @@ public class ClaimChunkCommand implements CommandExecutor {
         // Determine claim name from args or generate default
         String claimName;
         if (args.length > 0) {
-            claimName = String.join(" ", args);
+            claimName = String.join(" ", args).trim();
+            if (!ChunkManager.isValidClaimName(claimName)) {
+                player.sendMessage(org.bukkit.ChatColor.RED + "Invalid claim name. Use 1-" + ChunkManager.MAX_CLAIM_NAME_LENGTH + " characters (letters, numbers, '_', or '-').");
+                return true;
+            }
             // Check if the player already has a claim group with this name
             if (chunkManager.hasClaimName(player.getUniqueId(), claimName)) {
                 player.sendMessage(messages.getFor(player.getUniqueId(), "chunk-name-exists", "name", claimName));
                 return true;
             }
         } else {
-            // Generate default name: "Claim #N"
-            int next = chunkManager.getPlayerClaimNames(player.getUniqueId()).size() + 1;
-            claimName = "Claim_#" + next;
+            claimName = chunkManager.generateDefaultClaimName(player.getUniqueId());
         }
 
         // Check if the chunk is already claimed by someone

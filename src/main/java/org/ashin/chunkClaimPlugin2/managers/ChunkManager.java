@@ -60,6 +60,28 @@ public class ChunkManager {
         loadData();
     }
 
+    public static final int MAX_CLAIM_NAME_LENGTH = 24;
+    private static final java.util.regex.Pattern CLAIM_NAME_PATTERN = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]+$");
+
+    /**
+     * Validates that a claim name is 1-24 characters matching [a-zA-Z0-9_-].
+     */
+    public static boolean isValidClaimName(String name) {
+        return name != null && !name.isEmpty() && name.length() <= MAX_CLAIM_NAME_LENGTH
+                && CLAIM_NAME_PATTERN.matcher(name).matches();
+    }
+
+    /**
+     * Generates a unique default claim name (e.g. Claim_1) not already used by the player.
+     */
+    public String generateDefaultClaimName(UUID playerId) {
+        int next = getPlayerClaimNames(playerId).size() + 1;
+        while (hasClaimName(playerId, "Claim_" + next)) {
+            next++;
+        }
+        return "Claim_" + next;
+    }
+
     // ── Basic chunk operations ──
 
     public boolean canClaimChunk(Chunk chunk, Player player) {

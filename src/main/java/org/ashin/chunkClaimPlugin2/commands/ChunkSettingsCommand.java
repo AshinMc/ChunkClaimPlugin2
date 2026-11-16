@@ -287,6 +287,11 @@ public class ChunkSettingsCommand implements CommandExecutor, TabCompleter {
         String oldName = args[1];
         String newName = args[2];
 
+        if (!ChunkManager.isValidClaimName(newName)) {
+            player.sendMessage(ChatColor.RED + "Invalid claim name. Use 1-" + ChunkManager.MAX_CLAIM_NAME_LENGTH + " characters (letters, numbers, '_', or '-').");
+            return;
+        }
+
         if (!chunkManager.hasClaimName(player.getUniqueId(), oldName)) {
             player.sendMessage(messages.getFor(player.getUniqueId(), "expand-not-found", "name", oldName));
             return;

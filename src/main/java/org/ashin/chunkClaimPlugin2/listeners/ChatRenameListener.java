@@ -60,6 +60,11 @@ public class ChatRenameListener implements Listener {
                 return;
             }
 
+            if (!ChunkManager.isValidClaimName(newName)) {
+                player.sendMessage(ChatColor.RED + "Invalid claim name. Use 1-" + ChunkManager.MAX_CLAIM_NAME_LENGTH + " characters (letters, numbers, '_', or '-').");
+                return;
+            }
+
             // Schedule renaming sync safely
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (chunkManager.renameClaim(player.getUniqueId(), oldName, newName)) {

@@ -60,9 +60,8 @@ public class ItemClaimListener implements Listener {
         }
         player.setMetadata("ccp_item_claim_cooldown", new org.bukkit.metadata.FixedMetadataValue(plugin, System.currentTimeMillis()));
 
-        // Generate default name: "Claim #N"
-        int next = chunkManager.getPlayerClaimNames(player.getUniqueId()).size() + 1;
-        String claimName = "Claim #" + next;
+        // Generate default name matching valid claim name syntax
+        String claimName = chunkManager.generateDefaultClaimName(player.getUniqueId());
 
         // Check if the chunk is already claimed by someone
         UUID existingOwner = chunkManager.getChunkOwner(chunk);
