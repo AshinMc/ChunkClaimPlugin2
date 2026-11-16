@@ -253,6 +253,14 @@ public class ChunkProtectionListener implements Listener {
         Chunk chunk = event.getEntity().getLocation().getChunk();
         if (canModifyChunk(player, chunk)) return;
 
+        if (event.getEntity() instanceof ArmorStand) {
+            event.setCancelled(true);
+            if (messages.isMessageEnabled("deny-break")) {
+                player.sendMessage(messages.getFor(player.getUniqueId(), "deny-break"));
+            }
+            return;
+        }
+
         if (chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_PROTECTION)) {
             event.setCancelled(true);
             if (messages.isMessageEnabled("deny-entity")) {

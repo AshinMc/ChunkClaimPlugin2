@@ -240,6 +240,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** Armor stands are guarded strictly by the `mob-protection` (animal protection) flag. If mob-protection is disabled for combat, visitors can punch and break armor stands, looting equipped gear.
 - **Task:** Check container/block modification rules (`canModifyChunk`) for `ArmorStand` damage rather than mob protection flags.
+- **Status:** ✅ **FIXED** — Updated `onEntityDamageByEntity` to check `canModifyChunk()` directly for `ArmorStand` entities (sending `deny-break`) unconditionally, independent of the `mob-protection` flag.
 
 ### Bad Omen Village Raid Invasions
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
