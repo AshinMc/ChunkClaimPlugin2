@@ -49,6 +49,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `PlayerBucketEmptyEvent` and `PlayerBucketFillEvent` are not implemented. Visitors can empty lava/water buckets or pick up liquids inside claims.
 - **Task:** Implement both events and cancel them if `!canModifyChunk(player, chunk)`.
+- **Status:** ✅ **FIXED** — Implemented `onBucketEmpty(PlayerBucketEmptyEvent)` and `onBucketFill(PlayerBucketFillEvent)` checking `event.getBlock().getChunk()` via shared `checkModifyOrCancel(...)` helper so cross-border bucket placement and fluid pickup are blocked with appropriate `deny-place`/`deny-break` feedback.
 
 ### Cross-Border Fluid Inflow
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`

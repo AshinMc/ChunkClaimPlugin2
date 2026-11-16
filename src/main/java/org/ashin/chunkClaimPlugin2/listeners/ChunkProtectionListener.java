@@ -9,6 +9,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -23,6 +24,8 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
@@ -56,13 +59,17 @@ public class ChunkProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (canModifyChunk(event.getPlayer(), event.getBlock().getChunk())) {
-            return;
-        }
-        event.setCancelled(true);
-        if (messages.isMessageEnabled("deny-place")) {
-            event.getPlayer().sendMessage(messages.getFor(event.getPlayer().getUniqueId(), "deny-place"));
-        }
+        checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-place");
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBucketEmpty(PlayerBucketEmptyEvent event) {
+        checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-place");
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBucketFill(PlayerBucketFillEvent event) {
+        checkModifyOrCancel(event.getPlayer(), event.getBlock().getChunk(), event, "deny-break");
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -499,6 +506,17 @@ public class ChunkProtectionListener implements Listener {
         if (damager instanceof Player p) return p;
         if (damager instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof Player p) return p;
         return null;
+    }
+
+    private boolean checkModifyOrCancel(Player player, Chunk chunk, Cancellable event, String denyKey) {
+        if (canModifyChunk(player, chunk)) {
+            return true;
+        }
+        event.setCancelled(true);
+        if (denyKey != null && messages.isMessageEnabled(denyKey)) {
+            player.sendMessage(messages.getFor(player.getUniqueId(), denyKey));
+        }
+        return false;
     }
 
     private boolean canModifyChunk(Player player, Chunk chunk) {
