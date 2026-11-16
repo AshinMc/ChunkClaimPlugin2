@@ -34,6 +34,7 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -448,6 +449,28 @@ public class ChunkProtectionListener implements Listener {
         if (chunkManager.isChunkClaimed(chunk) && chunkManager.isChunkFlagEnabled(chunk, ChunkManager.FLAG_MOB_GRIEFING)) {
             event.setCancelled(true);
         }
+    }
+
+    /**
+     * Prevents trees or giant mushrooms grown outside or on the border of a claim from
+     * replacing blocks inside claimed chunks owned by other players.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onStructureGrow(StructureGrowEvent event) {
+        UUID originOwner = chunkManager.getChunkOwner(event.getLocation().getChunk());
+        Player player = event.getPlayer();
+
+        event.getBlocks().removeIf(state -> {
+            Chunk targetChunk = state.getLocation().getChunk();
+            UUID targetOwner = chunkManager.getChunkOwner(targetChunk);
+            if (targetOwner == null) {
+                return false;
+            }
+            if (player != null) {
+                return !canModifyChunk(player, targetChunk);
+            }
+            return !targetOwner.equals(originOwner);
+        });
     }
 
     /**

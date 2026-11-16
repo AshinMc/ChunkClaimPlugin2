@@ -85,6 +85,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
 - **Issue:** `StructureGrowEvent` is not handled. Large trees (Dark Oak, Jungle) grown on borders replace blocks inside neighboring claims.
 - **Task:** Implement `StructureGrowEvent` and strip out block changes falling inside chunks owned by other players.
+- **Status:** ✅ **FIXED** — Implemented `onStructureGrow(StructureGrowEvent)` which strips generated blocks falling inside claimed chunks unless the player has modify access (bonemeal) or the sapling's origin chunk shares the same owner (natural growth).
 
 ### Vehicle & Mount Controls
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/listeners/ChunkProtectionListener.java`
