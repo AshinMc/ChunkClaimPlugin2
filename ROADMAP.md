@@ -310,6 +310,7 @@ This document lists architectural bugs, security vulnerabilities, performance bo
   - `src/main/java/org/ashin/chunkClaimPlugin2/commands/VisualizeChunkCommand.java` (lines 28–29, 227–246)
 - **Issue:** `config.yml` provides `particle-height: 100` and `particle-spacing: 0.5`. However, `VisualizeChunkCommand` uses `private static final int PARTICLE_HEIGHT = 100` and `private static final double PARTICLE_SPACING = 0.5` without ever reading the configuration keys. Changes made by administrators are silently ignored.
 - **Task:** Read `visualization.particle-height` and `visualization.particle-spacing` from `config.yml` with sensible bounds validation.
+- **Status:** ✅ **FIXED** — Removed hardcoded `PARTICLE_HEIGHT` and `PARTICLE_SPACING` constants from `VisualizeChunkCommand` and wired both `visualization.particle-height` (clamped `[1, 384]`) and `visualization.particle-spacing` (clamped `[0.1, 8.0]`) dynamically from `config.yml`.
 
 ### Unconditional Startup Comment Wiping in `ConfigMigrator`
 - **File:** `src/main/java/org/ashin/chunkClaimPlugin2/config/ConfigMigrator.java` (lines 48–50)

@@ -25,9 +25,7 @@ public class VisualizeChunkCommand implements CommandExecutor {
     private final JavaPlugin plugin;
     private final ChunkManager chunkManager;
     private final MessageManager messages;
-    private static final int PARTICLE_HEIGHT = 100;
-    private static final double PARTICLE_SPACING = 0.5;
-    
+
     private final Map<UUID, BukkitTask> activeVisualizations = new HashMap<>();
 
     public VisualizeChunkCommand(JavaPlugin plugin, ChunkManager chunkManager, MessageManager messages) {
@@ -158,11 +156,15 @@ public class VisualizeChunkCommand implements CommandExecutor {
         }
         if (groupCoords.isEmpty()) return;
 
+        int particleHeight = Math.max(1, Math.min(384, plugin.getConfig().getInt("visualization.particle-height", 100)));
+        double configuredSpacing = plugin.getConfig().getDouble("visualization.particle-spacing", 0.5);
+        double particleSpacing = Math.max(0.1, Math.min(8.0, configuredSpacing));
+
         int playerY = player.getLocation().getBlockY();
         int worldMinY = player.getWorld().getMinHeight();
         int worldMaxY = player.getWorld().getMaxHeight();
         int minY = Math.max(worldMinY, playerY - 5);
-        int maxY = Math.min(minY + PARTICLE_HEIGHT, worldMaxY);
+        int maxY = Math.min(minY + particleHeight, worldMaxY);
         double eyeY = playerY + 1.5;
 
         for (ChunkData cd : chunks) {
@@ -180,28 +182,28 @@ public class VisualizeChunkCommand implements CommandExecutor {
             boolean hasEast = groupCoords.contains((cx + 1) + ":" + cz);
 
             if (!hasNorth) {
-                for (double x = minX; x <= maxX; x += PARTICLE_SPACING) spawnParticle(player, x, eyeY, minZ);
+                for (double x = minX; x <= maxX; x += particleSpacing) spawnParticle(player, x, eyeY, minZ);
             }
             if (!hasSouth) {
-                for (double x = minX; x <= maxX; x += PARTICLE_SPACING) spawnParticle(player, x, eyeY, maxZ);
+                for (double x = minX; x <= maxX; x += particleSpacing) spawnParticle(player, x, eyeY, maxZ);
             }
             if (!hasWest) {
-                for (double z = minZ; z <= maxZ; z += PARTICLE_SPACING) spawnParticle(player, minX, eyeY, z);
+                for (double z = minZ; z <= maxZ; z += particleSpacing) spawnParticle(player, minX, eyeY, z);
             }
             if (!hasEast) {
-                for (double z = minZ; z <= maxZ; z += PARTICLE_SPACING) spawnParticle(player, maxX, eyeY, z);
+                for (double z = minZ; z <= maxZ; z += particleSpacing) spawnParticle(player, maxX, eyeY, z);
             }
 
             // Vertical corner pillars only at outer corners
-            if (!hasNorth || !hasWest) drawVerticalPillar(player, minX, minZ, minY, maxY);
-            if (!hasNorth || !hasEast) drawVerticalPillar(player, maxX, minZ, minY, maxY);
-            if (!hasSouth || !hasWest) drawVerticalPillar(player, minX, maxZ, minY, maxY);
-            if (!hasSouth || !hasEast) drawVerticalPillar(player, maxX, maxZ, minY, maxY);
+            if (!hasNorth || !hasWest) drawVerticalPillar(player, minX, minZ, minY, maxY, particleSpacing);
+            if (!hasNorth || !hasEast) drawVerticalPillar(player, maxX, minZ, minY, maxY, particleSpacing);
+            if (!hasSouth || !hasWest) drawVerticalPillar(player, minX, maxZ, minY, maxY, particleSpacing);
+            if (!hasSouth || !hasEast) drawVerticalPillar(player, maxX, maxZ, minY, maxY, particleSpacing);
         }
     }
 
-    private void drawVerticalPillar(Player player, double x, double z, int minY, int maxY) {
-        for (double y = minY; y <= maxY; y += PARTICLE_SPACING) {
+    private void drawVerticalPillar(Player player, double x, double z, int minY, int maxY, double spacing) {
+        for (double y = minY; y <= maxY; y += spacing) {
             spawnParticle(player, x, y, z);
         }
     }
